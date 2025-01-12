@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.0
+// @version      1.0.1
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @match        *://*/*
@@ -10,6 +10,8 @@
 // @grant        GM_unregisterMenuCommand
 // @run-at       document-end
 // ==/UserScript==
+// TODO: 当前窗口的 url 也收进来
+// TODO: 只在某些页面生效
 
 (function() {
     'use strict';
@@ -137,7 +139,8 @@
             /south-plus\.net\/read\.php\?tid-.*/
         ],
         'nga': [
-            /bbs\.nga\.cn\/read\.php\?tid.*/
+            /bbs\.nga\.cn\/read\.php\?tid.*/,
+            /ngabbs\.com\/read\.php\?tid.*/
         ],
         'chiphell': [
             /chiphell\.com\/thread-.*/
