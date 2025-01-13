@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.1.4
+// @version      1.1.5
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -134,7 +134,7 @@
     function getBaseUrl(url) {
         const domain = new URL(url).hostname;
         if (domain === 'www.v2ex.com') return url.split('?')[0].split('#')[0];
-        if (domain === 'linux.do') return url.replace(/(\/\d+)$/, '');
+        if (domain === 'linux.do') return url.replace(/(\/\d+)\/\d+$/, '$1');
         if (domain === 'www.bilibili.com') return url.split('?')[0];
         return url;
     }
