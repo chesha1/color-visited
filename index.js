@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.0.1
+// @version      1.1.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @match        *://*/*
@@ -26,8 +26,23 @@
     };
 
     const domain = window.location.hostname;
+    const currentUrl = window.location.href;
     const scriptKey = `scriptEnabled_${domain}`;
     let isEnabled = GM_getValue(scriptKey, true);
+
+    // 检查当前页面是否在preset的生效范围内
+    function isInPresetPages() {
+        let inPresetPages = false;
+        config.presets.forEach(preset => {
+            PRESET_RULES[preset].pages.forEach(page => {
+                if (page.test(currentUrl)) {
+                    inPresetPages = true;
+                }
+            });
+        });
+        console.log('inPresetPages:', inPresetPages);
+        return inPresetPages;
+    }
 
     // 获取所有应用的URL匹配规则
     function getAllPatterns() {
@@ -35,7 +50,7 @@
 
         config.presets.forEach(preset => {
             if (PRESET_RULES[preset]) {
-                patterns = patterns.concat(PRESET_RULES[preset]);
+                patterns = patterns.concat(PRESET_RULES[preset].patterns);
             }
         });
 
@@ -74,6 +89,9 @@
     }
 
     function initScript() {
+        // 如果不在预设页面内，直接结束
+        if (!isInPresetPages()) return;
+
         const visitedLinks = new Set(GM_getValue('visitedLinks', []));
 
         function updateLinkStatus(link) {
@@ -84,7 +102,6 @@
                 link.style.color = config.color;
             } else {
                 link.addEventListener('click', () => {
-                    console.log('input:', inputUrl);
                     visitedLinks.add(inputUrl);
                     GM_setValue('visitedLinks', Array.from(visitedLinks));
                     link.style.color = config.color;
@@ -132,24 +149,57 @@
 
     // 预设规则集合
     const PRESET_RULES = {
-        'v2ex': [
-            /v2ex\.com\/t\/.*/,
-        ],
-        'south-plus': [
-            /south-plus\.net\/read\.php\?tid-.*/
-        ],
-        'nga': [
-            /bbs\.nga\.cn\/read\.php\?tid.*/,
-            /ngabbs\.com\/read\.php\?tid.*/
-        ],
-        'chiphell': [
-            /chiphell\.com\/thread-.*/
-        ],
-        'linuxdo': [
-            /linux.do\/t\/topic\/.*/
-        ],
-        'bilibili': [
-            /www\.bilibili\.com\/video\/BV.*/
-        ],
+        'v2ex': {
+            pages: [
+                /.*v2ex\.com\/$/,
+                /.*v2ex\.com\/\?tab.*/,
+                /.*v2ex\.com\/go\/.*/
+            ],
+            patterns: [
+                /v2ex\.com\/t\/.*/
+            ]
+        },
+        'south-plus': {
+            pages: [
+                /south-plus\.net/
+            ],
+            patterns: [
+                /south-plus\.net\/read\.php\?tid-.*/
+            ]
+        },
+        'nga': {
+            pages: [
+                /bbs\.nga\.cn/,
+                /ngabbs\.com/
+            ],
+            patterns: [
+                /bbs\.nga\.cn\/read\.php\?tid.*/,
+                /ngabbs\.com\/read\.php\?tid.*/
+            ]
+        },
+        'chiphell': {
+            pages: [
+                /chiphell\.com/
+            ],
+            patterns: [
+                /chiphell\.com\/thread-.*/
+            ]
+        },
+        'linuxdo': {
+            pages: [
+                /linux\.do/
+            ],
+            patterns: [
+                /linux\.do\/t\/topic\/.*/
+            ]
+        },
+        'bilibili': {
+            pages: [
+                /www\.bilibili\.com/
+            ],
+            patterns: [
+                /www\.bilibili\.com\/video\/BV.*/
+            ]
+        }
     };
 })();
