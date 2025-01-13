@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.1.0
+// @version      1.1.1
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
-// @license      GPLv3
+// @license      GPL-3.0-only
 // @match        *://*/*
 // @grant        GM_setValue
 // @grant        GM_getValue
