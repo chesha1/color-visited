@@ -3,6 +3,7 @@
 // @version      1.1.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
+// @license      GPLv3
 // @match        *://*/*
 // @grant        GM_setValue
 // @grant        GM_getValue
