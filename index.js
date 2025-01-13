@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.1.2
+// @version      1.1.3
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -23,7 +23,7 @@
         urlPatterns: [ // 自定义URL匹配规则
             /example\.com/,
         ],
-        presets: ['v2ex', 'south-plus', 'nga', 'chiphell', 'linuxdo', 'bilibili'] // 使用的预设规则
+        presets: ['v2ex', 'south-plus', 'nga', 'chiphell', 'linuxdo', 'bilibili', 'zhihu'] // 使用的预设规则
     };
 
     const domain = window.location.hostname;
@@ -41,7 +41,6 @@
                 }
             });
         });
-        console.log('inPresetPages:', inPresetPages);
         return inPresetPages;
     }
 
@@ -152,9 +151,9 @@
     const PRESET_RULES = {
         'v2ex': {
             pages: [
-                /.*v2ex\.com\/$/,
-                /.*v2ex\.com\/\?tab.*/,
-                /.*v2ex\.com\/go\/.*/
+                /https:\/\/www\.v2ex\.com\/$/,
+                /https:\/\/www\.v2ex\.com\/\?tab.*/,
+                /https:\/\/www\.v2ex\.com\/go\/.*/
             ],
             patterns: [
                 /v2ex\.com\/t\/.*/
@@ -170,8 +169,8 @@
         },
         'nga': {
             pages: [
-                /bbs\.nga\.cn/,
-                /ngabbs\.com/
+                /https:\/\/bbs\.nga\.cn\/thread\.php\?fid.*/,
+                /https:\/\/ngabbs\.com\/thread\.php\?fid.*/,
             ],
             patterns: [
                 /bbs\.nga\.cn\/read\.php\?tid.*/,
@@ -180,7 +179,7 @@
         },
         'chiphell': {
             pages: [
-                /.*chiphell\.com\/forum-.*/,
+                /https:\/\/www\.chiphell\.com\/forum-.*/,
             ],
             patterns: [
                 /chiphell\.com\/thread-.*/
@@ -200,6 +199,16 @@
             ],
             patterns: [
                 /www\.bilibili\.com\/video\/BV.*/
+            ]
+        },
+        'zhihu': {
+            pages: [
+                /https:\/\/www\.zhihu\.com\/$/,
+                /https:\/\/www\.zhihu\.com\/people\/.*/,
+            ],
+            patterns: [
+                /zhihu\.com\/question\/\d+\/answer\/\d+$/,
+                /zhuanlan\.zhihu\.com\/p\/\d+/,
             ]
         }
     };
