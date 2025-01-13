@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.1.3
+// @version      1.1.4
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -161,10 +161,12 @@
         },
         'south-plus': {
             pages: [
-                /south-plus\.net/
+                /https:\/\/www\.south-plus\.net\/thread\.php\?fid.*/,
+                /https:\/\/www\.south-plus\.net\/u\.php\?action-topic-uid-.*/,
             ],
             patterns: [
-                /south-plus\.net\/read\.php\?tid-.*/
+                /south-plus\.net\/read\.php\?tid-.*/,
+
             ]
         },
         'nga': {
