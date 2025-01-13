@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.1.1
+// @version      1.1.2
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -180,7 +180,7 @@
         },
         'chiphell': {
             pages: [
-                /chiphell\.com/
+                /.*chiphell\.com\/forum-.*/,
             ],
             patterns: [
                 /chiphell\.com\/thread-.*/
