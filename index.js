@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.1.6
+// @version      1.1.7
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -11,8 +11,6 @@
 // @grant        GM_unregisterMenuCommand
 // @run-at       document-end
 // ==/UserScript==
-// TODO: 当前窗口的 url 也收进来
-// TODO: 只在某些页面生效
 
 (function() {
     'use strict';
@@ -23,7 +21,8 @@
         urlPatterns: [ // 自定义URL匹配规则
             /example\.com/,
         ],
-        presets: ['v2ex', 'south-plus', 'nga', 'chiphell', 'linuxdo', 'bilibili', 'zhihu'] // 使用的预设规则
+        presets: ['v2ex', 'south-plus', 'nga', 'chiphell', 'linuxdo', 'bilibili', 'zhihu'], // 使用的预设规则
+        debug: false, // 是否开启调试模式
     };
 
     const domain = window.location.hostname;
@@ -41,6 +40,10 @@
                 }
             });
         });
+        if (config.debug) {
+            console.log('currentUrl', currentUrl);
+            console.log('inPresetPages', inPresetPages);
+        }
         return inPresetPages;
     }
 
@@ -102,6 +105,9 @@
                 link.style.color = config.color;
             } else {
                 link.addEventListener('click', () => {
+                    if (config.debug) {
+                        console.log('inputUrl', inputUrl);
+                    }
                     visitedLinks.add(inputUrl);
                     GM_setValue('visitedLinks', Array.from(visitedLinks));
                     link.style.color = config.color;
@@ -198,10 +204,16 @@
         },
         'bilibili': {
             pages: [
-                /www\.bilibili\.com/
+                // TODO: 动态页挂载不上，以后再研究研究
+                // /https:\/\/t\.bilibili\.com.*/,
+                /https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/, // 个人空间首页
+                /https:\/\/space\.bilibili\.com\/\d+\/video/, // 个人空间投稿
+                // TODO: 并不是 <a> 标签本身，而是子标签负责显示，稍后处理一下
+                /https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频播放页
+
             ],
             patterns: [
-                /www\.bilibili\.com\/video\/BV.*/
+                /www\.bilibili\.com\/video\/BV.*/,
             ]
         },
         'zhihu': {
