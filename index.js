@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.2.0
+// @version      1.2.1
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -183,7 +183,9 @@
         'nga': {
             pages: [
                 /https:\/\/bbs\.nga\.cn\/thread\.php\?fid.*/,
+                /https:\/\/bbs\.nga\.cn\/thread\.php\?stid.*/,
                 /https:\/\/ngabbs\.com\/thread\.php\?fid.*/,
+                /https:\/\/ngabbs\.com\/thread\.php\?stid.*/,
             ],
             patterns: [
                 /bbs\.nga\.cn\/read\.php\?tid.*/,
