@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.1.7
+// @version      1.2.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -104,14 +104,19 @@
             if (visitedLinks.has(inputUrl)) {
                 link.style.color = config.color;
             } else {
-                link.addEventListener('click', () => {
-                    if (config.debug) {
-                        console.log('inputUrl', inputUrl);
-                    }
-                    visitedLinks.add(inputUrl);
-                    GM_setValue('visitedLinks', Array.from(visitedLinks));
-                    link.style.color = config.color;
-                }, { capture: true });
+                // 在鼠标左键单击（包括 ctrl, command, shift + 单击），中键单击时触发
+                // 对右键菜单开发无能为力，建议把这种操作改成效率更高的按键 + 鼠标左键
+                const events = ['click', 'auxclick'];
+                events.forEach((event) => {
+                    link.addEventListener(event, () => {
+                        if (config.debug) {
+                            console.log('inputUrl', inputUrl);
+                        }
+                        visitedLinks.add(inputUrl);
+                        GM_setValue('visitedLinks', Array.from(visitedLinks));
+                        link.style.color = config.color;
+                    }, { capture: true });
+                });
             }
         }
 
