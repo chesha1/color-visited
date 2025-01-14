@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.2.3
+// @version      1.3.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -86,9 +86,22 @@
 
     function clearLinks() {
         GM_setValue('visitedLinks', []);
-        document.querySelectorAll('a[href]').forEach(link => {
-            link.style.color = '';
-        });
+        removeScript();
+    }
+
+    // 在文档中注入一段自定义的 CSS 样式，针对这个类名的元素及其所有子元素，设置颜色样式，使用更高的选择器优先级和 !important
+    // 直接使用 link.style.color 会被后续的样式覆盖，所以这么做
+    function injectCustomStyles() {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            a.visited-link,
+            a.visited-link *,
+            a.visited-link *::before,
+            a.visited-link *::after {
+                color: ${config.color} !important;
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     function initScript() {
@@ -101,11 +114,10 @@
             const inputUrl = getBaseUrl(link.href);
             if (!shouldColorLink(inputUrl)) return;
 
+            // 添加 visited-link 类名
             if (visitedLinks.has(inputUrl)) {
-                link.style.color = config.color;
+                link.classList.add('visited-link');
             } else {
-                // 在鼠标左键单击（包括 ctrl, command, shift + 单击），中键单击时触发
-                // 对右键菜单开发无能为力，建议把这种操作改成效率更高的按键 + 鼠标左键
                 const events = ['click', 'auxclick'];
                 events.forEach((event) => {
                     link.addEventListener(event, () => {
@@ -114,7 +126,7 @@
                         }
                         visitedLinks.add(inputUrl);
                         GM_setValue('visitedLinks', Array.from(visitedLinks));
-                        link.style.color = config.color;
+                        link.classList.add('visited-link');
                     }, { capture: true });
                 });
             }
@@ -137,9 +149,10 @@
 
     function removeScript() {
         document.querySelectorAll('a[href]').forEach(link => {
-            link.style.color = '';
+            link.classList.remove('visited-link');
         });
     }
+
 
     // 去除各种查询参数等的干扰
     function getBaseUrl(url) {
@@ -153,6 +166,7 @@
     updateMenu();
 
     window.onload = () => {
+        injectCustomStyles();
         if (isEnabled) {
             initScript();
         }
@@ -215,7 +229,6 @@
                 // /https:\/\/t\.bilibili\.com.*/,
                 /https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/, // 个人空间首页
                 /https:\/\/space\.bilibili\.com\/\d+\/video/, // 个人空间投稿
-                // TODO: 并不是 <a> 标签本身，而是子标签负责显示，稍后处理一下
                 /https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频播放页
 
             ],
@@ -232,6 +245,8 @@
                 /zhihu\.com\/question\/\d+\/answer\/\d+$/,
                 /zhuanlan\.zhihu\.com\/p\/\d+/,
             ]
-        }
+        },
+        // TODO: tieba
+        // resources: https://tophub.today/
     };
 })();
