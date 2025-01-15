@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.4.1
+// @version      1.4.2
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -166,6 +166,8 @@
         if (domain === 'www.v2ex.com') return url.split('?')[0].split('#')[0];
         if (domain === 'linux.do') return url.replace(/(\/\d+)\/\d+$/, '$1');
         if (domain === 'www.bilibili.com') return url.split('?')[0];
+        if (domain === 'tieba.baidu.com') return url.split('?')[0];
+        if (domain === 'www.douban.com') return url.split('?')[0];
         return url;
     }
 
@@ -199,6 +201,22 @@
             ],
             patterns: [
                 /chiphell\.com\/thread-.*/
+            ]
+        },
+        'douban': {
+            pages: [
+                /https:\/\/www\.douban\.com\/group\/.*/, // 小组首页
+            ],
+            patterns: [
+                /douban\.com\/group\/topic\/\d+\//, // 小组帖子
+            ]
+        },
+        'hupu': {
+            pages: [
+                /https:\/\/bbs\.hupu\.com\/[a-zA-Z].*/, // 各个板块首页
+            ],
+            patterns: [
+                /bbs\.hupu\.com\/\d+\.html/, // 帖子
             ]
         },
         'linuxdo': {
@@ -264,5 +282,6 @@
             ]
         },
         // resources: https://tophub.today/
+        // https://rebang.today/community
     };
 })();
