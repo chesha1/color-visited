@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.3.2
+// @version      1.4.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -21,7 +21,7 @@
         urlPatterns: [ // 自定义URL匹配规则
             /example\.com/,
         ],
-        presets: ['v2ex', 'south-plus', 'nga', 'chiphell', 'linuxdo', 'bilibili', 'zhihu', 'tieba'], // 使用的预设规则
+        presets: 'all', // 使用的预设规则
         debug: false, // 是否开启调试模式
     };
 
@@ -105,6 +105,11 @@
     }
 
     function initScript() {
+        // 生成预设
+        if (config.presets === 'all') {
+            config.presets = Object.keys(PRESET_RULES);
+        }
+
         // 如果不在预设页面内，直接结束
         if (!isInPresetPages()) return;
 
