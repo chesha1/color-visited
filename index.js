@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.3.1
+// @version      1.3.2
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -21,7 +21,7 @@
         urlPatterns: [ // 自定义URL匹配规则
             /example\.com/,
         ],
-        presets: ['v2ex', 'south-plus', 'nga', 'chiphell', 'linuxdo', 'bilibili', 'zhihu'], // 使用的预设规则
+        presets: ['v2ex', 'south-plus', 'nga', 'chiphell', 'linuxdo', 'bilibili', 'zhihu', 'tieba'], // 使用的预设规则
         debug: false, // 是否开启调试模式
     };
 
@@ -175,36 +175,17 @@
 
     // 预设规则集合
     const PRESET_RULES = {
-        'v2ex': {
+        'bilibili': {
             pages: [
-                /https:\/\/www\.v2ex\.com\/$/,
-                /https:\/\/www\.v2ex\.com\/\?tab.*/,
-                /https:\/\/www\.v2ex\.com\/go\/.*/
-            ],
-            patterns: [
-                /v2ex\.com\/t\/.*/
-            ]
-        },
-        'south-plus': {
-            pages: [
-                /https:\/\/www\.south-plus\.net\/thread\.php\?fid.*/,
-                /https:\/\/www\.south-plus\.net\/u\.php\?action-topic-uid-.*/,
-            ],
-            patterns: [
-                /south-plus\.net\/read\.php\?tid-.*/,
+                // TODO: 动态页挂载不上，以后再研究研究
+                // /https:\/\/t\.bilibili\.com.*/,
+                /https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/, // 个人空间首页
+                /https:\/\/space\.bilibili\.com\/\d+\/video/, // 个人空间投稿
+                /https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频播放页
 
-            ]
-        },
-        'nga': {
-            pages: [
-                /https:\/\/bbs\.nga\.cn\/thread\.php\?(fid|stid).*/,
-                /https:\/\/ngabbs\.com\/thread\.php\?(fid|stid).*/,
-                /https:\/\/nga\.178\.com\/thread\.php\?(fid|stid).*/,
             ],
             patterns: [
-                /bbs\.nga\.cn\/read\.php\?tid.*/,
-                /ngabbs\.com\/read\.php\?tid.*/,
-                /nga\.178\.com\/read\.php\?tid.*/,
+                /www\.bilibili\.com\/video\/BV.*/,
             ]
         },
         'chiphell': {
@@ -224,17 +205,44 @@
                 /linux\.do\/t\/topic\/.*/
             ]
         },
-        'bilibili': {
+        'nga': {
             pages: [
-                // TODO: 动态页挂载不上，以后再研究研究
-                // /https:\/\/t\.bilibili\.com.*/,
-                /https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/, // 个人空间首页
-                /https:\/\/space\.bilibili\.com\/\d+\/video/, // 个人空间投稿
-                /https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频播放页
-
+                /https:\/\/bbs\.nga\.cn\/thread\.php\?(fid|stid).*/,
+                /https:\/\/ngabbs\.com\/thread\.php\?(fid|stid).*/,
+                /https:\/\/nga\.178\.com\/thread\.php\?(fid|stid).*/,
             ],
             patterns: [
-                /www\.bilibili\.com\/video\/BV.*/,
+                /bbs\.nga\.cn\/read\.php\?tid.*/,
+                /ngabbs\.com\/read\.php\?tid.*/,
+                /nga\.178\.com\/read\.php\?tid.*/,
+            ]
+        },
+        'south-plus': {
+            pages: [
+                /https:\/\/www\.south-plus\.net\/thread\.php\?fid.*/,
+                /https:\/\/www\.south-plus\.net\/u\.php\?action-topic-uid-.*/,
+            ],
+            patterns: [
+                /south-plus\.net\/read\.php\?tid-.*/,
+
+            ]
+        },
+        'tieba': {
+            pages: [
+                /https:\/\/tieba\.baidu\.com\/f\?kw=.*/,
+            ],
+            patterns: [
+                /tieba\.baidu\.com\/p\/\d+/,
+            ]
+        },
+        'v2ex': {
+            pages: [
+                /https:\/\/www\.v2ex\.com\/$/,
+                /https:\/\/www\.v2ex\.com\/\?tab.*/,
+                /https:\/\/www\.v2ex\.com\/go\/.*/
+            ],
+            patterns: [
+                /v2ex\.com\/t\/.*/
             ]
         },
         'zhihu': {
@@ -249,7 +257,6 @@
                 /zhuanlan\.zhihu\.com\/p\/\d+/, // 专栏文章
             ]
         },
-        // TODO: tieba
         // resources: https://tophub.today/
     };
 })();
