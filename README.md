@@ -1,5 +1,5 @@
 # color-visited
-把已访问过的链接染成浅灰色，方便阅读时过滤已读信息
+[油猴脚本](https://greasyfork.org/zh-CN/scripts/523600-color-visited-%E5%AF%B9%E5%B7%B2%E8%AE%BF%E9%97%AE%E8%BF%87%E7%9A%84%E9%93%BE%E6%8E%A5%E6%9F%93%E8%89%B2)：把已访问过的链接染成浅灰色，方便阅读时过滤已读信息
 
 如果需要修改设置，可以在开头的 `config` 里修改
 

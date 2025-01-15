@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.3.0
+// @version      1.3.1
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -41,8 +41,8 @@
             });
         });
         if (config.debug) {
-            console.log('currentUrl', currentUrl);
-            console.log('inPresetPages', inPresetPages);
+            console.log('currentUrl: ', currentUrl);
+            console.log('inPresetPages: ', inPresetPages);
         }
         return inPresetPages;
     }
@@ -117,12 +117,13 @@
             // 添加 visited-link 类名
             if (visitedLinks.has(inputUrl)) {
                 link.classList.add('visited-link');
+                if (config.debug) console.log(`${inputUrl} class added`);
             } else {
                 const events = ['click', 'auxclick'];
                 events.forEach((event) => {
                     link.addEventListener(event, () => {
                         if (config.debug) {
-                            console.log('inputUrl', inputUrl);
+                            console.log(`${inputUrl} event listener added`);
                         }
                         visitedLinks.add(inputUrl);
                         GM_setValue('visitedLinks', Array.from(visitedLinks));
@@ -238,12 +239,14 @@
         },
         'zhihu': {
             pages: [
-                /https:\/\/www\.zhihu\.com\/$/,
-                /https:\/\/www\.zhihu\.com\/people\/.*/,
+                /https:\/\/www\.zhihu\.com\/$/, // 首页
+                /https:\/\/www\.zhihu\.com\/hot$/, // 热榜
+                /https:\/\/www\.zhihu\.com\/people\/.*/, // 个人
             ],
             patterns: [
-                /zhihu\.com\/question\/\d+\/answer\/\d+$/,
-                /zhuanlan\.zhihu\.com\/p\/\d+/,
+                /zhihu\.com\/question\/\d+\/answer\/\d+$/, // 具体的回答页
+                /zhihu\.com\/question\/\d+$/, // 问题页
+                /zhuanlan\.zhihu\.com\/p\/\d+/, // 专栏文章
             ]
         },
         // TODO: tieba
