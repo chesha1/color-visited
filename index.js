@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.4.2
+// @version      1.4.3
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -187,7 +187,8 @@
                 // TODO: 动态页挂载不上，以后再研究研究
                 // /https:\/\/t\.bilibili\.com.*/,
                 /https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/, // 个人空间首页
-                /https:\/\/space\.bilibili\.com\/\d+\/video/, // 个人空间投稿
+                /https:\/\/space\.bilibili\.com\/\d+\/video/, // 个人空间投稿（疑似已失效）
+                /https:\/\/space\.bilibili\.com\/\d+\/upload.*/, // 个人空间投稿
                 /https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频播放页
 
             ],
