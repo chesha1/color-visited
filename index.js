@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.4.0
+// @version      1.4.1
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -234,10 +234,11 @@
         },
         'tieba': {
             pages: [
-                /https:\/\/tieba\.baidu\.com\/f\?kw=.*/,
+                /https:\/\/tieba\.baidu\.com\/f\?kw=.*/, // 某个吧首页
+                /https:\/\/tieba\.baidu\.com\/hottopic.*/, // 热榜
             ],
             patterns: [
-                /tieba\.baidu\.com\/p\/\d+/,
+                /tieba\.baidu\.com\/p\/\d+/, // 帖子
             ]
         },
         'v2ex': {
