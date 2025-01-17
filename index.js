@@ -22,7 +22,7 @@
             /example\.com/,
         ],
         presets: 'all', // 使用的预设规则
-        debug: true, // 是否开启调试模式
+        debug: false, // 是否开启调试模式
     };
 
     const domain = window.location.hostname;
@@ -273,6 +273,14 @@
 
             ]
         },
+        'techflow': {
+            pages: [
+                /https:\/\/www\.techflowpost\.com\/$/, // 首页
+            ],
+            patterns: [
+                /techflowpost\.com\/article\/.*/, // 文章页
+            ],
+        },
         'tieba': {
             pages: [
                 /https:\/\/tieba\.baidu\.com\/f\?kw=.*/, // 某个吧首页
@@ -306,5 +314,7 @@
         },
         // resources: https://rebang.today/
         // TODO: enshan 油猴脚本都加载不进去，之后再试试
+        // TODO: 优化一下多次获取 patterns 的逻辑
+        // TODO: 让 o1 优化一下
     };
 })();
