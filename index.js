@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.4.6
+// @version      1.4.7
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -130,8 +130,8 @@
                         if (config.debug) {
                             console.log(`${inputUrl} event listener added`);
                         }
-                        visitedLinks.add(inputUrl);
-                        GM_setValue('visitedLinks', Array.from(visitedLinks));
+                visitedLinks.add(inputUrl);
+                GM_setValue('visitedLinks', Array.from(visitedLinks));
                         link.classList.add('visited-link');
                     }, { capture: true });
                 });
@@ -263,6 +263,14 @@
                 /nga\.178\.com\/read\.php\?tid.*/,
             ]
         },
+        'reddit': {
+            pages: [
+                /https:\/\/www\.reddit\.com\/r\/[^\/]+\/?$/, // 板块首页
+            ],
+            patterns: [
+                /reddit\.com\/r\/[^\/]+\/comments\/.*/, // 帖子
+            ]
+        },
         'south-plus': {
             pages: [
                 /https:\/\/www\.south-plus\.net\/thread\.php\?fid.*/,
@@ -314,6 +322,7 @@
         },
         // resources: https://rebang.today/
         // TODO: enshan 油猴脚本都加载不进去，之后再试试
+        // TODO: reddit 第一次点击的时候不会变色，刷新后才会
         // TODO: 优化一下多次获取 patterns 的逻辑
         // TODO: 让 o1 优化一下
     };
