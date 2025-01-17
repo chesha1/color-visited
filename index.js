@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.4.4
+// @version      1.4.5
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -188,7 +188,7 @@
                 /https:\/\/36kr\.com\/motif\/\d+$/, // 主题页
                 /https:\/\/36kr\.com\/newsflashes\/$/, // 快讯页
                 /https:\/\/36kr\.com\/information\/.*/, // 资讯页
-                /https:\/\/36kr\.com\/topic\/\d+$/, // 专题页
+                /https:\/\/36kr\.com\/topics\/\d+$/, // 专题页
             ],
             patterns: [
                 /36kr\.com\/p\/\d+$/, // 文章页
