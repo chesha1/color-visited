@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.4.3
+// @version      1.4.4
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -182,6 +182,19 @@
 
     // 预设规则集合
     const PRESET_RULES = {
+        '36kr': {
+            pages: [
+                /https:\/\/36kr\.com\/$/, // 首页
+                /https:\/\/36kr\.com\/motif\/\d+$/, // 主题页
+                /https:\/\/36kr\.com\/newsflashes\/$/, // 快讯页
+                /https:\/\/36kr\.com\/information\/.*/, // 资讯页
+                /https:\/\/36kr\.com\/topic\/\d+$/, // 专题页
+            ],
+            patterns: [
+                /36kr\.com\/p\/\d+$/, // 文章页
+                /36kr\.com\/newsflashes\/\d+$/, // 快讯详情页
+            ],
+        },
         'bilibili': {
             pages: [
                 // TODO: 动态页挂载不上，以后再研究研究
@@ -282,7 +295,6 @@
                 /zhuanlan\.zhihu\.com\/p\/\d+/, // 专栏文章
             ]
         },
-        // resources: https://tophub.today/
-        // https://rebang.today/community
+        // resources: https://rebang.today/
     };
 })();
