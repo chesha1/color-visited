@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.4.5
+// @version      1.4.6
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -22,7 +22,7 @@
             /example\.com/,
         ],
         presets: 'all', // 使用的预设规则
-        debug: false, // 是否开启调试模式
+        debug: true, // 是否开启调试模式
     };
 
     const domain = window.location.hostname;
@@ -174,6 +174,7 @@
     updateMenu();
 
     window.onload = () => {
+        if (config.debug) console.log('color-visited script loaded');
         injectCustomStyles();
         if (isEnabled) {
             initScript();
@@ -223,6 +224,14 @@
             ],
             patterns: [
                 /douban\.com\/group\/topic\/\d+\//, // 小组帖子
+            ]
+        },
+        'hostloc': {
+            pages: [
+                /https:\/\/hostloc\.com\/forum-.*/, // 板块首页
+            ],
+            patterns: [
+                /hostloc\.com\/thread.*/, // 帖子
             ]
         },
         'hupu': {
@@ -296,5 +305,6 @@
             ]
         },
         // resources: https://rebang.today/
+        // TODO: enshan 油猴脚本都加载不进去，之后再试试
     };
 })();
