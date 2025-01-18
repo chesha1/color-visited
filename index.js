@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.4.8
+// @version      1.4.9
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -275,10 +275,10 @@
             pages: [
                 /https:\/\/www\.(south|north|blue|snow)-plus\.net\/thread\.php\?fid.*/, // 板块首页
                 /https:\/\/bbs\.imoutolove\.me\/thread\.php\?fid.*/, // 板块首页
-                /https:\/\/www\.(south|north|blue)-plus\.net\/u\.php\?action-topic-uid-.*/, // 个人主页
+                /https:\/\/www\.(south|north|blue|snow)-plus\.net\/u\.php\?action-topic-uid-.*/, // 个人主页
             ],
             patterns: [
-                /(south|north|blue)-plus\.net\/read\.php\?tid-.*/, // 帖子
+                /(south|north|blue|snow)-plus\.net\/read\.php\?tid-.*/, // 帖子
                 /bbs\.imoutolove\.me\/read\.php\?tid-.*/, // 帖子
 
             ]
