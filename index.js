@@ -130,8 +130,8 @@
                         if (config.debug) {
                             console.log(`${inputUrl} event listener added`);
                         }
-                visitedLinks.add(inputUrl);
-                GM_setValue('visitedLinks', Array.from(visitedLinks));
+                        visitedLinks.add(inputUrl);
+                        GM_setValue('visitedLinks', Array.from(visitedLinks));
                         link.classList.add('visited-link');
                     }, { capture: true });
                 });
@@ -224,6 +224,16 @@
             ],
             patterns: [
                 /douban\.com\/group\/topic\/\d+\//, // 小组帖子
+            ]
+        },
+        // TODO: 很纯粹的网站，纯静态资源，暂时无能为力，后续研究一下
+        'hacg': {
+            pages: [
+                /https:\/\/www\.hacg\.me\/wp\/$/, // 首页
+                /https:\/\/www\.hacg\.me\/wp\/[a-zA-Z].*/, // 分类目录页
+            ],
+            patterns: [
+                /hacg\.me\/wp\/\d+\.html/, // 文章页
             ]
         },
         'hostloc': {
