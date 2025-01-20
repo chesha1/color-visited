@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.5.1
+// @version      1.5.2
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -22,7 +22,7 @@
             /example\.com/,
         ],
         presets: 'all', // 使用的预设规则
-        debug: true, // 是否开启调试模式
+        debug: false, // 是否开启调试模式
     };
 
     // 预设规则集合
@@ -291,18 +291,6 @@
             if (Object.hasOwn(visitedLinks, inputUrl)) {
                 link.classList.add('visited-link');
                 if (config.debug) console.log(`${inputUrl} class added`);
-            } else {
-                const events = ['click', 'auxclick'];
-                events.forEach((event) => {
-                    link.addEventListener(event, () => {
-                        if (config.debug) {
-                            console.log(`${inputUrl} event listener added`);
-                        }
-                        visitedLinks[inputUrl] = true;
-                        GM_setValue('visitedLinks', visitedLinks);
-                        link.classList.add('visited-link');
-                    }, { capture: true });
-                });
             }
         }
 
@@ -319,6 +307,26 @@
         });
 
         observer.observe(document.body, { childList: true, subtree: true });
+        
+        // 添加事件委托的点击事件监听器
+        function handleLinkClick(event) {
+            // 使用 event.target.closest 来获取被点击的链接元素
+            const link = event.target.closest('a[href]');
+            if (!link) return; // 如果点击的不是链接，直接返回
+        
+            const inputUrl = getBaseUrl(link.href);
+            if (!shouldColorLink(inputUrl)) return; // 如果链接不符合匹配规则，返回
+        
+            if (!Object.hasOwn(visitedLinks, inputUrl)) {
+                // 如果是第一次点击该链接，记录到 visitedLinks 并更新存储
+                visitedLinks[inputUrl] = true;
+                GM_setValue('visitedLinks', visitedLinks);
+                link.classList.add('visited-link');
+                if (config.debug) console.log(`${inputUrl} class added`);
+            }
+        }
+        document.addEventListener('click', handleLinkClick, true);
+        document.addEventListener('auxclick', handleLinkClick, true);
     }
 
     function removeScript() {
