@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.5.0
+// @version      1.5.1
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -22,164 +22,7 @@
             /example\.com/,
         ],
         presets: 'all', // 使用的预设规则
-        debug: false, // 是否开启调试模式
-    };
-
-    const domain = window.location.hostname;
-    const currentUrl = window.location.href;
-    const scriptKey = `scriptEnabled_${domain}`;
-    let isEnabled = GM_getValue(scriptKey, true);
-
-    // 检查当前页面是否在preset的生效范围内
-    function isInPresetPages() {
-        let inPresetPages = false;
-        config.presets.forEach(preset => {
-            PRESET_RULES[preset].pages.forEach(page => {
-                if (page.test(currentUrl)) {
-                    inPresetPages = true;
-                }
-            });
-        });
-        if (config.debug) {
-            console.log('currentUrl: ', currentUrl);
-            console.log('inPresetPages: ', inPresetPages);
-        }
-        return inPresetPages;
-    }
-
-    // 获取所有应用的URL匹配规则
-    function getAllPatterns() {
-        let patterns = [...config.urlPatterns];
-
-        config.presets.forEach(preset => {
-            if (PRESET_RULES[preset]) {
-                patterns = patterns.concat(PRESET_RULES[preset].patterns);
-            }
-        });
-
-        return patterns.length > 0 ? patterns : [/.*/];
-    }
-
-    function shouldColorLink(url) {
-        return getAllPatterns().some(pattern => pattern.test(url));
-    }
-
-    function updateMenu() {
-        GM_unregisterMenuCommand('toggleScriptMenuCommand');
-        GM_unregisterMenuCommand('clearLinksMenuCommand');
-
-        const toggleText = isEnabled ? '禁用链接染色脚本' : '启用链接染色脚本';
-        GM_registerMenuCommand(toggleText, toggleScript);
-        GM_registerMenuCommand('清除所有记住的链接', clearLinks);
-    }
-
-    function toggleScript() {
-        isEnabled = !isEnabled;
-        GM_setValue(scriptKey, isEnabled);
-        updateMenu();
-        if (isEnabled) {
-            initScript();
-        } else {
-            removeScript();
-        }
-    }
-
-    function clearLinks() {
-        GM_setValue('visitedLinks', {});
-        removeScript();
-    }
-
-    // 在文档中注入一段自定义的 CSS 样式，针对这个类名的元素及其所有子元素，设置颜色样式，使用更高的选择器优先级和 !important
-    // 直接使用 link.style.color 会被后续的样式覆盖，所以这么做
-    function injectCustomStyles() {
-        const style = document.createElement('style');
-        style.innerHTML = `
-            a.visited-link,
-            a.visited-link *,
-            a.visited-link *::before,
-            a.visited-link *::after {
-                color: ${config.color} !important;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    function initScript() {
-        // 生成预设
-        if (config.presets === 'all') {
-            config.presets = Object.keys(PRESET_RULES);
-        }
-
-        // 如果不在预设页面内，直接结束
-        if (!isInPresetPages()) return;
-
-        const visitedLinks = GM_getValue('visitedLinks', {});
-
-        function updateLinkStatus(link) {
-            const inputUrl = getBaseUrl(link.href);
-            if (!shouldColorLink(inputUrl)) return;
-
-            // 添加 visited-link 类名
-            if (Object.hasOwn(visitedLinks, inputUrl)) {
-                // if (visitedLinks.hasOwnProperty(inputUrl)) {
-                link.classList.add('visited-link');
-                if (config.debug) console.log(`${inputUrl} class added`);
-            } else {
-                const events = ['click', 'auxclick'];
-                events.forEach((event) => {
-                    link.addEventListener(event, () => {
-                        if (config.debug) {
-                            console.log(`${inputUrl} event listener added`);
-                        }
-                        visitedLinks[inputUrl] = true;
-                        GM_setValue('visitedLinks', visitedLinks);
-                        link.classList.add('visited-link');
-                    }, { capture: true });
-                });
-            }
-        }
-
-        document.querySelectorAll('a[href]').forEach(updateLinkStatus);
-
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        node.querySelectorAll('a[href]').forEach(updateLinkStatus);
-                    }
-                });
-            });
-        });
-
-        observer.observe(document.body, { childList: true, subtree: true });
-    }
-
-    function removeScript() {
-        document.querySelectorAll('a[href]').forEach(link => {
-            link.classList.remove('visited-link');
-        });
-    }
-
-
-    // 去除各种查询参数等的干扰
-    function getBaseUrl(url) {
-        const domain = new URL(url).hostname;
-        if (domain === 'www.v2ex.com') return url.split('?')[0].split('#')[0];
-        if (domain === 'linux.do') return url.replace(/(\/\d+)\/\d+$/, '$1');
-        if (domain === 'www.bilibili.com') return url.split('?')[0];
-        if (domain === 'tieba.baidu.com') return url.split('?')[0];
-        if (domain === 'www.douban.com') return url.split('?')[0];
-        return url;
-    }
-
-    updateMenu();
-
-    window.onload = () => {
-        if (config.debug) console.log('color-visited script loaded');
-        injectCustomStyles();
-        if (isEnabled) {
-            initScript();
-        }
+        debug: true, // 是否开启调试模式
     };
 
     // 预设规则集合
@@ -339,4 +182,160 @@
         // TODO: 优化一下多次获取 patterns 的逻辑
         // TODO: 让 o1 优化一下
     };
+
+    const domain = window.location.hostname;
+    const currentUrl = window.location.href;
+    const scriptKey = `scriptEnabled_${domain}`;
+    let isEnabled = GM_getValue(scriptKey, true);
+    let allPatterns = [];
+
+    updateMenu();
+
+    // 生成预设
+    if (config.presets === 'all') {
+        config.presets = Object.keys(PRESET_RULES);
+    }
+    initAllPatterns();
+
+    window.onload = () => {
+        if (config.debug) console.log('color-visited script loaded');
+        injectCustomStyles();
+        if (isEnabled) {
+            initScript();
+        }
+    };
+
+    // 检查当前页面是否在preset的生效范围内
+    function isInPresetPages() {
+        let inPresetPages = false;
+        config.presets.forEach(preset => {
+            PRESET_RULES[preset].pages.forEach(page => {
+                if (page.test(currentUrl)) {
+                    inPresetPages = true;
+                }
+            });
+        });
+        if (config.debug) {
+            console.log('currentUrl: ', currentUrl);
+            console.log('inPresetPages: ', inPresetPages);
+        }
+        return inPresetPages;
+    }
+
+    // 获取所有应用的URL匹配规则
+    function initAllPatterns() {
+        let patterns = [...config.urlPatterns];
+        config.presets.forEach(preset => {
+            if (PRESET_RULES[preset]) {
+                patterns = patterns.concat(PRESET_RULES[preset].patterns);
+            }
+        });
+        allPatterns = patterns.length > 0 ? patterns : [/.*/];
+    }
+
+    function shouldColorLink(url) {
+        return allPatterns.some(pattern => pattern.test(url));
+    }
+
+    function updateMenu() {
+        GM_unregisterMenuCommand('toggleScriptMenuCommand');
+        GM_unregisterMenuCommand('clearLinksMenuCommand');
+
+        const toggleText = isEnabled ? '禁用链接染色脚本' : '启用链接染色脚本';
+        GM_registerMenuCommand(toggleText, toggleScript);
+        GM_registerMenuCommand('清除所有记住的链接', clearLinks);
+    }
+
+    function toggleScript() {
+        isEnabled = !isEnabled;
+        GM_setValue(scriptKey, isEnabled);
+        updateMenu();
+        if (isEnabled) {
+            initScript();
+        } else {
+            removeScript();
+        }
+    }
+
+    function clearLinks() {
+        GM_setValue('visitedLinks', {});
+        removeScript();
+    }
+
+    // 在文档中注入一段自定义的 CSS 样式，针对这个类名的元素及其所有子元素，设置颜色样式，使用更高的选择器优先级和 !important
+    // 直接使用 link.style.color 会被后续的样式覆盖，所以这么做
+    function injectCustomStyles() {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            a.visited-link,
+            a.visited-link *,
+            a.visited-link *::before,
+            a.visited-link *::after {
+                color: ${config.color} !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function initScript() {
+        // 如果不在预设页面内，直接结束
+        if (!isInPresetPages()) return;
+
+        const visitedLinks = GM_getValue('visitedLinks', {});
+
+        function updateLinkStatus(link) {
+            const inputUrl = getBaseUrl(link.href);
+            if (!shouldColorLink(inputUrl)) return;
+
+            // 添加 visited-link 类名
+            if (Object.hasOwn(visitedLinks, inputUrl)) {
+                link.classList.add('visited-link');
+                if (config.debug) console.log(`${inputUrl} class added`);
+            } else {
+                const events = ['click', 'auxclick'];
+                events.forEach((event) => {
+                    link.addEventListener(event, () => {
+                        if (config.debug) {
+                            console.log(`${inputUrl} event listener added`);
+                        }
+                        visitedLinks[inputUrl] = true;
+                        GM_setValue('visitedLinks', visitedLinks);
+                        link.classList.add('visited-link');
+                    }, { capture: true });
+                });
+            }
+        }
+
+        document.querySelectorAll('a[href]').forEach(updateLinkStatus);
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        node.querySelectorAll('a[href]').forEach(updateLinkStatus);
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    function removeScript() {
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.classList.remove('visited-link');
+        });
+    }
+
+
+    // 去除各种查询参数等的干扰
+    function getBaseUrl(url) {
+        const domain = new URL(url).hostname;
+        if (domain === 'www.v2ex.com') return url.split('?')[0].split('#')[0];
+        if (domain === 'linux.do') return url.replace(/(\/\d+)\/\d+$/, '$1');
+        if (domain === 'www.bilibili.com') return url.split('?')[0];
+        if (domain === 'tieba.baidu.com') return url.split('?')[0];
+        if (domain === 'www.douban.com') return url.split('?')[0];
+        return url;
+    }
 })();
