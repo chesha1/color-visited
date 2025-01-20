@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.4.9
+// @version      1.5.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -85,7 +85,7 @@
     }
 
     function clearLinks() {
-        GM_setValue('visitedLinks', []);
+        GM_setValue('visitedLinks', {});
         removeScript();
     }
 
@@ -113,14 +113,15 @@
         // 如果不在预设页面内，直接结束
         if (!isInPresetPages()) return;
 
-        const visitedLinks = new Set(GM_getValue('visitedLinks', []));
+        const visitedLinks = GM_getValue('visitedLinks', {});
 
         function updateLinkStatus(link) {
             const inputUrl = getBaseUrl(link.href);
             if (!shouldColorLink(inputUrl)) return;
 
             // 添加 visited-link 类名
-            if (visitedLinks.has(inputUrl)) {
+            if (Object.hasOwn(visitedLinks, inputUrl)) {
+                // if (visitedLinks.hasOwnProperty(inputUrl)) {
                 link.classList.add('visited-link');
                 if (config.debug) console.log(`${inputUrl} class added`);
             } else {
@@ -130,8 +131,8 @@
                         if (config.debug) {
                             console.log(`${inputUrl} event listener added`);
                         }
-                        visitedLinks.add(inputUrl);
-                        GM_setValue('visitedLinks', Array.from(visitedLinks));
+                        visitedLinks[inputUrl] = true;
+                        GM_setValue('visitedLinks', visitedLinks);
                         link.classList.add('visited-link');
                     }, { capture: true });
                 });
