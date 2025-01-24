@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.5.2
+// @version      1.5.3
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -344,6 +344,9 @@
         if (domain === 'www.bilibili.com') return url.split('?')[0];
         if (domain === 'tieba.baidu.com') return url.split('?')[0];
         if (domain === 'www.douban.com') return url.split('?')[0];
+        if (domain === 'ngabbs.com') return url.split('&')[0];
+        if (domain === 'bbs.nga.cn') return url.split('&')[0];
+        if (domain === 'nga.178.com') return url.split('&')[0];
         return url;
     }
 })();
