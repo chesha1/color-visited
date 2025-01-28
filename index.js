@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.5.3
+// @version      1.5.4
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -127,12 +127,12 @@
         },
         'south-plus': {
             pages: [
-                /https:\/\/www\.(south|north|blue|snow)-plus\.net\/thread\.php\?fid.*/, // 板块首页
+                /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/thread\.php\?fid.*/, // 板块首页
                 /https:\/\/bbs\.imoutolove\.me\/thread\.php\?fid.*/, // 板块首页
-                /https:\/\/www\.(south|north|blue|snow)-plus\.net\/u\.php\?action-topic-uid-.*/, // 个人主页
+                /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/u\.php\?action-topic-uid-.*/, // 个人主页
             ],
             patterns: [
-                /(south|north|blue|snow)-plus\.net\/read\.php\?tid-.*/, // 帖子
+                /(south|north|blue|white|level|snow|spring|summer)-plus\.net\/read\.php\?tid-.*/, // 帖子
                 /bbs\.imoutolove\.me\/read\.php\?tid-.*/, // 帖子
 
             ]
