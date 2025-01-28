@@ -1,0 +1,18 @@
+{
+  "name": "color-visited",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^9.19.0",
+    "@stylistic/eslint-plugin": "^3.0.0",
+    "eslint": "^9.19.0",
+    "globals": "^15.14.0"
+  }
+}
