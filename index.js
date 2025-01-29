@@ -42,13 +42,11 @@
 
   // 获取所有应用的URL匹配规则
   function initAllPatterns() {
-    let patterns = [...config.urlPatterns];
     config.presets.forEach((preset) => {
       if (PRESET_RULES[preset]) {
-        patterns = patterns.concat(PRESET_RULES[preset].patterns);
+        allPatterns = allPatterns.concat(PRESET_RULES[preset].patterns);
       }
     });
-    allPatterns = patterns.length > 0 ? patterns : [];
   }
 
   function shouldColorLink(url) {

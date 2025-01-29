@@ -1,12 +1,53 @@
 # color-visited
 [油猴脚本](https://greasyfork.org/zh-CN/scripts/523600-color-visited-%E5%AF%B9%E5%B7%B2%E8%AE%BF%E9%97%AE%E8%BF%87%E7%9A%84%E9%93%BE%E6%8E%A5%E6%9F%93%E8%89%B2)：把已访问过的链接染成浅灰色，方便阅读时过滤已读信息
 
+## 背景
+很多论坛性质的网站，没有推荐系统能自动不推送已读页面，所有页面都需要用户自行分辨是否已读
+
+而决策是否点进去需要的意志力是一种宝贵的资源，所以希望快速标记出已读页面
+
+## 使用说明
 如果需要修改设置，可以在开头的 `config` 里修改
 
-有三个参数：
+有两个参数：
 - color：被染成的颜色
-- urlPatterns：需要扫描，是否需要标记成已读染色的链接，需要提供正则表达式
-- presets：一堆已经写好的预设，每一个预设对应了多条具体规则，预设的详情在 `PRESET_RULES` 中
+- presets：定义对哪些网站启用本脚本 
+
+`presets` 默认状态下是字符串 `'all'`，代表启用所有预设
+
+`presets` 还可以是字符串组成的数组，比如 `['36kr', 'bilibili']`，代表对这些网站启用脚本，数组中可以填哪些值，可以参考 `PRESET_RULES` 的键
+
+## 预设说明
+
+对于 `PRESET_RULES` 中的每个对象，`pages` 定义了在哪些 URL 下启用脚本，`patterns` 定义了在 `pages` 页面上，哪些链接会被染色
+
+例如：下面是 bilibili 的预设
+
+```javascript
+{
+    pages: [
+      /https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/, // 个人空间首页
+      /https:\/\/space\.bilibili\.com\/\d+\/video/, // 个人空间投稿（疑似已失效）
+      /https:\/\/space\.bilibili\.com\/\d+\/upload.*/, // 个人空间投稿
+      /https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频详情页
+
+    ],
+    patterns: [
+      /www\.bilibili\.com\/video\/BV.*/, // 视频详情页
+    ],
+}
+```
+
+意思是对于 bilibili，在个人空间和视频详情页，对潜在的已读链接进行染色，而在其他页面（如动态、首页）不进行已读染色
+
+而且对于视频详情页的链接才进行染色，不对其他链接（如个人空间的链接）进行已读染色
+
+所以这里也是可以定制的，如果你不希望在视频详情页中进行染色，只需要删除 `pages` 数组中的这一条即可
+
+## 原理
+（待更新）
+
+## 反馈
 
 如果有问题，欢迎在 [GitHub Issues](https://github.com/chesha1/color-visited/issues) 或者[脚本反馈区](https://greasyfork.org/zh-CN/scripts/523600-color-visited-%E5%AF%B9%E5%B7%B2%E8%AE%BF%E9%97%AE%E8%BF%87%E7%9A%84%E9%93%BE%E6%8E%A5%E6%9F%93%E8%89%B2/feedback) 提出
 

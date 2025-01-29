@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.6.6
+// @version      1.6.7
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -49,9 +49,6 @@
 // 配置参数
 const config = {
   color: '#f1f5f9', // 链接颜色，默认为 slate-100
-  urlPatterns: [ // 自定义URL匹配规则
-    /example\.com/,
-  ],
   presets: 'all', // 使用的预设规则
   debug: false, // 是否开启调试模式
 };
@@ -78,11 +75,11 @@ const PRESET_RULES = {
       /https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/, // 个人空间首页
       /https:\/\/space\.bilibili\.com\/\d+\/video/, // 个人空间投稿（疑似已失效）
       /https:\/\/space\.bilibili\.com\/\d+\/upload.*/, // 个人空间投稿
-      /https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频播放页
+      /https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频详情页
 
     ],
     patterns: [
-      /www\.bilibili\.com\/video\/BV.*/,
+      /www\.bilibili\.com\/video\/BV.*/, // 视频详情页
     ],
   },
   'chiphell': {
@@ -258,13 +255,11 @@ const PRESET_RULES = {
 
   // 获取所有应用的URL匹配规则
   function initAllPatterns() {
-    let patterns = [...config.urlPatterns];
     config.presets.forEach((preset) => {
       if (PRESET_RULES[preset]) {
-        patterns = patterns.concat(PRESET_RULES[preset].patterns);
+        allPatterns = allPatterns.concat(PRESET_RULES[preset].patterns);
       }
     });
-    allPatterns = patterns.length > 0 ? patterns : [];
   }
 
   function shouldColorLink(url) {
