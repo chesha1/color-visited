@@ -48,7 +48,7 @@
         patterns = patterns.concat(PRESET_RULES[preset].patterns);
       }
     });
-    allPatterns = patterns.length > 0 ? patterns : [/.*/];
+    allPatterns = patterns.length > 0 ? patterns : [];
   }
 
   function shouldColorLink(url) {
