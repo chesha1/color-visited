@@ -1,4 +1,3 @@
-
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
 // @version      1.6.1
@@ -12,7 +11,6 @@
 // @grant        GM_unregisterMenuCommand
 // @run-at       document-end
 // ==/UserScript==
-
 // 配置参数
 const config = {
   color: '#f1f5f9', // 链接颜色，默认为 slate-100
@@ -24,7 +22,7 @@ const config = {
 };
 
 // 预设规则集合
-const PRESET_RULES = {
+export const PRESET_RULES = {
   '36kr': {
     pages: [
       /https:\/\/36kr\.com\/$/, // 首页
@@ -180,7 +178,6 @@ const PRESET_RULES = {
   // TODO: 优化一下多次获取 patterns 的逻辑
   // TODO: 让 o1 优化一下
 };
-
 
 (function () {
   'use strict';
@@ -352,4 +349,3 @@ const PRESET_RULES = {
     return url;
   }
 })();
-
