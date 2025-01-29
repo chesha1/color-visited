@@ -9,7 +9,7 @@ const config = {
 };
 
 // 预设规则集合
-export const PRESET_RULES = {
+const PRESET_RULES = {
   '36kr': {
     pages: [
       /https:\/\/36kr\.com\/$/, // 首页

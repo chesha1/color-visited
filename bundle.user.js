@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.6.4
+// @version      1.6.5
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -54,7 +54,7 @@ const config = {
 };
 
 // 预设规则集合
-export const PRESET_RULES = {
+const PRESET_RULES = {
   '36kr': {
     pages: [
       /https:\/\/36kr\.com\/$/, // 首页
