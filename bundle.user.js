@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.6.5
+// @version      1.6.6
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -42,6 +42,9 @@
 // @grant        GM_registerMenuCommand
 // @grant        GM_unregisterMenuCommand
 // @run-at       document-end
+// @noframes
+// @homepageURL  https://github.com/chesha1/color-visited
+// @supportURL   https://github.com/chesha1/color-visited/issues
 // ==/UserScript==
 // 配置参数
 const config = {
