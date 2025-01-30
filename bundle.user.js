@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.6.7
+// @version      1.7.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -51,6 +51,7 @@ const config = {
   color: '#f1f5f9', // 链接颜色，默认为 slate-100
   presets: 'all', // 使用的预设规则
   debug: false, // 是否开启调试模式
+  expirationTime: 1000 * 60, // 链接染色的过期时间，毫秒为单位，
 };
 
 // 预设规则集合
@@ -307,9 +308,23 @@ const PRESET_RULES = {
     document.head.appendChild(style);
   }
 
+  function deleteExpiredLinks() {
+    const visitedLinks = GM_getValue('visitedLinks', {});
+    const now = new Date().getTime();
+    Object.keys(visitedLinks).forEach((url) => {
+      if (now - visitedLinks[url] > config.expirationTime) {
+        if (config.debug) console.log(`now: ${now}, diff: ${now - visitedLinks[url]}`);
+        if (config.debug) console.log(`expirationSeconds: ${config.expirationTime}`);
+        if (config.debug) console.log(`${url} deleted`);
+        delete visitedLinks[url];
+      }
+    });
+    GM_setValue('visitedLinks', visitedLinks);
+  }
+
   function initScript() {
-    // 如果不在预设页面内，直接结束
-    if (!isInPresetPages()) return;
+    if (!isInPresetPages()) return; // 如果不在预设页面内，直接结束
+    deleteExpiredLinks(); // 删除过期的链接
 
     const visitedLinks = GM_getValue('visitedLinks', {});
 
@@ -349,7 +364,7 @@ const PRESET_RULES = {
 
       if (!Object.hasOwn(visitedLinks, inputUrl)) {
         // 如果是第一次点击该链接，记录到 visitedLinks 并更新存储
-        visitedLinks[inputUrl] = true;
+        visitedLinks[inputUrl] = new Date().getTime();
         GM_setValue('visitedLinks', visitedLinks);
         link.classList.add('visited-link');
         if (config.debug) console.log(`${inputUrl} class added`);

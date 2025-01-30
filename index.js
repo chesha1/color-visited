@@ -94,9 +94,23 @@
     document.head.appendChild(style);
   }
 
+  function deleteExpiredLinks() {
+    const visitedLinks = GM_getValue('visitedLinks', {});
+    const now = new Date().getTime();
+    Object.keys(visitedLinks).forEach((url) => {
+      if (now - visitedLinks[url] > config.expirationTime) {
+        if (config.debug) console.log(`now: ${now}, diff: ${now - visitedLinks[url]}`);
+        if (config.debug) console.log(`expirationSeconds: ${config.expirationTime}`);
+        if (config.debug) console.log(`${url} deleted`);
+        delete visitedLinks[url];
+      }
+    });
+    GM_setValue('visitedLinks', visitedLinks);
+  }
+
   function initScript() {
-    // 如果不在预设页面内，直接结束
-    if (!isInPresetPages()) return;
+    if (!isInPresetPages()) return; // 如果不在预设页面内，直接结束
+    deleteExpiredLinks(); // 删除过期的链接
 
     const visitedLinks = GM_getValue('visitedLinks', {});
 
@@ -136,7 +150,7 @@
 
       if (!Object.hasOwn(visitedLinks, inputUrl)) {
         // 如果是第一次点击该链接，记录到 visitedLinks 并更新存储
-        visitedLinks[inputUrl] = true;
+        visitedLinks[inputUrl] = new Date().getTime();
         GM_setValue('visitedLinks', visitedLinks);
         link.classList.add('visited-link');
         if (config.debug) console.log(`${inputUrl} class added`);
