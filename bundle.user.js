@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.7.0
+// @version      1.7.1
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -51,7 +51,7 @@ const config = {
   color: '#f1f5f9', // 链接颜色，默认为 slate-100
   presets: 'all', // 使用的预设规则
   debug: false, // 是否开启调试模式
-  expirationTime: 1000 * 60, // 链接染色的过期时间，毫秒为单位，
+  expirationTime: 1000 * 60 * 60 * 24 * 365, // 链接染色的过期时间，毫秒为单位，默认为一年
 };
 
 // 预设规则集合
