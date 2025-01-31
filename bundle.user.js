@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.7.2
+// @version      1.7.3
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -13,7 +13,7 @@
 // @include      /https:\/\/space\.bilibili\.com\/\d+\/video/
 // @include      /https:\/\/space\.bilibili\.com\/\d+\/upload.*/
 // @include      /https:\/\/www\.bilibili\.com\/video\/BV.*/
-// @include      /https:\/\/www\.bilibili\.com\/list\/watchlater\/.*/
+// @include      /https:\/\/www\.bilibili\.com\/list\/watchlater\?.*/
 // @include      /https:\/\/www\.chiphell\.com\/forum-.*/
 // @include      /https:\/\/www\.douban\.com\/group\/.*/
 // @include      /https:\/\/www\.hacg\.me\/wp\/$/
@@ -78,7 +78,7 @@ const PRESET_RULES = {
       /https:\/\/space\.bilibili\.com\/\d+\/video/, // 个人空间投稿（疑似已失效）
       /https:\/\/space\.bilibili\.com\/\d+\/upload.*/, // 个人空间投稿
       /https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频详情页
-      /https:\/\/www\.bilibili\.com\/list\/watchlater\/.*/, // 稍后再看中的视频详情页
+      /https:\/\/www\.bilibili\.com\/list\/watchlater\?.*/, // 稍后再看中的视频详情页
     ],
     patterns: [
       /www\.bilibili\.com\/video\/BV.*/, // 视频详情页
@@ -314,9 +314,6 @@ const PRESET_RULES = {
     const now = new Date().getTime();
     Object.keys(visitedLinks).forEach((url) => {
       if (now - visitedLinks[url] > config.expirationTime) {
-        if (config.debug) console.log(`now: ${now}, diff: ${now - visitedLinks[url]}`);
-        if (config.debug) console.log(`expirationSeconds: ${config.expirationTime}`);
-        if (config.debug) console.log(`${url} deleted`);
         delete visitedLinks[url];
       }
     });

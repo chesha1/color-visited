@@ -99,9 +99,6 @@
     const now = new Date().getTime();
     Object.keys(visitedLinks).forEach((url) => {
       if (now - visitedLinks[url] > config.expirationTime) {
-        if (config.debug) console.log(`now: ${now}, diff: ${now - visitedLinks[url]}`);
-        if (config.debug) console.log(`expirationSeconds: ${config.expirationTime}`);
-        if (config.debug) console.log(`${url} deleted`);
         delete visitedLinks[url];
       }
     });

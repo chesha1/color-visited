@@ -29,7 +29,7 @@ const PRESET_RULES = {
       /https:\/\/space\.bilibili\.com\/\d+\/video/, // 个人空间投稿（疑似已失效）
       /https:\/\/space\.bilibili\.com\/\d+\/upload.*/, // 个人空间投稿
       /https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频详情页
-      /https:\/\/www\.bilibili\.com\/list\/watchlater\/.*/, // 稍后再看中的视频详情页
+      /https:\/\/www\.bilibili\.com\/list\/watchlater\?.*/, // 稍后再看中的视频详情页
     ],
     patterns: [
       /www\.bilibili\.com\/video\/BV.*/, // 视频详情页
