@@ -23,23 +23,6 @@
     }
   };
 
-  // 检查当前页面是否在preset的生效范围内
-  function isInPresetPages() {
-    let inPresetPages = false;
-    config.presets.forEach((preset) => {
-      PRESET_RULES[preset].pages.forEach((page) => {
-        if (page.test(currentUrl)) {
-          inPresetPages = true;
-        }
-      });
-    });
-    if (config.debug) {
-      console.log('currentUrl: ', currentUrl);
-      console.log('inPresetPages: ', inPresetPages);
-    }
-    return inPresetPages;
-  }
-
   // 获取所有应用的URL匹配规则
   function initAllPatterns() {
     config.presets.forEach((preset) => {
@@ -106,7 +89,6 @@
   }
 
   function initScript() {
-    if (!isInPresetPages()) return; // 如果不在预设页面内，直接结束
     deleteExpiredLinks(); // 删除过期的链接
 
     const visitedLinks = GM_getValue('visitedLinks', {});

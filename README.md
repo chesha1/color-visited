@@ -55,3 +55,6 @@
 如果有问题，欢迎在 [GitHub Issues](https://github.com/chesha1/color-visited/issues) 或者[脚本反馈区](https://greasyfork.org/zh-CN/scripts/523600-color-visited-%E5%AF%B9%E5%B7%B2%E8%AE%BF%E9%97%AE%E8%BF%87%E7%9A%84%E9%93%BE%E6%8E%A5%E6%9F%93%E8%89%B2/feedback) 提出
 
 建议使用 [GitHub Issues](https://github.com/chesha1/color-visited/issues)
+
+## 未来工作
+- [ ] 在页面中排除某些链接不染色，比如在 bilibili 稍后再看中，不对标题的视频详情链接染色，其他照染
