@@ -21,6 +21,14 @@ const PRESET_RULES = {
       /36kr\.com\/newsflashes\/\d+$/, // 快讯详情页
     ],
   },
+  'bahamut': {
+    pages: [
+      /https:\/\/forum\.gamer\.com\.tw\/(A|B|G1)\.php\?bsn=.*/, // 各个板块首页
+    ],
+    patterns: [
+      /forum\.gamer\.com\.tw\/C\.php\?bsn=.*/, // 帖子
+    ],
+  },
   'bilibili': {
     pages: [
       // TODO: 动态页挂载不上，以后再研究研究

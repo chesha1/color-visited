@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.8.0
+// @version      1.8.1
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -9,6 +9,7 @@
 // @include      /https:\/\/36kr\.com\/newsflashes\/$/
 // @include      /https:\/\/36kr\.com\/information\/.*/
 // @include      /https:\/\/36kr\.com\/topics\/\d+$/
+// @include      /https:\/\/forum\.gamer\.com\.tw\/(A|B|G1)\.php\?bsn=.*/
 // @include      /https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/
 // @include      /https:\/\/space\.bilibili\.com\/\d+\/video/
 // @include      /https:\/\/space\.bilibili\.com\/\d+\/upload.*/
@@ -68,6 +69,14 @@ const PRESET_RULES = {
     patterns: [
       /36kr\.com\/p\/\d+$/, // 文章页
       /36kr\.com\/newsflashes\/\d+$/, // 快讯详情页
+    ],
+  },
+  'bahamut': {
+    pages: [
+      /https:\/\/forum\.gamer\.com\.tw\/(A|B|G1)\.php\?bsn=.*/, // 各个板块首页
+    ],
+    patterns: [
+      /forum\.gamer\.com\.tw\/C\.php\?bsn=.*/, // 帖子
     ],
   },
   'bilibili': {
