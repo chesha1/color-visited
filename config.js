@@ -87,7 +87,8 @@ const PRESET_RULES = {
   },
   'linuxdo': {
     pages: [
-      /https:\/\/linux\.do\/?$/,
+      /https:\/\/linux\.do\/?$/, // 首页
+      /https:\/\/linux\.do\/(new|top|hot|categories)/, // 首页的几个页签
       /https:\/\/linux\.do\/c\/.*/,
     ],
     patterns: [
