@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.8.2
+// @version      1.8.3
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -228,7 +228,6 @@ const PRESET_RULES = {
   'use strict';
 
   const domain = window.location.hostname;
-  const currentUrl = window.location.href;
   const scriptKey = `scriptEnabled_${domain}`;
   let isEnabled = GM_getValue(scriptKey, true);
   let allPatterns = [];
@@ -241,13 +240,57 @@ const PRESET_RULES = {
   }
   initAllPatterns();
 
-  window.onload = () => {
-    if (config.debug) console.log('color-visited script loaded');
-    injectCustomStyles();
-    if (isEnabled) {
+  // 初始运行
+  init();
+
+  // 监听 URL 变化
+  onUrlChange(() => {
+    init();
+  });
+
+  // 定义 init() 函数
+  function init() {
+    if (config.debug) console.log('color-visited script initialized on', window.location.href);
+
+    removeScript(); // 清除之前的脚本效果
+
+    if (isEnabled && isPageActive()) {
+      injectCustomStyles();
       initScript();
     }
-  };
+    else {
+      if (config.debug) console.log('Script is not active on this page:', window.location.href);
+    }
+  }
+
+  // 判断当前页面是否符合运行条件
+  // 虽然已经用 @include 正则限定了运行范围了，但是有的网站用了 SPA
+  // 在首页点击某个帖子链接时，页面并没有真正刷新，而是通过 js 动态地更新了页面内容，同时修改了浏览器的地址栏
+  // 所以这里还要进一步检查一下
+  // 目前只有 linux.do 这个网站是这么做的
+  function isPageActive() {
+    const currentUrl = window.location.href;
+    return config.presets.some((preset) => {
+      const pages = PRESET_RULES[preset]?.pages || [];
+      return pages.some(pattern => pattern.test(currentUrl));
+    });
+  }
+
+  // 检测 URL 变化的函数
+  function onUrlChange(callback) {
+    let oldHref = location.href;
+    const body = document.querySelector('body');
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (oldHref !== location.href) {
+          oldHref = location.href;
+          if (config.debug) console.log('URL changed:', oldHref, '->', location.href);
+          callback();
+        }
+      });
+    });
+    observer.observe(body, { childList: true, subtree: true });
+  }
 
   // 获取所有应用的URL匹配规则
   function initAllPatterns() {
@@ -275,12 +318,7 @@ const PRESET_RULES = {
     isEnabled = !isEnabled;
     GM_setValue(scriptKey, isEnabled);
     updateMenu();
-    if (isEnabled) {
-      initScript();
-    }
-    else {
-      removeScript();
-    }
+    init();
   }
 
   function clearLinks() {
@@ -291,15 +329,18 @@ const PRESET_RULES = {
   // 在文档中注入一段自定义的 CSS 样式，针对这个类名的元素及其所有子元素，设置颜色样式，使用更高的选择器优先级和 !important
   // 直接使用 link.style.color 会被后续的样式覆盖，所以这么做
   function injectCustomStyles() {
+    if (document.querySelector('#color-visited-style')) return;
+
     const style = document.createElement('style');
+    style.id = 'color-visited-style';
     style.innerHTML = `
-            a.visited-link,
-            a.visited-link *,
-            a.visited-link *::before,
-            a.visited-link *::after {
-                color: ${config.color} !important;
-            }
-        `;
+      a.visited-link,
+      a.visited-link *,
+      a.visited-link *::before,
+      a.visited-link *::after {
+        color: ${config.color} !important;
+      }
+    `;
     document.head.appendChild(style);
   }
 
@@ -361,12 +402,20 @@ const PRESET_RULES = {
         if (config.debug) console.log(`${inputUrl} class added`);
       }
     }
+
     document.addEventListener('click', handleLinkClick, true);
     document.addEventListener('auxclick', handleLinkClick, true);
   }
 
   function removeScript() {
-    document.querySelectorAll('a[href]').forEach((link) => {
+    // 移除样式
+    const styleElement = document.querySelector('#color-visited-style');
+    if (styleElement) {
+      styleElement.remove();
+    }
+
+    // 移除链接上的类名
+    document.querySelectorAll('a.visited-link').forEach((link) => {
       link.classList.remove('visited-link');
     });
   }
