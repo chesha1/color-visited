@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.8.3
+// @version      1.8.4
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -22,7 +22,7 @@
 // @include      /https:\/\/hostloc\.com\/forum-.*/
 // @include      /https:\/\/bbs\.hupu\.com\/[a-zA-Z].*/
 // @include      /https:\/\/linux\.do\/?$/
-// @include      /https:\/\/linux\.do\/(new|top|hot|categories)/
+// @include      /https:\/\/linux\.do\/(latest|new|top|hot|categories)/
 // @include      /https:\/\/linux\.do\/c\/.*/
 // @include      /https:\/\/bbs\.nga\.cn\/thread\.php\?(fid|stid).*/
 // @include      /https:\/\/ngabbs\.com\/thread\.php\?(fid|stid).*/
@@ -139,7 +139,7 @@ const PRESET_RULES = {
   'linuxdo': {
     pages: [
       /https:\/\/linux\.do\/?$/, // 首页
-      /https:\/\/linux\.do\/(new|top|hot|categories)/, // 首页的几个页签
+      /https:\/\/linux\.do\/(latest|new|top|hot|categories)/, // 首页的几个页签
       /https:\/\/linux\.do\/c\/.*/,
     ],
     patterns: [
