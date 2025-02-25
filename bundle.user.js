@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.8.4
+// @version      1.8.5
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -431,6 +431,12 @@ const PRESET_RULES = {
     if (domain === 'ngabbs.com') return url.split('&')[0];
     if (domain === 'bbs.nga.cn') return url.split('&')[0];
     if (domain === 'nga.178.com') return url.split('&')[0];
+
+    // 使用正则表达式匹配所有 south-plus 域名
+    if (/^www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net$/.test(domain)) {
+      return url.replace(/-fpage-\d+/, '');
+    }
+
     return url;
   }
 })();
