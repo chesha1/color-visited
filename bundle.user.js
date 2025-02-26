@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.8.5
+// @version      1.8.6
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -398,6 +398,7 @@ const PRESET_RULES = {
         // 如果是第一次点击该链接，记录到 visitedLinks 并更新存储
         visitedLinks[inputUrl] = new Date().getTime();
         GM_setValue('visitedLinks', visitedLinks);
+        if (config.debug) console.log(`${inputUrl} saved`);
         link.classList.add('visited-link');
         if (config.debug) console.log(`${inputUrl} class added`);
       }

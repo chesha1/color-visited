@@ -172,6 +172,7 @@
         // 如果是第一次点击该链接，记录到 visitedLinks 并更新存储
         visitedLinks[inputUrl] = new Date().getTime();
         GM_setValue('visitedLinks', visitedLinks);
+        if (config.debug) console.log(`${inputUrl} saved`);
         link.classList.add('visited-link');
         if (config.debug) console.log(`${inputUrl} class added`);
       }
