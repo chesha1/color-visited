@@ -59,6 +59,14 @@ const PRESET_RULES = {
       /douban\.com\/group\/topic\/\d+\//, // 小组帖子
     ],
   },
+  'e-hentai-forums': {
+    pages: [
+      /https:\/\/forums\.e-hentai\.org\/index\.php\?showforum=\d+/, // 论坛版块页面
+    ],
+    patterns: [
+      /https:\/\/forums\.e-hentai\.org\/index\.php\?showtopic=\d+/, // 帖子页面
+    ],
+  },
   // TODO: 很纯粹的网站，纯静态资源，暂时无能为力，后续研究一下
   'hacg': {
     pages: [

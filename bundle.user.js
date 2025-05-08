@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.8.6
+// @version      1.9.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -17,6 +17,7 @@
 // @include      /https:\/\/www\.bilibili\.com\/list\/watchlater\?.*/
 // @include      /https:\/\/www\.chiphell\.com\/forum-.*/
 // @include      /https:\/\/www\.douban\.com\/group\/.*/
+// @include      /https:\/\/forums\.e-hentai\.org\/index\.php\?showforum=\d+/
 // @include      /https:\/\/www\.hacg\.me\/wp\/$/
 // @include      /https:\/\/www\.hacg\.me\/wp\/[a-zA-Z].*/
 // @include      /https:\/\/hostloc\.com\/forum-.*/
@@ -108,6 +109,14 @@ const PRESET_RULES = {
     ],
     patterns: [
       /douban\.com\/group\/topic\/\d+\//, // 小组帖子
+    ],
+  },
+  'e-hentai-forums': {
+    pages: [
+      /https:\/\/forums\.e-hentai\.org\/index\.php\?showforum=\d+/, // 论坛版块页面
+    ],
+    patterns: [
+      /https:\/\/forums\.e-hentai\.org\/index\.php\?showtopic=\d+/, // 帖子页面
     ],
   },
   // TODO: 很纯粹的网站，纯静态资源，暂时无能为力，后续研究一下
