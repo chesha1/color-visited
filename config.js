@@ -67,6 +67,22 @@ const PRESET_RULES = {
       /https:\/\/forums\.e-hentai\.org\/index\.php\?showtopic=\d+/, // 帖子页面
     ],
   },
+  'ehentai': {
+    pages: [
+      /https:\/\/e-hentai\.org\/?$/, // 首页
+      /https:\/\/exhentai\.org\/?$/, // 首页
+      /https:\/\/e-hentai\.org\/toplist\.php\?tl=\d+/, // 排行榜
+      /https:\/\/exhentai\.org\/toplist\.php\?tl=\d+/, // 排行榜
+      /https:\/\/e-hentai\.org\/\?f_search=.*/, // 首页搜索页
+      /https:\/\/exhentai\.org\/\?f_search=.*/, // 首页搜索页
+      /https:\/\/e-hentai\.org\/popular/, // 热门页面
+      /https:\/\/exhentai\.org\/popular/, // 热门页面
+    ],
+    patterns: [
+      /https:\/\/e-hentai\.org\/g\/\d+\/\w+\//, // 画廊页面
+      /https:\/\/exhentai\.org\/g\/\d+\/\w+\//, // 画廊页面
+    ],
+  },
   // TODO: 很纯粹的网站，纯静态资源，暂时无能为力，后续研究一下
   'hacg': {
     pages: [
