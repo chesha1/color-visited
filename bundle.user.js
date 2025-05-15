@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.11.0
+// @version      1.11.1
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -38,6 +38,7 @@
 // @include      /https:\/\/nga\.178\.com\/thread\.php\?(fid|stid).*/
 // @include      /https:\/\/www\.nodeseek\.com\/?$/
 // @include      /https:\/\/www\.nodeseek\.com\/categories\/.*/
+// @include      /https:\/\/www\.nodeseek\.com\/page-\d+/
 // @include      /https:\/\/www\.reddit\.com\/r\/[^\/]+\/?$/
 // @include      /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/thread\.php\?fid.*/
 // @include      /https:\/\/bbs\.imoutolove\.me\/thread\.php\?fid.*/
@@ -197,6 +198,7 @@ const PRESET_RULES = {
     pages: [
       /https:\/\/www\.nodeseek\.com\/?$/, // 首页
       /https:\/\/www\.nodeseek\.com\/categories\/.*/, // 各个板块
+      /https:\/\/www\.nodeseek\.com\/page-\d+/, // 分页
     ],
     patterns: [
       /https:\/\/www\.nodeseek\.com\/post-.*/, // 帖子

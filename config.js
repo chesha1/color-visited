@@ -135,6 +135,7 @@ const PRESET_RULES = {
     pages: [
       /https:\/\/www\.nodeseek\.com\/?$/, // 首页
       /https:\/\/www\.nodeseek\.com\/categories\/.*/, // 各个板块
+      /https:\/\/www\.nodeseek\.com\/page-\d+/, // 分页
     ],
     patterns: [
       /https:\/\/www\.nodeseek\.com\/post-.*/, // 帖子
