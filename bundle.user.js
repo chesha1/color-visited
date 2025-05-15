@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.10.0
+// @version      1.11.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -36,6 +36,8 @@
 // @include      /https:\/\/bbs\.nga\.cn\/thread\.php\?(fid|stid).*/
 // @include      /https:\/\/ngabbs\.com\/thread\.php\?(fid|stid).*/
 // @include      /https:\/\/nga\.178\.com\/thread\.php\?(fid|stid).*/
+// @include      /https:\/\/www\.nodeseek\.com\/?$/
+// @include      /https:\/\/www\.nodeseek\.com\/categories\/.*/
 // @include      /https:\/\/www\.reddit\.com\/r\/[^\/]+\/?$/
 // @include      /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/thread\.php\?fid.*/
 // @include      /https:\/\/bbs\.imoutolove\.me\/thread\.php\?fid.*/
@@ -189,6 +191,15 @@ const PRESET_RULES = {
       /bbs\.nga\.cn\/read\.php\?tid.*/,
       /ngabbs\.com\/read\.php\?tid.*/,
       /nga\.178\.com\/read\.php\?tid.*/,
+    ],
+  },
+  'nodeseek': {
+    pages: [
+      /https:\/\/www\.nodeseek\.com\/?$/, // 首页
+      /https:\/\/www\.nodeseek\.com\/categories\/.*/, // 各个板块
+    ],
+    patterns: [
+      /https:\/\/www\.nodeseek\.com\/post-.*/, // 帖子
     ],
   },
   'reddit': {

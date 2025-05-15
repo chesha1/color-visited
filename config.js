@@ -131,6 +131,15 @@ const PRESET_RULES = {
       /nga\.178\.com\/read\.php\?tid.*/,
     ],
   },
+  'nodeseek': {
+    pages: [
+      /https:\/\/www\.nodeseek\.com\/?$/, // 首页
+      /https:\/\/www\.nodeseek\.com\/categories\/.*/, // 各个板块
+    ],
+    patterns: [
+      /https:\/\/www\.nodeseek\.com\/post-.*/, // 帖子
+    ],
+  },
   'reddit': {
     pages: [
       /https:\/\/www\.reddit\.com\/r\/[^\/]+\/?$/, // 板块首页
