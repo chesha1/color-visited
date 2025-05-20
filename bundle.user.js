@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.12.0
+// @version      1.13.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -356,10 +356,12 @@ const PRESET_RULES = {
   function updateMenu() {
     GM_unregisterMenuCommand('toggleScriptMenuCommand');
     GM_unregisterMenuCommand('clearLinksMenuCommand');
+    GM_unregisterMenuCommand('batchAddLinksMenuCommand');
 
     const toggleText = isEnabled ? '禁用链接染色脚本' : '启用链接染色脚本';
     GM_registerMenuCommand(toggleText, toggleScript);
     GM_registerMenuCommand('清除所有记住的链接', clearLinks);
+    GM_registerMenuCommand('批量记录当前页面链接', batchAddLinks);
   }
 
   function toggleScript() {
@@ -372,6 +374,34 @@ const PRESET_RULES = {
   function clearLinks() {
     GM_setValue('visitedLinks', {});
     removeScript();
+  }
+
+  // 批量记录当前页面上的所有符合规则的链接
+  function batchAddLinks() {
+    const visitedLinks = GM_getValue('visitedLinks', {});
+    const now = new Date().getTime();
+    let addedCount = 0;
+
+    // 查找所有链接
+    document.querySelectorAll('a[href]').forEach((link) => {
+      const inputUrl = getBaseUrl(link.href);
+
+      // 检查链接是否符合规则且尚未被标记为已访问
+      if (shouldColorLink(inputUrl) && !Object.hasOwn(visitedLinks, inputUrl)) {
+        visitedLinks[inputUrl] = now;
+        link.classList.add('visited-link');
+        addedCount++;
+      }
+    });
+
+    // 保存更新后的访问链接记录
+    if (addedCount > 0) {
+      GM_setValue('visitedLinks', visitedLinks);
+      alert(`已批量添加 ${addedCount} 个链接到已访问记录`);
+    }
+    else {
+      alert('没有找到新的符合规则的链接可添加');
+    }
   }
 
   // 在文档中注入一段自定义的 CSS 样式，针对这个类名的元素及其所有子元素，设置颜色样式，使用更高的选择器优先级和 !important
