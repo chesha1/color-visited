@@ -1,6 +1,8 @@
 (function () {
   'use strict';
 
+  console.log('Color Visited Script has started!');
+
   const domain = window.location.hostname;
   const scriptKey = `scriptEnabled_${domain}`;
   let isEnabled = GM_getValue(scriptKey, true);
@@ -133,6 +135,7 @@
     deleteExpiredLinks(); // 删除过期的链接
 
     const visitedLinks = GM_getValue('visitedLinks', {});
+    console.log(`visitedLinks storage size: ${Object.keys(visitedLinks).length} items`);
 
     function updateLinkStatus(link) {
       const inputUrl = getBaseUrl(link.href);

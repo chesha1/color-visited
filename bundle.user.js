@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.11.1
+// @version      1.12.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -273,6 +273,8 @@ const PRESET_RULES = {
 (function () {
   'use strict';
 
+  console.log('Color Visited Script has started!');
+
   const domain = window.location.hostname;
   const scriptKey = `scriptEnabled_${domain}`;
   let isEnabled = GM_getValue(scriptKey, true);
@@ -405,6 +407,7 @@ const PRESET_RULES = {
     deleteExpiredLinks(); // 删除过期的链接
 
     const visitedLinks = GM_getValue('visitedLinks', {});
+    console.log(`visitedLinks storage size: ${Object.keys(visitedLinks).length} items`);
 
     function updateLinkStatus(link) {
       const inputUrl = getBaseUrl(link.href);
