@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.13.1
+// @version      1.14.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -437,7 +437,23 @@ const PRESET_RULES = {
     deleteExpiredLinks(); // 删除过期的链接
 
     const visitedLinks = GM_getValue('visitedLinks', {});
-    console.log(`visitedLinks storage size: ${Object.keys(visitedLinks).length} items`);
+
+    // 计算 visitedLinks 的大小
+    const serializedData = JSON.stringify(visitedLinks);
+    const sizeInBytes = new TextEncoder().encode(serializedData).length;
+    const sizeInKB = (sizeInBytes / 1024).toFixed(2);
+    const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+    let sizeText;
+    if (sizeInBytes < 1024) {
+      sizeText = `${sizeInBytes} bytes`;
+    }
+    else if (sizeInBytes < 1024 * 1024) {
+      sizeText = `${sizeInKB} KB`;
+    }
+    else {
+      sizeText = `${sizeInMB} MB`;
+    }
+    console.log(`visitedLinks storage size: ${Object.keys(visitedLinks).length} items, ${sizeText}`);
 
     function updateLinkStatus(link) {
       const inputUrl = getBaseUrl(link.href);
