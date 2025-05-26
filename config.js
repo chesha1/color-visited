@@ -126,9 +126,9 @@ const PRESET_RULES = {
       /https:\/\/nga\.178\.com\/thread\.php\?(fid|stid).*/,
     ],
     patterns: [
-      /bbs\.nga\.cn\/read\.php\?tid.*/,
-      /ngabbs\.com\/read\.php\?tid.*/,
-      /nga\.178\.com\/read\.php\?tid.*/,
+      /bbs\.nga\.cn\/read\.php\?tid=\d+(&_fp=\d+)?$/,
+      /ngabbs\.com\/read\.php\?tid=\d+(&_fp=\d+)?$/,
+      /nga\.178\.com\/read\.php\?tid=\d+(&_fp=\d+)?$/,
     ],
   },
   'nodeseek': {

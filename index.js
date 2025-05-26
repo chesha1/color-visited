@@ -252,9 +252,6 @@
     if (domain === 'www.bilibili.com') return url.split('?')[0];
     if (domain === 'tieba.baidu.com') return url.split('?')[0];
     if (domain === 'www.douban.com') return url.split('?')[0];
-    if (domain === 'ngabbs.com') return url.split('&')[0];
-    if (domain === 'bbs.nga.cn') return url.split('&')[0];
-    if (domain === 'nga.178.com') return url.split('&')[0];
 
     // 使用正则表达式匹配所有 south-plus 域名
     if (/^www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net$/.test(domain)) {
