@@ -9,6 +9,24 @@
   let isEnabled = GM_getValue(scriptKey, true);
   let allPatterns = [];
 
+  // 检测当前操作系统
+  const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
+  // 根据操作系统设置不同的默认快捷键
+  const defaultBatchKeySettings = {
+    ctrlKey: !isMac, // macOS 下为 false，Windows 下为 true
+    shiftKey: true,
+    altKey: false,
+    metaKey: isMac, // macOS 下为 true，Windows 下为 false
+    key: 'V',
+  };
+
+  // 从存储中读取快捷键设置，如果没有则使用默认设置
+  let batchKeySettings = GM_getValue('batch_shortcut_settings', defaultBatchKeySettings);
+
+  // 批量记录快捷键处理器
+  let batchKeyHandler = null;
+
   // ================== 主流程控制 ==================
 
   // 脚本启动和全局初始化 - 负责整个脚本的启动配置、菜单设置、URL监听
@@ -39,6 +57,7 @@
     if (isEnabled && isPageActive()) {
       injectCustomStyles();
       activateLinkFeatures();
+      setupBatchKeyListener(); // 设置批量记录快捷键监听
     }
     else {
       if (config.debug) console.log('Script is not active on this page:', window.location.href);
@@ -124,11 +143,13 @@
     GM_unregisterMenuCommand('toggleScriptMenuCommand');
     GM_unregisterMenuCommand('clearLinksMenuCommand');
     GM_unregisterMenuCommand('batchAddLinksMenuCommand');
+    GM_unregisterMenuCommand('setBatchKeyMenuCommand');
 
     const toggleText = isEnabled ? '禁用链接染色脚本' : '启用链接染色脚本';
     GM_registerMenuCommand(toggleText, toggleScript);
     GM_registerMenuCommand('清除所有记住的链接', clearLinks);
     GM_registerMenuCommand('批量记录当前页面链接', batchAddLinks);
+    GM_registerMenuCommand('设置批量记录快捷键', showBatchKeySettingsDialog);
   }
 
   function toggleScript() {
@@ -169,6 +190,12 @@
     document.querySelectorAll('a.visited-link').forEach((link) => {
       link.classList.remove('visited-link');
     });
+
+    // 移除快捷键监听器
+    if (batchKeyHandler) {
+      document.removeEventListener('keydown', batchKeyHandler);
+      batchKeyHandler = null;
+    }
   }
 
   // ================== 链接管理模块 ==================
@@ -210,11 +237,245 @@
     // 保存更新后的访问链接记录
     if (addedCount > 0) {
       GM_setValue('visitedLinks', visitedLinks);
-      alert(`已批量添加 ${addedCount} 个链接到已访问记录`);
+      showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
     }
     else {
-      alert('没有找到新的符合规则的链接可添加');
+      showNotification('没有找到新的符合规则的链接可添加');
     }
+  }
+
+  // 显示批量记录快捷键设置弹窗
+  function showBatchKeySettingsDialog() {
+    // 创建设置弹窗
+    const dialog = document.createElement('div');
+    dialog.style.position = 'fixed';
+    dialog.style.top = '50%';
+    dialog.style.left = '50%';
+    dialog.style.transform = 'translate(-50%, -50%)';
+    dialog.style.backgroundColor = 'white';
+    dialog.style.padding = '20px';
+    dialog.style.borderRadius = '8px';
+    dialog.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+    dialog.style.zIndex = '10000';
+    dialog.style.minWidth = '300px';
+    dialog.style.maxWidth = '400px';
+
+    // 创建标题
+    const title = document.createElement('h2');
+    title.textContent = '设置批量记录快捷键';
+    title.style.marginTop = '0';
+    title.style.marginBottom = '15px';
+    dialog.appendChild(title);
+
+    // 创建说明
+    const description = document.createElement('p');
+    description.textContent = '请按下您想要使用的快捷键组合。';
+    dialog.appendChild(description);
+
+    // 创建当前设置显示区域
+    const currentShortcut = document.createElement('div');
+    currentShortcut.style.padding = '10px';
+    currentShortcut.style.border = '1px solid #ddd';
+    currentShortcut.style.borderRadius = '4px';
+    currentShortcut.style.marginBottom = '15px';
+    currentShortcut.style.textAlign = 'center';
+    currentShortcut.style.fontSize = '16px';
+    updateShortcutDisplay();
+    dialog.appendChild(currentShortcut);
+
+    function updateShortcutDisplay() {
+      let shortcutText = [];
+
+      // 根据操作系统显示不同的修饰键名称
+      if (batchKeySettings.metaKey) shortcutText.push(isMac ? '⌘ Command' : 'Win');
+      if (batchKeySettings.ctrlKey) shortcutText.push(isMac ? '⌃ Control' : 'Ctrl');
+      if (batchKeySettings.altKey) shortcutText.push(isMac ? '⌥ Option' : 'Alt');
+      if (batchKeySettings.shiftKey) shortcutText.push(isMac ? '⇧ Shift' : 'Shift');
+      shortcutText.push(batchKeySettings.key);
+
+      currentShortcut.textContent = shortcutText.join(' + ');
+    }
+
+    // 创建提示
+    const hint = document.createElement('p');
+    hint.textContent = '请按下新的快捷键组合...';
+    hint.style.marginBottom = '15px';
+    dialog.appendChild(hint);
+
+    // 创建按钮区域
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.style.display = 'flex';
+    buttonsDiv.style.justifyContent = 'space-between';
+    dialog.appendChild(buttonsDiv);
+
+    // 创建保存按钮
+    const saveButton = document.createElement('button');
+    saveButton.textContent = '保存';
+    saveButton.style.padding = '8px 16px';
+    saveButton.style.backgroundColor = '#4CAF50';
+    saveButton.style.color = 'white';
+    saveButton.style.border = 'none';
+    saveButton.style.borderRadius = '4px';
+    saveButton.style.cursor = 'pointer';
+    saveButton.disabled = true;
+    buttonsDiv.appendChild(saveButton);
+
+    // 创建取消按钮
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = '取消';
+    cancelButton.style.padding = '8px 16px';
+    cancelButton.style.backgroundColor = '#f44336';
+    cancelButton.style.color = 'white';
+    cancelButton.style.border = 'none';
+    cancelButton.style.borderRadius = '4px';
+    cancelButton.style.cursor = 'pointer';
+    buttonsDiv.appendChild(cancelButton);
+
+    // 创建重置按钮
+    const resetButton = document.createElement('button');
+    resetButton.textContent = '重置为默认';
+    resetButton.style.padding = '8px 16px';
+    resetButton.style.backgroundColor = '#2196F3';
+    resetButton.style.color = 'white';
+    resetButton.style.border = 'none';
+    resetButton.style.borderRadius = '4px';
+    resetButton.style.cursor = 'pointer';
+    buttonsDiv.appendChild(resetButton);
+
+    // 临时存储新设置
+    let newSettings = Object.assign({}, batchKeySettings);
+    let hasNewKeyPress = false;
+
+    // 创建遮罩层
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '9999';
+
+    // 添加遮罩和弹窗到页面
+    document.body.appendChild(overlay);
+    document.body.appendChild(dialog);
+
+    // 按键事件处理
+    function handleKeyDown(e) {
+      // 忽略单独的修饰键按下
+      if (e.key === 'Control' || e.key === 'Shift' || e.key === 'Alt' || e.key === 'Meta') {
+        return;
+      }
+
+      e.preventDefault();
+
+      newSettings = {
+        ctrlKey: e.ctrlKey,
+        shiftKey: e.shiftKey,
+        altKey: e.altKey,
+        metaKey: e.metaKey,
+        key: e.key.toUpperCase(),
+      };
+
+      // 更新显示
+      let shortcutText = [];
+
+      if (newSettings.metaKey) shortcutText.push(isMac ? '⌘ Command' : 'Win');
+      if (newSettings.ctrlKey) shortcutText.push(isMac ? '⌃ Control' : 'Ctrl');
+      if (newSettings.altKey) shortcutText.push(isMac ? '⌥ Option' : 'Alt');
+      if (newSettings.shiftKey) shortcutText.push(isMac ? '⇧ Shift' : 'Shift');
+      shortcutText.push(newSettings.key);
+
+      currentShortcut.textContent = shortcutText.join(' + ');
+
+      hint.textContent = '已记录新快捷键，点击保存应用设置';
+      saveButton.disabled = false;
+      hasNewKeyPress = true;
+    }
+
+    // 绑定事件
+    document.addEventListener('keydown', handleKeyDown);
+
+    // 保存按钮事件
+    saveButton.addEventListener('click', function () {
+      if (hasNewKeyPress) {
+        batchKeySettings = newSettings;
+        GM_setValue('batch_shortcut_settings', batchKeySettings);
+        closeDialog();
+        showNotification('批量记录快捷键设置已保存！');
+      }
+    });
+
+    // 取消按钮事件
+    cancelButton.addEventListener('click', closeDialog);
+
+    // 重置按钮事件
+    resetButton.addEventListener('click', function () {
+      newSettings = Object.assign({}, defaultBatchKeySettings);
+      batchKeySettings = Object.assign({}, defaultBatchKeySettings);
+      GM_setValue('batch_shortcut_settings', defaultBatchKeySettings);
+      updateShortcutDisplay();
+      closeDialog();
+      showNotification('批量记录快捷键已重置为默认！');
+    });
+
+    // 关闭对话框
+    function closeDialog() {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.removeChild(dialog);
+      document.body.removeChild(overlay);
+    }
+  }
+
+  // 显示通知
+  function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.left = '50%';
+    notification.style.transform = 'translateX(-50%)';
+    notification.style.backgroundColor = '#4CAF50';
+    notification.style.color = 'white';
+    notification.style.padding = '10px 20px';
+    notification.style.borderRadius = '5px';
+    notification.style.zIndex = '9999';
+    notification.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+
+    document.body.appendChild(notification);
+
+    setTimeout(function () {
+      document.body.removeChild(notification);
+    }, 2000);
+  }
+
+  // 设置批量记录快捷键监听器
+  function setupBatchKeyListener() {
+    // 移除之前的监听器
+    if (batchKeyHandler) {
+      document.removeEventListener('keydown', batchKeyHandler);
+    }
+
+    // 创建新的监听器
+    batchKeyHandler = function (event) {
+      // 检测是否按下设置的快捷键组合
+      if (
+        event.ctrlKey === batchKeySettings.ctrlKey
+        && event.shiftKey === batchKeySettings.shiftKey
+        && event.altKey === batchKeySettings.altKey
+        && event.metaKey === batchKeySettings.metaKey
+        && event.key.toUpperCase() === batchKeySettings.key
+      ) {
+        // 阻止浏览器默认行为
+        event.preventDefault();
+
+        // 执行批量记录功能
+        batchAddLinks();
+      }
+    };
+
+    // 添加新的监听器
+    document.addEventListener('keydown', batchKeyHandler);
   }
 
   // 计算存储信息的大小并显示到控制台
