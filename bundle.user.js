@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      1.14.0
+// @version      1.15.0
 // @description  把访问过的链接染色成灰色
 // @author       chesha1
 // @license      GPL-3.0-only
@@ -275,41 +275,49 @@ const PRESET_RULES = {
 
   console.log('Color Visited Script has started!');
 
+  // ================== 全局变量和初始化配置 ==================
   const domain = window.location.hostname;
   const scriptKey = `scriptEnabled_${domain}`;
   let isEnabled = GM_getValue(scriptKey, true);
   let allPatterns = [];
 
-  updateMenu();
+  // ================== 主流程控制 ==================
 
-  // 生成预设
-  if (config.presets === 'all') {
-    config.presets = Object.keys(PRESET_RULES);
+  // 脚本启动和全局初始化 - 负责整个脚本的启动配置、菜单设置、URL监听
+  function startScript() {
+    updateMenu();
+
+    // 生成预设
+    if (config.presets === 'all') {
+      config.presets = Object.keys(PRESET_RULES);
+    }
+    loadUrlPatterns();
+
+    // 初始运行
+    setupPage();
+
+    // 监听 URL 变化
+    onUrlChange(() => {
+      setupPage();
+    });
   }
-  initAllPatterns();
 
-  // 初始运行
-  init();
-
-  // 监听 URL 变化
-  onUrlChange(() => {
-    init();
-  });
-
-  // 定义 init() 函数
-  function init() {
+  // 页面级别的设置和初始化 - 每个页面的条件检查、样式注入、功能激活
+  function setupPage() {
     if (config.debug) console.log('color-visited script initialized on', window.location.href);
 
     removeScript(); // 清除之前的脚本效果
 
     if (isEnabled && isPageActive()) {
       injectCustomStyles();
-      initScript();
+      activateLinkFeatures();
     }
     else {
       if (config.debug) console.log('Script is not active on this page:', window.location.href);
     }
   }
+
+  // ================== URL和页面检测模块 ==================
 
   // 判断当前页面是否符合运行条件
   // 虽然已经用 @include 正则限定了运行范围了，但是有的网站用了 SPA
@@ -340,8 +348,37 @@ const PRESET_RULES = {
     observer.observe(body, { childList: true, subtree: true });
   }
 
-  // 获取所有应用的URL匹配规则
-  function initAllPatterns() {
+  // 去除各种查询参数等的干扰
+  function getBaseUrl(url) {
+    const domain = new URL(url).hostname;
+    if (domain === 'www.v2ex.com') return url.split('?')[0].split('#')[0];
+    if (domain === 'linux.do') return url.replace(/(\/\d+)\/\d+$/, '$1');
+    if (domain === 'www.bilibili.com') return url.split('?')[0];
+    if (domain === 'tieba.baidu.com') return url.split('?')[0];
+    if (domain === 'www.douban.com') return url.split('?')[0];
+    if (domain === 'ngabbs.com') return url.split('&')[0];
+    if (domain === 'bbs.nga.cn') return url.split('&')[0];
+    if (domain === 'nga.178.com') return url.split('&')[0];
+
+    // 使用正则表达式匹配所有 south-plus 域名
+    if (/^www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net$/.test(domain)) {
+      let processedUrl = url;
+      // 1. 首先移除末尾的 #a
+      processedUrl = processedUrl.replace(/#a$/, '');
+      // 2. 移除 -fpage-\d+
+      processedUrl = processedUrl.replace(/-fpage-\d+/, '');
+      // 3. 移除 -page- 后跟数字 (\d+) 或字母 'e' 或 'a' 的部分
+      processedUrl = processedUrl.replace(/-page-(\d+|[ea])(\.html)?$/, '$2');
+      return processedUrl;
+    }
+
+    return url;
+  }
+
+  // ================== 模式匹配和规则管理 ==================
+
+  // 加载URL匹配模式 - 根据预设规则构建匹配模式数组
+  function loadUrlPatterns() {
     config.presets.forEach((preset) => {
       if (PRESET_RULES[preset]) {
         allPatterns = allPatterns.concat(PRESET_RULES[preset].patterns);
@@ -352,6 +389,8 @@ const PRESET_RULES = {
   function shouldColorLink(url) {
     return allPatterns.some(pattern => pattern.test(url));
   }
+
+  // ================== 菜单管理模块 ==================
 
   function updateMenu() {
     GM_unregisterMenuCommand('toggleScriptMenuCommand');
@@ -368,7 +407,53 @@ const PRESET_RULES = {
     isEnabled = !isEnabled;
     GM_setValue(scriptKey, isEnabled);
     updateMenu();
-    init();
+    setupPage();
+  }
+
+  // ================== 样式管理模块 ==================
+
+  // 在文档中注入一段自定义的 CSS 样式，针对这个类名的元素及其所有子元素，设置颜色样式，使用更高的选择器优先级和 !important
+  // 直接使用 link.style.color 会被后续的样式覆盖，所以这么做
+  function injectCustomStyles() {
+    if (document.querySelector('#color-visited-style')) return;
+
+    const style = document.createElement('style');
+    style.id = 'color-visited-style';
+    style.innerHTML = `
+      a.visited-link,
+      a.visited-link *,
+      a.visited-link *::before,
+      a.visited-link *::after {
+        color: ${config.color} !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function removeScript() {
+    // 移除样式
+    const styleElement = document.querySelector('#color-visited-style');
+    if (styleElement) {
+      styleElement.remove();
+    }
+
+    // 移除链接上的类名
+    document.querySelectorAll('a.visited-link').forEach((link) => {
+      link.classList.remove('visited-link');
+    });
+  }
+
+  // ================== 链接管理模块 ==================
+
+  function deleteExpiredLinks() {
+    const visitedLinks = GM_getValue('visitedLinks', {});
+    const now = new Date().getTime();
+    Object.keys(visitedLinks).forEach((url) => {
+      if (now - visitedLinks[url] > config.expirationTime) {
+        delete visitedLinks[url];
+      }
+    });
+    GM_setValue('visitedLinks', visitedLinks);
   }
 
   function clearLinks() {
@@ -404,45 +489,13 @@ const PRESET_RULES = {
     }
   }
 
-  // 在文档中注入一段自定义的 CSS 样式，针对这个类名的元素及其所有子元素，设置颜色样式，使用更高的选择器优先级和 !important
-  // 直接使用 link.style.color 会被后续的样式覆盖，所以这么做
-  function injectCustomStyles() {
-    if (document.querySelector('#color-visited-style')) return;
-
-    const style = document.createElement('style');
-    style.id = 'color-visited-style';
-    style.innerHTML = `
-      a.visited-link,
-      a.visited-link *,
-      a.visited-link *::before,
-      a.visited-link *::after {
-        color: ${config.color} !important;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function deleteExpiredLinks() {
-    const visitedLinks = GM_getValue('visitedLinks', {});
-    const now = new Date().getTime();
-    Object.keys(visitedLinks).forEach((url) => {
-      if (now - visitedLinks[url] > config.expirationTime) {
-        delete visitedLinks[url];
-      }
-    });
-    GM_setValue('visitedLinks', visitedLinks);
-  }
-
-  function initScript() {
-    deleteExpiredLinks(); // 删除过期的链接
-
-    const visitedLinks = GM_getValue('visitedLinks', {});
-
-    // 计算 visitedLinks 的大小
+  // 计算存储信息的大小并显示到控制台
+  function logStorageInfo(visitedLinks) {
     const serializedData = JSON.stringify(visitedLinks);
     const sizeInBytes = new TextEncoder().encode(serializedData).length;
     const sizeInKB = (sizeInBytes / 1024).toFixed(2);
     const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+
     let sizeText;
     if (sizeInBytes < 1024) {
       sizeText = `${sizeInBytes} bytes`;
@@ -453,35 +506,53 @@ const PRESET_RULES = {
     else {
       sizeText = `${sizeInMB} MB`;
     }
-    console.log(`visitedLinks storage size: ${Object.keys(visitedLinks).length} items, ${sizeText}`);
 
-    function updateLinkStatus(link) {
-      const inputUrl = getBaseUrl(link.href);
-      if (!shouldColorLink(inputUrl)) return;
+    const itemCount = Object.keys(visitedLinks).length;
+    console.log(`visitedLinks storage size: ${itemCount} items, ${sizeText}`);
+  }
 
-      // 添加 visited-link 类名
-      if (Object.hasOwn(visitedLinks, inputUrl)) {
-        link.classList.add('visited-link');
-        if (config.debug) console.log(`${inputUrl} class added`);
-      }
+  // 更新单个链接的状态
+  function updateLinkStatus(link, visitedLinks) {
+    const inputUrl = getBaseUrl(link.href);
+    if (!shouldColorLink(inputUrl)) return;
+
+    // 添加 visited-link 类名
+    if (Object.hasOwn(visitedLinks, inputUrl)) {
+      link.classList.add('visited-link');
+      if (config.debug) console.log(`${inputUrl} class added`);
     }
+  }
 
-    document.querySelectorAll('a[href]').forEach(updateLinkStatus);
+  // 批量更新页面中所有链接的状态
+  function updateAllLinksStatus(visitedLinks) {
+    document.querySelectorAll('a[href]').forEach((link) => {
+      updateLinkStatus(link, visitedLinks);
+    });
+  }
 
+  // ================== DOM监听器和事件处理模块 ==================
+
+  // 设置DOM变化监听器
+  function setupDOMObserver(visitedLinks) {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            node.querySelectorAll('a[href]').forEach(updateLinkStatus);
+            node.querySelectorAll('a[href]').forEach((link) => {
+              updateLinkStatus(link, visitedLinks);
+            });
           }
         });
       });
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
+    return observer;
+  }
 
-    // 添加事件委托的点击事件监听器
-    function handleLinkClick(event) {
+  // 处理链接点击事件
+  function createLinkClickHandler(visitedLinks) {
+    return function handleLinkClick(event) {
       // 使用 event.target.closest 来获取被点击的链接元素
       const link = event.target.closest('a[href]');
       if (!link) return; // 如果点击的不是链接，直接返回
@@ -497,49 +568,36 @@ const PRESET_RULES = {
         link.classList.add('visited-link');
         if (config.debug) console.log(`${inputUrl} class added`);
       }
-    }
+    };
+  }
 
+  // 设置链接点击事件监听器
+  function setupLinkEventListeners(visitedLinks) {
+    const handleLinkClick = createLinkClickHandler(visitedLinks);
+
+    // 添加事件委托的点击事件监听器
     document.addEventListener('click', handleLinkClick, true);
     document.addEventListener('auxclick', handleLinkClick, true);
+
+    return handleLinkClick;
   }
 
-  function removeScript() {
-    // 移除样式
-    const styleElement = document.querySelector('#color-visited-style');
-    if (styleElement) {
-      styleElement.remove();
-    }
+  // ================== 脚本核心逻辑模块 ==================
 
-    // 移除链接上的类名
-    document.querySelectorAll('a.visited-link').forEach((link) => {
-      link.classList.remove('visited-link');
-    });
+  // 激活链接功能 - 启动存储管理、状态更新、DOM监听、事件处理
+  function activateLinkFeatures() {
+    deleteExpiredLinks(); // 删除过期的链接
+
+    const visitedLinks = GM_getValue('visitedLinks', {});
+
+    logStorageInfo(visitedLinks); // 显示存储信息
+    updateAllLinksStatus(visitedLinks); // 更新链接状态
+    setupDOMObserver(visitedLinks); // 设置DOM监听
+    setupLinkEventListeners(visitedLinks); // 设置事件监听
   }
 
-  // 去除各种查询参数等的干扰
-  function getBaseUrl(url) {
-    const domain = new URL(url).hostname;
-    if (domain === 'www.v2ex.com') return url.split('?')[0].split('#')[0];
-    if (domain === 'linux.do') return url.replace(/(\/\d+)\/\d+$/, '$1');
-    if (domain === 'www.bilibili.com') return url.split('?')[0];
-    if (domain === 'tieba.baidu.com') return url.split('?')[0];
-    if (domain === 'www.douban.com') return url.split('?')[0];
-    if (domain === 'ngabbs.com') return url.split('&')[0];
-    if (domain === 'bbs.nga.cn') return url.split('&')[0];
-    if (domain === 'nga.178.com') return url.split('&')[0];
+  // ================== 启动脚本 ==================
 
-    // 使用正则表达式匹配所有 south-plus 域名
-    if (/^www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net$/.test(domain)) {
-      let processedUrl = url;
-      // 1. 首先移除末尾的 #a
-      processedUrl = processedUrl.replace(/#a$/, '');
-      // 2. 移除 -fpage-\d+
-      processedUrl = processedUrl.replace(/-fpage-\d+/, '');
-      // 3. 移除 -page- 后跟数字 (\d+) 或字母 'e' 或 'a' 的部分
-      processedUrl = processedUrl.replace(/-page-(\d+|[ea])(\.html)?$/, '$2');
-      return processedUrl;
-    }
-
-    return url;
-  }
+  // 执行脚本启动流程
+  startScript();
 })();
