@@ -50,12 +50,14 @@
   // ================== 主流程控制 ==================
 
   // 脚本启动和全局初始化 - 负责整个脚本的启动配置、菜单设置、URL监听
-  async function startScript() {
+  function startScript() {
     updateMenu();
 
-    // 如果启用同步，先进行启动同步
+    // 如果启用同步，在后台进行启动同步（不阻塞主流程）
     if (syncSettings.enabled) {
-      await syncOnStartup();
+      syncOnStartup().catch((error) => {
+        console.warn('后台同步失败:', error.message);
+      });
     }
 
     // 生成预设
