@@ -27,11 +27,36 @@
   // 批量记录快捷键处理器
   let batchKeyHandler = null;
 
+  // ================== 同步配置 ==================
+
+  // 简化的同步配置 - 代码中的默认值
+  const defaultSyncSettings = {
+    enabled: false,
+    githubToken: '',
+    gistId: '',
+    lastSyncTime: 0,
+  };
+
+  // 合并存储值和默认值，确保重要参数不为空
+  let storedSettings = GM_getValue('sync_settings', {});
+  let syncSettings = {
+    ...defaultSyncSettings,
+    ...storedSettings,
+    // 确保关键参数不为空，如果存储中为空则使用默认值
+    githubToken: storedSettings.githubToken || defaultSyncSettings.githubToken,
+    gistId: storedSettings.gistId || defaultSyncSettings.gistId,
+  };
+
   // ================== 主流程控制 ==================
 
   // 脚本启动和全局初始化 - 负责整个脚本的启动配置、菜单设置、URL监听
-  function startScript() {
+  async function startScript() {
     updateMenu();
+
+    // 如果启用同步，先进行启动同步
+    if (syncSettings.enabled) {
+      await syncOnStartup();
+    }
 
     // 生成预设
     if (config.presets === 'all') {
@@ -144,12 +169,14 @@
     GM_unregisterMenuCommand('clearLinksMenuCommand');
     GM_unregisterMenuCommand('batchAddLinksMenuCommand');
     GM_unregisterMenuCommand('setBatchKeyMenuCommand');
+    GM_unregisterMenuCommand('showSyncSettingsMenuCommand');
 
     const toggleText = isEnabled ? '禁用链接染色脚本' : '启用链接染色脚本';
     GM_registerMenuCommand(toggleText, toggleScript);
     GM_registerMenuCommand('清除所有记住的链接', clearLinks);
     GM_registerMenuCommand('批量记录当前页面链接', batchAddLinks);
     GM_registerMenuCommand('设置批量记录快捷键', showBatchKeySettingsDialog);
+    GM_registerMenuCommand('同步设置', showSyncSettingsDialog);
   }
 
   function toggleScript() {
@@ -583,6 +610,369 @@
     updateAllLinksStatus(visitedLinks); // 更新链接状态
     setupDOMObserver(visitedLinks); // 设置DOM监听
     setupLinkEventListeners(visitedLinks); // 设置事件监听
+  }
+
+  // ================== GitHub API 和同步模块 ==================
+
+  // 验证 GitHub 令牌
+  async function validateGitHubToken(token) {
+    try {
+      const response = await fetch('https://api.github.com/user', {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+      return response.ok;
+    }
+    catch (error) {
+      console.warn('验证 GitHub 令牌失败:', error);
+      return false;
+    }
+  }
+
+  // 更新现有的 Gist
+  async function updateGist(token, gistId, data) {
+    try {
+      // 先获取现有 Gist 以确定文件名
+      const gistInfo = await fetch(`https://api.github.com/gists/${gistId}`, {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+
+      if (!gistInfo.ok) {
+        throw new Error(`获取 Gist 信息失败: ${gistInfo.status}`);
+      }
+
+      const gistData = await gistInfo.json();
+      const fileName = Object.keys(gistData.files)[0]; // 使用第一个文件
+
+      const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+        body: JSON.stringify({
+          files: {
+            [fileName]: {
+              content: JSON.stringify(data, null, 2),
+            },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`更新 Gist 失败: ${response.status}`);
+      }
+    }
+    catch (error) {
+      console.warn('更新 Gist 失败:', error);
+      throw error;
+    }
+  }
+
+  // 获取 Gist 内容
+  async function getGist(token, gistId) {
+    try {
+      const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // 获取第一个文件的内容，不依赖特定文件名
+        const fileName = Object.keys(result.files)[0];
+        const content = result.files[fileName]?.content;
+        return content ? JSON.parse(content) : {};
+      }
+      else {
+        throw new Error(`获取 Gist 失败: ${response.status}`);
+      }
+    }
+    catch (error) {
+      console.warn('获取 Gist 失败:', error);
+      throw error;
+    }
+  }
+
+  // 上传数据到云端
+  async function uploadToCloud(data) {
+    const { githubToken, gistId } = syncSettings;
+
+    if (!githubToken) {
+      throw new Error('GitHub 令牌未设置');
+    }
+
+    if (!gistId) {
+      throw new Error('Gist ID 未设置，请先创建 Gist 并在设置中填入 ID');
+    }
+
+    await updateGist(githubToken, gistId, data);
+  }
+
+  // 从云端下载数据
+  async function downloadFromCloud() {
+    const { githubToken, gistId } = syncSettings;
+
+    if (!githubToken || !gistId) {
+      return {};
+    }
+
+    return await getGist(githubToken, gistId);
+  }
+
+  // 合并本地和云端数据
+  function mergeVisitedLinks(localLinks, cloudLinks) {
+    const merged = { ...localLinks };
+
+    // 以最新时间戳为准合并数据
+    Object.keys(cloudLinks).forEach((url) => {
+      if (!merged[url] || cloudLinks[url] > merged[url]) {
+        merged[url] = cloudLinks[url];
+      }
+    });
+
+    return merged;
+  }
+
+  // 检查数据是否有变化
+  function hasDataChanged(oldData, newData) {
+    return JSON.stringify(oldData) !== JSON.stringify(newData);
+  }
+
+  // 启动时同步
+  async function syncOnStartup() {
+    try {
+      console.log('开始同步数据...');
+
+      // 1. 获取本地数据
+      const localLinks = GM_getValue('visitedLinks', {});
+
+      // 2. 从云端获取数据
+      const cloudLinks = await downloadFromCloud();
+
+      // 3. 合并数据（以最新时间戳为准）
+      const mergedLinks = mergeVisitedLinks(localLinks, cloudLinks);
+
+      // 4. 保存到本地
+      GM_setValue('visitedLinks', mergedLinks);
+
+      // 5. 检查是否需要上传到云端
+      const localChanged = hasDataChanged(localLinks, mergedLinks);
+      const cloudChanged = hasDataChanged(cloudLinks, mergedLinks);
+
+      if (localChanged || cloudChanged) {
+        await uploadToCloud(mergedLinks);
+        console.log('数据已同步并上传到云端');
+      }
+      else {
+        console.log('数据已同步，无需上传');
+      }
+
+      // 6. 更新同步时间
+      syncSettings.lastSyncTime = Date.now();
+      GM_setValue('sync_settings', syncSettings);
+    }
+    catch (error) {
+      console.warn('同步失败，使用本地数据:', error.message);
+      showNotification(`同步失败: ${error.message}`);
+    }
+  }
+
+  // 显示同步设置对话框
+  function showSyncSettingsDialog() {
+    // 创建设置弹窗
+    const dialog = document.createElement('div');
+    dialog.style.position = 'fixed';
+    dialog.style.top = '50%';
+    dialog.style.left = '50%';
+    dialog.style.transform = 'translate(-50%, -50%)';
+    dialog.style.backgroundColor = 'white';
+    dialog.style.padding = '20px';
+    dialog.style.borderRadius = '8px';
+    dialog.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+    dialog.style.zIndex = '10000';
+    dialog.style.minWidth = '400px';
+    dialog.style.maxWidth = '500px';
+
+    // 创建标题
+    const title = document.createElement('h2');
+    title.textContent = '同步设置';
+    title.style.marginTop = '0';
+    title.style.marginBottom = '15px';
+    dialog.appendChild(title);
+
+    // 同步开关
+    const enableLabel = document.createElement('label');
+    enableLabel.style.display = 'block';
+    enableLabel.style.marginBottom = '15px';
+    enableLabel.innerHTML = '<input type="checkbox" id="syncEnabled"> 启用数据同步';
+    const enableCheckbox = enableLabel.querySelector('#syncEnabled');
+    enableCheckbox.checked = syncSettings.enabled;
+    dialog.appendChild(enableLabel);
+
+    // GitHub 令牌输入
+    const tokenLabel = document.createElement('label');
+    tokenLabel.style.display = 'block';
+    tokenLabel.style.marginBottom = '15px';
+    tokenLabel.innerHTML = 'GitHub 个人访问令牌:<br><input type="password" id="githubToken" style="width: 100%; padding: 5px; margin-top: 5px;">';
+    const tokenInput = tokenLabel.querySelector('#githubToken');
+    // 如果存储中没有值，使用代码中的默认值
+    tokenInput.value = syncSettings.githubToken || defaultSyncSettings.githubToken;
+    dialog.appendChild(tokenLabel);
+
+    // Gist ID 输入
+    const gistLabel = document.createElement('label');
+    gistLabel.style.display = 'block';
+    gistLabel.style.marginBottom = '15px';
+    gistLabel.innerHTML = 'Gist ID:<br><input type="text" id="gistId" style="width: 100%; padding: 5px; margin-top: 5px;" placeholder="请输入现有 Gist 的 ID">';
+    const gistInput = gistLabel.querySelector('#gistId');
+    // 如果存储中没有值，使用代码中的默认值
+    gistInput.value = syncSettings.gistId || defaultSyncSettings.gistId;
+    dialog.appendChild(gistLabel);
+
+    // 帮助说明
+    const helpText = document.createElement('p');
+    helpText.style.fontSize = '12px';
+    helpText.style.color = '#666';
+    helpText.style.marginBottom = '15px';
+    helpText.innerHTML = `
+      <strong>设置步骤：</strong><br>
+      1. 到 GitHub > Settings > Developer settings > Personal access tokens > Tokens (classic) 创建令牌，权限选择 "gist"<br>
+      2. 手动创建一个 Gist（任意文件名和内容），复制 URL 中的 ID 部分<br>
+      3. 将令牌和 Gist ID 填入上方输入框
+    `;
+    dialog.appendChild(helpText);
+
+    // 同步状态显示
+    const statusDiv = document.createElement('div');
+    statusDiv.style.marginBottom = '15px';
+    statusDiv.style.padding = '10px';
+    statusDiv.style.backgroundColor = '#f5f5f5';
+    statusDiv.style.borderRadius = '4px';
+    const lastSyncTime = syncSettings.lastSyncTime ? new Date(syncSettings.lastSyncTime).toLocaleString() : '从未同步';
+    statusDiv.innerHTML = `
+      <div>当前 Gist ID: ${syncSettings.gistId || '未设置'}</div>
+      <div>最后同步时间: ${lastSyncTime}</div>
+    `;
+    dialog.appendChild(statusDiv);
+
+    // 按钮区域
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.style.display = 'flex';
+    buttonsDiv.style.justifyContent = 'space-between';
+    dialog.appendChild(buttonsDiv);
+
+    // 测试连接按钮
+    const testButton = document.createElement('button');
+    testButton.textContent = '测试连接';
+    testButton.style.padding = '8px 16px';
+    testButton.style.backgroundColor = '#2196F3';
+    testButton.style.color = 'white';
+    testButton.style.border = 'none';
+    testButton.style.borderRadius = '4px';
+    testButton.style.cursor = 'pointer';
+    buttonsDiv.appendChild(testButton);
+
+    // 保存按钮
+    const saveButton = document.createElement('button');
+    saveButton.textContent = '保存';
+    saveButton.style.padding = '8px 16px';
+    saveButton.style.backgroundColor = '#4CAF50';
+    saveButton.style.color = 'white';
+    saveButton.style.border = 'none';
+    saveButton.style.borderRadius = '4px';
+    saveButton.style.cursor = 'pointer';
+    buttonsDiv.appendChild(saveButton);
+
+    // 取消按钮
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = '取消';
+    cancelButton.style.padding = '8px 16px';
+    cancelButton.style.backgroundColor = '#f44336';
+    cancelButton.style.color = 'white';
+    cancelButton.style.border = 'none';
+    cancelButton.style.borderRadius = '4px';
+    cancelButton.style.cursor = 'pointer';
+    buttonsDiv.appendChild(cancelButton);
+
+    // 创建遮罩层
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '9999';
+
+    // 添加遮罩和弹窗到页面
+    document.body.appendChild(overlay);
+    document.body.appendChild(dialog);
+
+    // 测试连接按钮事件
+    testButton.addEventListener('click', async function () {
+      const token = tokenInput.value.trim();
+      if (!token) {
+        showNotification('请输入 GitHub 令牌');
+        return;
+      }
+
+      testButton.textContent = '测试中...';
+      testButton.disabled = true;
+
+      try {
+        const isValid = await validateGitHubToken(token);
+        if (isValid) {
+          showNotification('连接成功！');
+        }
+        else {
+          showNotification('连接失败，请检查令牌是否正确');
+        }
+      }
+      catch (error) {
+        showNotification('连接失败: ' + error.message);
+      }
+      finally {
+        testButton.textContent = '测试连接';
+        testButton.disabled = false;
+      }
+    });
+
+    // 保存按钮事件
+    saveButton.addEventListener('click', async function () {
+      const newSettings = {
+        ...syncSettings,
+        enabled: enableCheckbox.checked,
+        githubToken: tokenInput.value.trim(),
+        gistId: gistInput.value.trim(),
+      };
+
+      syncSettings = newSettings;
+      GM_setValue('sync_settings', syncSettings);
+
+      closeDialog();
+      showNotification('同步设置已保存！');
+
+      // 重新更新菜单以反映状态变化
+      updateMenu();
+    });
+
+    // 取消按钮事件
+    cancelButton.addEventListener('click', closeDialog);
+
+    // 关闭对话框
+    function closeDialog() {
+      document.body.removeChild(dialog);
+      document.body.removeChild(overlay);
+    }
   }
 
   // ================== 启动脚本 ==================
