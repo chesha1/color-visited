@@ -691,8 +691,29 @@
         const result = await response.json();
         // 获取第一个文件的内容，不依赖特定文件名
         const fileName = Object.keys(result.files)[0];
-        const content = result.files[fileName]?.content;
-        return content ? JSON.parse(content) : {};
+        const file = result.files[fileName];
+        let contentText = '';
+
+        if (file.truncated) {
+          // 当文件被截断时，需要再请求 raw_url 获取完整内容
+          const rawResp = await fetch(file.raw_url);
+          if (!rawResp.ok) {
+            throw new Error(`获取 Gist 原始内容失败: ${rawResp.status}`);
+          }
+          contentText = await rawResp.text();
+        }
+        else {
+          contentText = file.content;
+        }
+
+        // 解析 JSON 内容，若解析失败则返回空对象
+        try {
+          return contentText ? JSON.parse(contentText) : {};
+        }
+        catch (e) {
+          console.warn('解析 Gist 内容失败:', e);
+          return {};
+        }
       }
       else {
         throw new Error(`获取 Gist 失败: ${response.status}`);
