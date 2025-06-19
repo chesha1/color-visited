@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.0.0
+// @version      2.0.1
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -501,7 +501,7 @@
     notification.style.color = "white";
     notification.style.padding = "10px 20px";
     notification.style.borderRadius = "5px";
-    notification.style.zIndex = "9999";
+    notification.style.zIndex = "10001";
     notification.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
     document.body.appendChild(notification);
     setTimeout(function() {

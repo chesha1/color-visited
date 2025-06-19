@@ -17,7 +17,7 @@ export function showNotification(message: string): void {
   notification.style.color = 'white';
   notification.style.padding = '10px 20px';
   notification.style.borderRadius = '5px';
-  notification.style.zIndex = '9999';
+  notification.style.zIndex = '10001';
   notification.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
 
   document.body.appendChild(notification);
@@ -107,9 +107,9 @@ export function showBatchKeySettingsDialog(
   currentShortcut.style.marginBottom = '15px';
   currentShortcut.style.textAlign = 'center';
   currentShortcut.style.fontSize = '16px';
-  
+
   let batchKeySettings = { ...currentSettings };
-  
+
   function updateShortcutDisplay() {
     let shortcutText = [];
 
@@ -122,7 +122,7 @@ export function showBatchKeySettingsDialog(
 
     currentShortcut.textContent = shortcutText.join(' + ');
   }
-  
+
   updateShortcutDisplay();
   dialog.appendChild(currentShortcut);
 
@@ -258,7 +258,7 @@ export function showBatchKeySettingsDialog(
 // 显示同步设置对话框
 export function showSyncSettingsDialog(onMenuUpdate: () => void): void {
   const syncSettings = getSyncSettings();
-  
+
   // 创建设置弹窗
   const dialog = document.createElement('div');
   dialog.style.position = 'fixed';
