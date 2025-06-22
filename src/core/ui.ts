@@ -68,190 +68,25 @@ export interface BatchKeySettings {
 // 显示批量记录快捷键设置弹窗
 export function showBatchKeySettingsDialog(
   currentSettings: BatchKeySettings,
-  _defaultSettings: BatchKeySettings,
+  defaultSettings: BatchKeySettings,
   isMac: boolean,
   onSave: (settings: BatchKeySettings) => void,
   onReset: () => void
 ): void {
-  // 创建设置弹窗
-  const dialog = document.createElement('div');
-  dialog.style.position = 'fixed';
-  dialog.style.top = '50%';
-  dialog.style.left = '50%';
-  dialog.style.transform = 'translate(-50%, -50%)';
-  dialog.style.backgroundColor = 'white';
-  dialog.style.padding = '20px';
-  dialog.style.borderRadius = '8px';
-  dialog.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-  dialog.style.zIndex = '10000';
-  dialog.style.minWidth = '300px';
-  dialog.style.maxWidth = '400px';
-
-  // 创建标题
-  const title = document.createElement('h2');
-  title.textContent = '设置批量记录快捷键';
-  title.style.marginTop = '0';
-  title.style.marginBottom = '15px';
-  dialog.appendChild(title);
-
-  // 创建说明
-  const description = document.createElement('p');
-  description.textContent = '请按下您想要使用的快捷键组合。';
-  dialog.appendChild(description);
-
-  // 创建当前设置显示区域
-  const currentShortcut = document.createElement('div');
-  currentShortcut.style.padding = '10px';
-  currentShortcut.style.border = '1px solid #ddd';
-  currentShortcut.style.borderRadius = '4px';
-  currentShortcut.style.marginBottom = '15px';
-  currentShortcut.style.textAlign = 'center';
-  currentShortcut.style.fontSize = '16px';
-
-  let batchKeySettings = { ...currentSettings };
-
-  function updateShortcutDisplay() {
-    let shortcutText = [];
-
-    // 根据操作系统显示不同的修饰键名称
-    if (batchKeySettings.metaKey) shortcutText.push(isMac ? '⌘ Command' : 'Win');
-    if (batchKeySettings.ctrlKey) shortcutText.push(isMac ? '⌃ Control' : 'Ctrl');
-    if (batchKeySettings.altKey) shortcutText.push(isMac ? '⌥ Option' : 'Alt');
-    if (batchKeySettings.shiftKey) shortcutText.push(isMac ? '⇧ Shift' : 'Shift');
-    shortcutText.push(batchKeySettings.key);
-
-    currentShortcut.textContent = shortcutText.join(' + ');
-  }
-
-  updateShortcutDisplay();
-  dialog.appendChild(currentShortcut);
-
-  // 创建提示
-  const hint = document.createElement('p');
-  hint.textContent = '请按下新的快捷键组合...';
-  hint.style.marginBottom = '15px';
-  dialog.appendChild(hint);
-
-  // 创建按钮区域
-  const buttonsDiv = document.createElement('div');
-  buttonsDiv.style.display = 'flex';
-  buttonsDiv.style.justifyContent = 'space-between';
-  dialog.appendChild(buttonsDiv);
-
-  // 创建保存按钮
-  const saveButton = document.createElement('button');
-  saveButton.textContent = '保存';
-  saveButton.style.padding = '8px 16px';
-  saveButton.style.backgroundColor = '#4CAF50';
-  saveButton.style.color = 'white';
-  saveButton.style.border = 'none';
-  saveButton.style.borderRadius = '4px';
-  saveButton.style.cursor = 'pointer';
-  saveButton.disabled = true;
-  buttonsDiv.appendChild(saveButton);
-
-  // 创建取消按钮
-  const cancelButton = document.createElement('button');
-  cancelButton.textContent = '取消';
-  cancelButton.style.padding = '8px 16px';
-  cancelButton.style.backgroundColor = '#f44336';
-  cancelButton.style.color = 'white';
-  cancelButton.style.border = 'none';
-  cancelButton.style.borderRadius = '4px';
-  cancelButton.style.cursor = 'pointer';
-  buttonsDiv.appendChild(cancelButton);
-
-  // 创建重置按钮
-  const resetButton = document.createElement('button');
-  resetButton.textContent = '重置为默认';
-  resetButton.style.padding = '8px 16px';
-  resetButton.style.backgroundColor = '#2196F3';
-  resetButton.style.color = 'white';
-  resetButton.style.border = 'none';
-  resetButton.style.borderRadius = '4px';
-  resetButton.style.cursor = 'pointer';
-  buttonsDiv.appendChild(resetButton);
-
-  // 临时存储新设置
-  let newSettings = Object.assign({}, batchKeySettings);
-  let hasNewKeyPress = false;
-
-  // 创建遮罩层
-  const overlay = document.createElement('div');
-  overlay.style.position = 'fixed';
-  overlay.style.top = '0';
-  overlay.style.left = '0';
-  overlay.style.width = '100%';
-  overlay.style.height = '100%';
-  overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
-  overlay.style.zIndex = '9999';
-
-  // 添加遮罩和弹窗到页面
-  document.body.appendChild(overlay);
-  document.body.appendChild(dialog);
-
-  // 按键事件处理
-  function handleKeyDown(e: KeyboardEvent) {
-    // 忽略单独的修饰键按下
-    if (e.key === 'Control' || e.key === 'Shift' || e.key === 'Alt' || e.key === 'Meta') {
-      return;
-    }
-
-    e.preventDefault();
-
-    newSettings = {
-      ctrlKey: e.ctrlKey,
-      shiftKey: e.shiftKey,
-      altKey: e.altKey,
-      metaKey: e.metaKey,
-      key: e.key.toUpperCase(),
-    };
-
-    // 更新显示
-    let shortcutText = [];
-
-    if (newSettings.metaKey) shortcutText.push(isMac ? '⌘ Command' : 'Win');
-    if (newSettings.ctrlKey) shortcutText.push(isMac ? '⌃ Control' : 'Ctrl');
-    if (newSettings.altKey) shortcutText.push(isMac ? '⌥ Option' : 'Alt');
-    if (newSettings.shiftKey) shortcutText.push(isMac ? '⇧ Shift' : 'Shift');
-    shortcutText.push(newSettings.key);
-
-    currentShortcut.textContent = shortcutText.join(' + ');
-
-    hint.textContent = '已记录新快捷键，点击保存应用设置';
-    saveButton.disabled = false;
-    hasNewKeyPress = true;
-  }
-
-  // 绑定事件
-  document.addEventListener('keydown', handleKeyDown);
-
-  // 保存按钮事件
-  saveButton.addEventListener('click', function () {
-    if (hasNewKeyPress) {
-      onSave(newSettings);
-      closeDialog();
-      showNotification('批量记录快捷键设置已保存！');
-    }
-  });
-
-  // 取消按钮事件
-  cancelButton.addEventListener('click', closeDialog);
-
-  // 重置按钮事件
-  resetButton.addEventListener('click', function () {
-    onReset();
-    closeDialog();
-    showNotification('批量记录快捷键已重置为默认！');
-  });
-
-  // 关闭对话框
-  function closeDialog() {
-    document.removeEventListener('keydown', handleKeyDown);
-    document.body.removeChild(dialog);
-    document.body.removeChild(overlay);
+  // 调用 Vue 组件
+  if ((window as any).showVueBatchKeySettingsDialog) {
+    (window as any).showVueBatchKeySettingsDialog(
+      currentSettings,
+      defaultSettings,
+      isMac,
+      onSave,
+      onReset
+    );
+  } else {
+    console.error('Vue 组件未加载');
   }
 }
+
 
 // ================== 同步设置对话框 ==================
 
