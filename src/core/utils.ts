@@ -1,6 +1,6 @@
 // ================== 工具函数模块 ==================
 
-import type { BatchKeySettings } from './ui';
+import type { BatchKeySettings } from '@/core/ui';
 
 // ================== 操作系统检测 ==================
 

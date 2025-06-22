@@ -15,10 +15,16 @@
   "devDependencies": {
     "@eslint/js": "^9.29.0",
     "@stylistic/eslint-plugin": "^4.4.1",
+    "@types/node": "^24.0.3",
+    "@vitejs/plugin-vue": "^5.2.4",
     "eslint": "^9.29.0",
     "globals": "^16.2.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
-    "vite-plugin-monkey": "^5.0.9"
+    "vite-plugin-monkey": "^5.0.9",
+    "vue-tsc": "^2.2.10"
+  },
+  "dependencies": {
+    "vue": "^3.5.17"
   }
 }

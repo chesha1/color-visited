@@ -1,7 +1,7 @@
 // ================== UI 组件模块 ==================
 
-import { config } from './config';
-import { getSyncSettings, saveSyncSettings, validateGitHubToken } from './sync';
+import { config } from '@/core/config';
+import { getSyncSettings, saveSyncSettings, validateGitHubToken } from '@/core/sync';
 
 // ================== 通知组件 ==================
 
