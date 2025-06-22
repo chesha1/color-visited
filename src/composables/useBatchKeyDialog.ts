@@ -1,5 +1,5 @@
-import { ref } from 'vue'
-import type { BatchKeySettings } from '@/components/BatchKeySettingsDialog.vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { eventBus, type BatchKeySettings } from '@/core/eventBus'
 
 export function useBatchKeyDialog() {
   const visible = ref(false)
@@ -22,7 +22,7 @@ export function useBatchKeyDialog() {
   let onSaveCallback: ((settings: BatchKeySettings) => void) | null = null
   let onResetCallback: (() => void) | null = null
 
-  const show = (
+  const handleShowDialog = (
     current: BatchKeySettings,
     defaults: BatchKeySettings,
     mac: boolean,
@@ -45,8 +45,15 @@ export function useBatchKeyDialog() {
     onResetCallback?.()
   }
 
-  // 注册全局方法供 core 层调用
-  ;(window as any).showVueBatchKeySettingsDialog = show
+  // 组件挂载时注册事件监听
+  onMounted(() => {
+    eventBus.on('showBatchKeyDialog', handleShowDialog)
+  })
+
+  // 组件卸载时移除事件监听
+  onUnmounted(() => {
+    eventBus.off('showBatchKeyDialog', handleShowDialog)
+  })
 
   return {
     visible,

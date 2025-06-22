@@ -7,7 +7,7 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
-const includeArray = Object.keys(PRESET_RULES).map(key => PRESET_RULES[key].pages).flat();
+const includeArray = Object.values(PRESET_RULES).flatMap(rule => rule.pages);
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -30,7 +30,7 @@ export default defineConfig({
       entry: 'src/main.ts',
       userscript: {
         name: 'color-visited 对已访问过的链接染色',
-        version: '2.0.3',
+        version: '2.0.4',
         description: '把访问过的链接染色成灰色',
         author: 'chesha1',
         license: 'GPL-3.0-only',

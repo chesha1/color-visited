@@ -2,6 +2,7 @@
 
 import { config } from '@/core/config';
 import { getSyncSettings, saveSyncSettings, validateGitHubToken } from '@/core/sync';
+import { eventBus, type BatchKeySettings } from '@/core/eventBus';
 
 // ================== 通知组件 ==================
 
@@ -57,14 +58,6 @@ export function removeCustomStyles(): void {
 
 // ================== 快捷键设置对话框 ==================
 
-export interface BatchKeySettings {
-  ctrlKey: boolean;
-  shiftKey: boolean;
-  altKey: boolean;
-  metaKey: boolean;
-  key: string;
-}
-
 // 显示批量记录快捷键设置弹窗
 export function showBatchKeySettingsDialog(
   currentSettings: BatchKeySettings,
@@ -73,18 +66,8 @@ export function showBatchKeySettingsDialog(
   onSave: (settings: BatchKeySettings) => void,
   onReset: () => void
 ): void {
-  // 调用 Vue 组件
-  if ((window as any).showVueBatchKeySettingsDialog) {
-    (window as any).showVueBatchKeySettingsDialog(
-      currentSettings,
-      defaultSettings,
-      isMac,
-      onSave,
-      onReset
-    );
-  } else {
-    console.error('Vue 组件未加载');
-  }
+  // 通过事件总线发送显示对话框事件
+  eventBus.emit('showBatchKeyDialog', currentSettings, defaultSettings, isMac, onSave, onReset);
 }
 
 

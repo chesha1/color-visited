@@ -50,14 +50,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-
-export interface BatchKeySettings {
-  ctrlKey: boolean
-  shiftKey: boolean
-  altKey: boolean
-  metaKey: boolean
-  key: string
-}
+import type { BatchKeySettings } from '@/core/eventBus'
 
 interface Props {
   modelValue: boolean

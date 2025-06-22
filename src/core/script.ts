@@ -9,9 +9,9 @@ import {
   injectCustomStyles,
   removeCustomStyles,
   showBatchKeySettingsDialog,
-  showSyncSettingsDialog,
-  type BatchKeySettings
+  showSyncSettingsDialog
 } from '@/core/ui';
+import { type BatchKeySettings } from '@/core/eventBus';
 import {
   isMac,
   defaultBatchKeySettings,
