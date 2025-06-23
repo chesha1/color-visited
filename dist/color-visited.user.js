@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.0.6
+// @version      2.0.7
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -73,7 +73,7 @@
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
   var require_main_001 = __commonJS({
-    "main-DmTedd4R.js"(exports, module) {
+    "main-EzSjbShl.js"(exports, module) {
       /**
       * @vue/shared v3.5.17
       * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -15447,75 +15447,30 @@
       }
       const emitter = mitt();
       const eventBus = emitter;
-      function useBatchKeyDialog() {
-        const visible = ref(false);
-        const currentSettings = ref({
-          ctrlKey: false,
-          shiftKey: false,
-          altKey: false,
-          metaKey: false,
-          key: ""
-        });
-        const defaultSettings = ref({
-          ctrlKey: false,
-          shiftKey: false,
-          altKey: false,
-          metaKey: false,
-          key: ""
-        });
-        const isMac2 = ref(false);
-        let onSaveCallback = null;
-        let onResetCallback = null;
-        const handleShowDialog = (data) => {
-          currentSettings.value = data.currentSettings;
-          defaultSettings.value = data.defaultSettings;
-          isMac2.value = data.isMac;
-          onSaveCallback = data.onSave;
-          onResetCallback = data.onReset;
-          visible.value = true;
-        };
-        const handleSave = (settings) => {
-          onSaveCallback == null ? void 0 : onSaveCallback(settings);
-        };
-        const handleReset = () => {
-          onResetCallback == null ? void 0 : onResetCallback();
-        };
-        onMounted(() => {
-          eventBus.on("showBatchKeyDialog", handleShowDialog);
-        });
-        onUnmounted(() => {
-          eventBus.off("showBatchKeyDialog", handleShowDialog);
-        });
-        return {
-          visible,
-          currentSettings,
-          defaultSettings,
-          isMac: isMac2,
-          handleSave,
-          handleReset
-        };
-      }
       const _sfc_main = /* @__PURE__ */ defineComponent({
         __name: "App",
         setup(__props) {
-          const {
-            visible,
-            currentSettings,
-            defaultSettings,
-            isMac: isMac2,
-            handleSave,
-            handleReset
-          } = useBatchKeyDialog();
+          const dialogData = ref(null);
+          const handleShowDialog = (data) => {
+            dialogData.value = { ...data, visible: true };
+          };
+          onMounted(() => {
+            eventBus.on("showBatchKeyDialog", handleShowDialog);
+          });
+          onUnmounted(() => {
+            eventBus.off("showBatchKeyDialog", handleShowDialog);
+          });
           return (_ctx, _cache) => {
-            return openBlock(), createBlock(BatchKeySettingsDialog, {
-              modelValue: unref(visible),
-              "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => isRef(visible) ? visible.value = $event : null),
-              "current-settings": unref(currentSettings),
-              "default-settings": unref(defaultSettings),
-              "is-mac": unref(isMac2),
-              onSave: unref(handleSave),
-              onReset: unref(handleReset)
-            }, null, 8, ["modelValue", "current-settings", "default-settings", "is-mac", "onSave", "onReset"]);
+            return dialogData.value ? (openBlock(), createBlock(BatchKeySettingsDialog, {
+              key: 0,
+              modelValue: dialogData.value.visible,
+              "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => dialogData.value.visible = $event),
+              "current-settings": dialogData.value.currentSettings,
+              "default-settings": dialogData.value.defaultSettings,
+              "is-mac": dialogData.value.isMac,
+              onSave: dialogData.value.onSave,
+              onReset: dialogData.value.onReset
+            }, null, 8, ["modelValue", "current-settings", "default-settings", "is-mac", "onSave", "onReset"])) : createCommentVNode("", true);
           };
         }
       });
