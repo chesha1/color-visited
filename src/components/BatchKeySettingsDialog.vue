@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onUnmounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { BatchKeySettings } from '@/core/eventBus'
 
@@ -145,8 +145,13 @@ watch(() => props.currentSettings, (newSettings) => {
   formData.value = { ...newSettings }
 }, { immediate: true, deep: true })
 
-onMounted(() => {
-  document.addEventListener('keydown', handleKeyDown)
+// 监听对话框显示状态，只在对话框显示时添加键盘监听器
+watch(visible, (isVisible) => {
+  if (isVisible) {
+    document.addEventListener('keydown', handleKeyDown)
+  } else {
+    document.removeEventListener('keydown', handleKeyDown)
+  }
 })
 
 onUnmounted(() => {
