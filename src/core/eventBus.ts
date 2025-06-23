@@ -2,14 +2,25 @@
 
 import mitt, { type Emitter } from 'mitt';
 
+// 定义常规设置接口
+export interface GeneralSettings {
+  color: string;
+  expirationTime: number;
+  debug: boolean;
+}
+
 // 定义事件类型
-export interface Events {
-  'showBatchKeyDialog': {
+export type Events = {
+  'showSettingsDialog': {
     currentSettings: BatchKeySettings;
     defaultSettings: BatchKeySettings;
+    currentGeneralSettings: GeneralSettings;
+    defaultGeneralSettings: GeneralSettings;
     isMac: boolean;
     onSave: (settings: BatchKeySettings) => void;
     onReset: () => void;
+    onGeneralSave: (settings: GeneralSettings) => void;
+    onGeneralReset: () => void;
   };
   'showSyncDialog': {
     onMenuUpdate: () => void;

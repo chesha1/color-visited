@@ -8,10 +8,10 @@ import {
   showNotification,
   injectCustomStyles,
   removeCustomStyles,
-  showBatchKeySettingsDialog,
+  showSettingsDialog,
   showSyncSettingsDialog
 } from '@/core/ui';
-import { type BatchKeySettings } from '@/core/eventBus';
+import { type BatchKeySettings, type GeneralSettings } from '@/core/eventBus';
 import {
   isMac,
   defaultBatchKeySettings,
@@ -44,6 +44,22 @@ export function startColorVisitedScript() {
   // 从存储中读取快捷键设置，如果没有则使用默认设置
   let batchKeySettings: BatchKeySettings = GM_getValue('batch_shortcut_settings', defaultBatchKeySettings);
 
+  // 从配置中获取常规设置
+  const getGeneralSettings = (): GeneralSettings => ({
+    color: GM_getValue('color_setting', config.color),
+    expirationTime: GM_getValue('expiration_time_setting', config.expirationTime),
+    debug: GM_getValue('debug_setting', config.debug)
+  });
+
+  // 默认常规设置
+  const defaultGeneralSettings: GeneralSettings = {
+    color: config.color,
+    expirationTime: config.expirationTime,
+    debug: config.debug
+  };
+
+  let currentGeneralSettings = getGeneralSettings();
+
   // 批量记录快捷键处理器
   let batchKeyHandler: ((event: KeyboardEvent) => void) | null = null;
 
@@ -54,6 +70,11 @@ export function startColorVisitedScript() {
 
   // 脚本启动和全局初始化 - 负责整个脚本的启动配置、菜单设置、URL监听
   function startScript() {
+    // 从存储中恢复常规设置到config对象
+    (config as any).color = currentGeneralSettings.color;
+    (config as any).expirationTime = currentGeneralSettings.expirationTime;
+    (config as any).debug = currentGeneralSettings.debug;
+    
     updateMenu();
 
     // 如果启用同步，在后台进行启动同步（不阻塞主流程）
@@ -155,10 +176,12 @@ export function startColorVisitedScript() {
     GM_registerMenuCommand(toggleText, toggleScript);
     GM_registerMenuCommand('清除所有记住的链接', clearLinks);
     GM_registerMenuCommand('批量记录当前页面链接', batchAddLinks);
-    GM_registerMenuCommand('设置批量记录快捷键', () => {
-      showBatchKeySettingsDialog(
+    GM_registerMenuCommand('设置', () => {
+      showSettingsDialog(
         batchKeySettings,
         defaultBatchKeySettings,
+        currentGeneralSettings,
+        defaultGeneralSettings,
         isMac,
         (newSettings) => {
           batchKeySettings = newSettings;
@@ -167,6 +190,30 @@ export function startColorVisitedScript() {
         () => {
           batchKeySettings = Object.assign({}, defaultBatchKeySettings);
           GM_setValue('batch_shortcut_settings', defaultBatchKeySettings);
+        },
+        (newGeneralSettings) => {
+          currentGeneralSettings = newGeneralSettings;
+          GM_setValue('color_setting', newGeneralSettings.color);
+          GM_setValue('expiration_time_setting', newGeneralSettings.expirationTime);
+          GM_setValue('debug_setting', newGeneralSettings.debug);
+          // 更新config对象以便立即生效
+          (config as any).color = newGeneralSettings.color;
+          (config as any).expirationTime = newGeneralSettings.expirationTime;
+          (config as any).debug = newGeneralSettings.debug;
+          // 重新设置页面以应用新设置
+          setupPage();
+        },
+        () => {
+          currentGeneralSettings = { ...defaultGeneralSettings };
+          GM_setValue('color_setting', defaultGeneralSettings.color);
+          GM_setValue('expiration_time_setting', defaultGeneralSettings.expirationTime);
+          GM_setValue('debug_setting', defaultGeneralSettings.debug);
+          // 更新config对象以便立即生效
+          (config as any).color = defaultGeneralSettings.color;
+          (config as any).expirationTime = defaultGeneralSettings.expirationTime;
+          (config as any).debug = defaultGeneralSettings.debug;
+          // 重新设置页面以应用新设置
+          setupPage();
         }
       );
     });

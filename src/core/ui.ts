@@ -2,7 +2,7 @@
 
 import { config } from '@/core/config';
 import { getSyncSettings, saveSyncSettings, validateGitHubToken } from '@/core/sync';
-import { eventBus, type BatchKeySettings } from '@/core/eventBus';
+import { eventBus, type BatchKeySettings, type GeneralSettings } from '@/core/eventBus';
 
 // ================== 通知组件 ==================
 
@@ -58,21 +58,29 @@ export function removeCustomStyles(): void {
 
 // ================== 快捷键设置对话框 ==================
 
-// 显示批量记录快捷键设置弹窗
-export function showBatchKeySettingsDialog(
+// 显示设置弹窗（包含快捷键和常规设置）
+export function showSettingsDialog(
   currentSettings: BatchKeySettings,
   defaultSettings: BatchKeySettings,
+  currentGeneralSettings: GeneralSettings,
+  defaultGeneralSettings: GeneralSettings,
   isMac: boolean,
   onSave: (settings: BatchKeySettings) => void,
-  onReset: () => void
+  onReset: () => void,
+  onGeneralSave: (settings: GeneralSettings) => void,
+  onGeneralReset: () => void
 ): void {
   // 通过事件总线发送显示对话框事件
-  eventBus.emit('showBatchKeyDialog', {
+  eventBus.emit('showSettingsDialog', {
     currentSettings,
     defaultSettings,
+    currentGeneralSettings,
+    defaultGeneralSettings,
     isMac,
     onSave,
-    onReset
+    onReset,
+    onGeneralSave,
+    onGeneralReset
   });
 }
 
