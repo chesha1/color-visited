@@ -22,18 +22,18 @@ export function useBatchKeyDialog() {
   let onSaveCallback: ((settings: BatchKeySettings) => void) | null = null
   let onResetCallback: (() => void) | null = null
 
-  const handleShowDialog = (
-    current: BatchKeySettings,
-    defaults: BatchKeySettings,
-    mac: boolean,
-    onSave: (settings: BatchKeySettings) => void,
-    onReset: () => void
-  ) => {
-    currentSettings.value = current
-    defaultSettings.value = defaults
-    isMac.value = mac
-    onSaveCallback = onSave
-    onResetCallback = onReset
+  const handleShowDialog = (data: {
+    currentSettings: BatchKeySettings;
+    defaultSettings: BatchKeySettings;
+    isMac: boolean;
+    onSave: (settings: BatchKeySettings) => void;
+    onReset: () => void;
+  }) => {
+    currentSettings.value = data.currentSettings
+    defaultSettings.value = data.defaultSettings
+    isMac.value = data.isMac
+    onSaveCallback = data.onSave
+    onResetCallback = data.onReset
     visible.value = true
   }
 

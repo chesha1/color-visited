@@ -67,7 +67,13 @@ export function showBatchKeySettingsDialog(
   onReset: () => void
 ): void {
   // 通过事件总线发送显示对话框事件
-  eventBus.emit('showBatchKeyDialog', currentSettings, defaultSettings, isMac, onSave, onReset);
+  eventBus.emit('showBatchKeyDialog', {
+    currentSettings,
+    defaultSettings,
+    isMac,
+    onSave,
+    onReset
+  });
 }
 
 

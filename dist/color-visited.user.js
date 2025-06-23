@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.0.5
+// @version      2.0.6
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -68,15 +68,12 @@
 (function () {
   'use strict';
 
-  var __defProp = Object.defineProperty;
   var __getOwnPropNames = Object.getOwnPropertyNames;
-  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __commonJS = (cb, mod) => function __require() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
-  var __publicField = (obj, key, value) => __defNormalProp(obj, key + "" , value);
   var require_main_001 = __commonJS({
-    "main-BTm7Jjuw.js"(exports, module) {
+    "main-DmTedd4R.js"(exports, module) {
       /**
       * @vue/shared v3.5.17
       * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -8868,19 +8865,19 @@
         SwipeDirection2["LEFT"] = "LEFT";
         SwipeDirection2["NONE"] = "NONE";
       })(SwipeDirection || (SwipeDirection = {}));
-      var __defProp2 = Object.defineProperty;
+      var __defProp = Object.defineProperty;
       var __getOwnPropSymbols = Object.getOwnPropertySymbols;
       var __hasOwnProp = Object.prototype.hasOwnProperty;
       var __propIsEnum = Object.prototype.propertyIsEnumerable;
-      var __defNormalProp2 = (obj, key, value) => key in obj ? __defProp2(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+      var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
       var __spreadValues = (a, b) => {
         for (var prop in b || (b = {}))
           if (__hasOwnProp.call(b, prop))
-            __defNormalProp2(a, prop, b[prop]);
+            __defNormalProp(a, prop, b[prop]);
         if (__getOwnPropSymbols)
           for (var prop of __getOwnPropSymbols(b)) {
             if (__propIsEnum.call(b, prop))
-              __defNormalProp2(a, prop, b[prop]);
+              __defNormalProp(a, prop, b[prop]);
           }
         return a;
       };
@@ -15432,51 +15429,24 @@
         return target;
       };
       const BatchKeySettingsDialog = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-2164e75c"]]);
-      class EventBus {
-        constructor() {
-          __publicField(this, "listeners", {});
-        }
-        on(event, callback) {
-          if (!this.listeners[event]) {
-            this.listeners[event] = [];
-          }
-          this.listeners[event].push(callback);
-        }
-        off(event, callback) {
-          if (!this.listeners[event]) return;
-          const index = this.listeners[event].indexOf(callback);
-          if (index > -1) {
-            this.listeners[event].splice(index, 1);
-          }
-        }
-        emit(event, ...args) {
-          const callbacks = this.listeners[event];
-          if (!callbacks || callbacks.length === 0) {
-            console.warn(`事件 "${event}" 没有监听器`);
-            return;
-          }
-          callbacks.forEach((callback) => {
-            try {
-              callback(...args);
-            } catch (error) {
-              console.error(`事件 "${event}" 的回调函数执行出错:`, error);
-            }
+      function mitt(n) {
+        return { all: n = n || /* @__PURE__ */ new Map(), on: function(t, e) {
+          var i = n.get(t);
+          i ? i.push(e) : n.set(t, [e]);
+        }, off: function(t, e) {
+          var i = n.get(t);
+          i && (e ? i.splice(i.indexOf(e) >>> 0, 1) : n.set(t, []));
+        }, emit: function(t, e) {
+          var i = n.get(t);
+          i && i.slice().map(function(n2) {
+            n2(e);
+          }), (i = n.get("*")) && i.slice().map(function(n2) {
+            n2(t, e);
           });
-        }
-        /**
-         * 移除所有监听器
-         */
-        clear() {
-          this.listeners = {};
-        }
-        /**
-         * 检查是否有监听器
-         */
-        hasListeners(event) {
-          return !!(this.listeners[event] && this.listeners[event].length > 0);
-        }
+        } };
       }
-      const eventBus = new EventBus();
+      const emitter = mitt();
+      const eventBus = emitter;
       function useBatchKeyDialog() {
         const visible = ref(false);
         const currentSettings = ref({
@@ -15496,12 +15466,12 @@
         const isMac2 = ref(false);
         let onSaveCallback = null;
         let onResetCallback = null;
-        const handleShowDialog = (current, defaults, mac, onSave, onReset) => {
-          currentSettings.value = current;
-          defaultSettings.value = defaults;
-          isMac2.value = mac;
-          onSaveCallback = onSave;
-          onResetCallback = onReset;
+        const handleShowDialog = (data) => {
+          currentSettings.value = data.currentSettings;
+          defaultSettings.value = data.defaultSettings;
+          isMac2.value = data.isMac;
+          onSaveCallback = data.onSave;
+          onResetCallback = data.onReset;
           visible.value = true;
         };
         const handleSave = (settings) => {
@@ -16013,7 +15983,13 @@
         }
       }
       function showBatchKeySettingsDialog(currentSettings, defaultSettings, isMac2, onSave, onReset) {
-        eventBus.emit("showBatchKeyDialog", currentSettings, defaultSettings, isMac2, onSave, onReset);
+        eventBus.emit("showBatchKeyDialog", {
+          currentSettings,
+          defaultSettings,
+          isMac: isMac2,
+          onSave,
+          onReset
+        });
       }
       function showSyncSettingsDialog(onMenuUpdate) {
         const syncSettings = getSyncSettings();
