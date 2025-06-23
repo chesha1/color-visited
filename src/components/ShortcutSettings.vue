@@ -4,7 +4,7 @@
       <h3>批量记录快捷键设置</h3>
       <p class="content-desc">自定义批量标记链接的快捷键组合</p>
     </div>
-    <el-form :model="formData" label-width="120px" class="settings-form">
+    <el-form :model="formData" label-width="7.5rem" class="settings-form">
       <el-form-item label="当前快捷键" class="shortcut-display-item">
         <el-input
           v-model="currentShortcutDisplay"

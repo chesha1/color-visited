@@ -1,9 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="设置"
-    width="900px"
-    :show-close="false"
+    width="56.25rem"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
     class="settings-dialog"
@@ -57,14 +55,6 @@
         />
       </div>
     </div>
-
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="handleCancel" size="large">
-          关闭
-        </el-button>
-      </div>
-    </template>
   </el-dialog>
 </template>
 

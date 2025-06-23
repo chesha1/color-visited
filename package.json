@@ -19,6 +19,7 @@
     "@vitejs/plugin-vue": "^5.2.4",
     "eslint": "^9.29.0",
     "globals": "^16.2.0",
+    "postcss-pxtorem": "^6.1.0",
     "typescript": "^5.8.3",
     "unplugin-auto-import": "^19.3.0",
     "unplugin-vue-components": "^28.7.0",

@@ -4,7 +4,7 @@
       <h3>常规设置</h3>
       <p class="content-desc">自定义链接颜色和行为设置</p>
     </div>
-    <el-form :model="formData" label-width="120px" class="settings-form">
+    <el-form :model="formData" label-width="7.5rem" class="settings-form">
       <el-form-item label="链接颜色" class="color-form-item">
         <div class="color-picker-container">
           <el-color-picker
