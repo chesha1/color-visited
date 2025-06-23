@@ -19,6 +19,9 @@ declare module 'vue' {
     ElMenu: typeof import('element-plus/es')['ElMenu']
     ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
     ElSwitch: typeof import('element-plus/es')['ElSwitch']
+    GeneralSettings: typeof import('./components/GeneralSettings.vue')['default']
+    PresetSettings: typeof import('./components/PresetSettings.vue')['default']
     SettingsDialog: typeof import('./components/SettingsDialog.vue')['default']
+    ShortcutSettings: typeof import('./components/ShortcutSettings.vue')['default']
   }
 }

@@ -2,10 +2,11 @@
   <el-dialog
     v-model="visible"
     title="设置"
-    width="800px"
+    width="900px"
     :show-close="false"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
+    class="settings-dialog"
     @closed="handleClosed"
   >
     <div class="settings-panel">
@@ -16,13 +17,13 @@
           class="sidebar-menu"
           @select="handleTabSelect"
         >
-          <el-menu-item index="general">
+          <el-menu-item index="general" class="menu-item">
             <span>常规设置</span>
           </el-menu-item>
-          <el-menu-item index="presets">
+          <el-menu-item index="presets" class="menu-item">
             <span>预设网站</span>
           </el-menu-item>
-          <el-menu-item index="shortcut">
+          <el-menu-item index="shortcut" class="menu-item">
             <span>批量记录快捷键</span>
           </el-menu-item>
         </el-menu>
@@ -31,102 +32,35 @@
       <!-- 右侧内容区域 -->
       <div class="content">
         <!-- 常规设置 -->
-        <div v-show="activeTab === 'general'" class="tab-content">
-          <h3>常规设置</h3>
-          <el-form :model="generalFormData" label-width="120px">
-            <el-form-item label="链接颜色">
-              <el-color-picker
-                v-model="generalFormData.color"
-                show-alpha
-                :predefine="colorPresets"
-              />
-              <el-input
-                v-model="generalFormData.color"
-                style="width: 200px; margin-left: 10px;"
-                placeholder="请输入颜色值"
-              />
-            </el-form-item>
-            
-            <el-form-item label="过期时间">
-              <el-input-number
-                v-model="expirationDays"
-                :min="1"
-                :max="3650"
-                controls-position="right"
-                style="width: 200px;"
-              />
-              <span style="margin-left: 10px; color: #909399;">天</span>
-            </el-form-item>
-            
-            <el-form-item label="调试模式">
-              <el-switch
-                v-model="generalFormData.debug"
-                active-text="开启"
-                inactive-text="关闭"
-              />
-            </el-form-item>
-          </el-form>
-          
-          <div class="tab-footer">
-            <el-button @click="handleGeneralReset" type="primary" plain>
-              重置为默认
-            </el-button>
-            <el-button
-              type="primary"
-              @click="handleGeneralSave"
-            >
-              保存
-            </el-button>
-          </div>
-        </div>
+        <GeneralSettingsComponent
+          v-show="activeTab === 'general'"
+          :current-settings="currentGeneralSettings"
+          :default-settings="defaultGeneralSettings"
+          @save="handleGeneralSave"
+          @reset="handleGeneralReset"
+        />
         
         <!-- 预设网站 -->
-        <div v-show="activeTab === 'presets'" class="tab-content">
-          <h3>预设网站</h3>
-          <p class="placeholder">预设网站功能正在开发中...</p>
-        </div>
+        <PresetSettingsComponent
+          v-show="activeTab === 'presets'"
+        />
         
         <!-- 批量记录快捷键设置 -->
-        <div v-show="activeTab === 'shortcut'" class="tab-content">
-          <h3>批量记录快捷键设置</h3>
-          <el-form :model="formData" label-width="120px">
-            <el-form-item label="当前快捷键">
-              <el-input
-                v-model="currentShortcutDisplay"
-                readonly
-                style="text-align: center; font-weight: bold;"
-              />
-            </el-form-item>
-            
-            <el-form-item>
-              <el-alert
-                :title="hintText"
-                type="info"
-                show-icon
-                :closable="false"
-              />
-            </el-form-item>
-          </el-form>
-          
-          <div class="tab-footer">
-            <el-button @click="handleReset" type="primary" plain>
-              重置为默认
-            </el-button>
-            <el-button
-              type="primary"
-              @click="handleSave"
-              :disabled="!hasNewKeyPress"
-            >
-              保存
-            </el-button>
-          </div>
-        </div>
+        <ShortcutSettingsComponent
+          v-show="activeTab === 'shortcut'"
+          :current-settings="currentSettings"
+          :default-settings="defaultSettings"
+          :is-mac="isMac"
+          :visible="visible"
+          @save="handleSave"
+          @reset="handleReset"
+        />
       </div>
     </div>
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleCancel">
+        <el-button @click="handleCancel" size="large">
           关闭
         </el-button>
       </div>
@@ -135,9 +69,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed } from 'vue'
 import type { BatchKeySettings, GeneralSettings } from '@/core/eventBus'
+import GeneralSettingsComponent from './GeneralSettings.vue'
+import PresetSettingsComponent from './PresetSettings.vue'
+import ShortcutSettingsComponent from './ShortcutSettings.vue'
 
 interface Props {
   modelValue: boolean
@@ -165,76 +101,10 @@ const visible = computed({
 })
 
 const activeTab = ref('general')
-const formData = ref<BatchKeySettings>({ ...props.currentSettings })
-const newSettings = ref<BatchKeySettings>({ ...props.currentSettings })
-const hasNewKeyPress = ref(false)
 
-// 常规设置相关状态
-const generalFormData = ref<GeneralSettings>({ ...props.currentGeneralSettings })
-const colorPresets = [
-  '#f1f5f9', // slate-100
-  '#e2e8f0', // slate-200
-  '#cbd5e1', // slate-300
-  '#94a3b8', // slate-400
-  '#64748b', // slate-500
-  '#475569', // slate-600
-  '#334155', // slate-700
-  '#1e293b', // slate-800
-  '#0f172a', // slate-900
-]
-
-// 过期时间（天数）
-const expirationDays = computed({
-  get: () => Math.round(generalFormData.value.expirationTime / (1000 * 60 * 60 * 24)),
-  set: (days: number) => {
-    generalFormData.value.expirationTime = days * 1000 * 60 * 60 * 24
-  }
-})
-
-const hintText = computed(() => {
-  return hasNewKeyPress.value 
-    ? '已记录新快捷键，点击保存应用设置'
-    : '请按下您想要使用的快捷键组合...'
-})
-
-const currentShortcutDisplay = computed(() => {
-  const settings = hasNewKeyPress.value ? newSettings.value : formData.value
-  const shortcutText: string[] = []
-
-  if (settings.metaKey) shortcutText.push(props.isMac ? '⌘ Command' : 'Win')
-  if (settings.ctrlKey) shortcutText.push(props.isMac ? '⌃ Control' : 'Ctrl')
-  if (settings.altKey) shortcutText.push(props.isMac ? '⌥ Option' : 'Alt')
-  if (settings.shiftKey) shortcutText.push(props.isMac ? '⇧ Shift' : 'Shift')
-  shortcutText.push(settings.key)
-
-  return shortcutText.join(' + ')
-})
-
-const handleKeyDown = (e: KeyboardEvent) => {
-  // 忽略单独的修饰键按下
-  if (e.key === 'Control' || e.key === 'Shift' || e.key === 'Alt' || e.key === 'Meta') {
-    return
-  }
-
-  e.preventDefault()
-
-  newSettings.value = {
-    ctrlKey: e.ctrlKey,
-    shiftKey: e.shiftKey,
-    altKey: e.altKey,
-    metaKey: e.metaKey,
-    key: e.key.toUpperCase(),
-  }
-
-  hasNewKeyPress.value = true
-}
-
-const handleSave = () => {
-  if (hasNewKeyPress.value) {
-    emit('save', newSettings.value)
-    visible.value = false
-    ElMessage.success('批量记录快捷键设置已保存！')
-  }
+const handleSave = (settings: BatchKeySettings) => {
+  emit('save', settings)
+  visible.value = false
 }
 
 const handleCancel = () => {
@@ -244,19 +114,14 @@ const handleCancel = () => {
 const handleReset = () => {
   emit('reset')
   visible.value = false
-  ElMessage.success('批量记录快捷键已重置为默认！')
 }
 
-// 常规设置保存
-const handleGeneralSave = () => {
-  emit('generalSave', { ...generalFormData.value })
-  ElMessage.success('常规设置已保存！')
+const handleGeneralSave = (settings: GeneralSettings) => {
+  emit('generalSave', settings)
 }
 
-// 常规设置重置
 const handleGeneralReset = () => {
   emit('generalReset')
-  ElMessage.success('常规设置已重置为默认！')
 }
 
 const handleTabSelect = (index: string) => {
@@ -266,84 +131,139 @@ const handleTabSelect = (index: string) => {
 const handleClosed = () => {
   // 重置状态
   activeTab.value = 'general'
-  formData.value = { ...props.currentSettings }
-  newSettings.value = { ...props.currentSettings }
-  hasNewKeyPress.value = false
-  generalFormData.value = { ...props.currentGeneralSettings }
 }
-
-// 监听 props.currentSettings 变化，同步更新 formData
-watch(() => props.currentSettings, (newSettings) => {
-  formData.value = { ...newSettings }
-}, { immediate: true, deep: true })
-
-// 监听 props.currentGeneralSettings 变化，同步更新 generalFormData
-watch(() => props.currentGeneralSettings, (newSettings) => {
-  generalFormData.value = { ...newSettings }
-}, { immediate: true, deep: true })
-
-// 监听对话框显示状态，只在对话框显示时添加键盘监听器
-watch(visible, (isVisible) => {
-  if (isVisible) {
-    document.addEventListener('keydown', handleKeyDown)
-  } else {
-    document.removeEventListener('keydown', handleKeyDown)
-  }
-})
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeyDown)
-})
 </script>
 
 <style scoped>
-.settings-panel {
-  display: flex;
-  height: 500px;
+/* 对话框整体样式 */
+:deep(.settings-dialog) {
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
 
+:deep(.settings-dialog .el-dialog__header) {
+  padding: 1.25rem 1.5rem;
+  margin: 0;
+  border-bottom: none;
+}
+
+:deep(.settings-dialog .el-dialog__title) {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+:deep(.settings-dialog .el-dialog__body) {
+  padding: 0;
+}
+
+:deep(.settings-dialog .el-dialog__footer) {
+  border-top: 0.0625rem solid #f0f0f0;
+  background-color: #fafafa;
+  padding: 1rem 1.5rem;
+}
+
+/* 主面板布局 */
+.settings-panel {
+  display: flex;
+  height: 35rem;
+  background-color: #ffffff;
+}
+
+/* 侧边栏样式 */
 .sidebar {
-  width: 200px;
-  border-right: 1px solid #e6e6e6;
+  width: 13.75rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-right: 0.0625rem solid #e2e8f0;
 }
 
 .sidebar-menu {
   border-right: none;
   height: 100%;
+  background: transparent;
 }
 
+:deep(.sidebar-menu .el-menu-item) {
+  height: 3.5rem;
+  line-height: 3.5rem;
+  margin: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+:deep(.sidebar-menu .el-menu-item.is-active) {
+  background-color: var(--el-color-primary);
+  color: white;
+}
+
+/* 移除标签页内文字的 hover 效果 */
+:deep(.sidebar-menu .el-menu-item span:hover) {
+  background-color: transparent !important;
+}
+
+/* 移除输入框内部文字 hover 时的额外框效果 */
+:deep(.el-input__inner:hover) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+:deep(.el-input-number__inner:hover) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* 内容区域样式 */
 .content {
   flex: 1;
-  padding: 20px;
+  padding: 2rem;
   overflow-y: auto;
+  background-color: #ffffff;
 }
 
-.tab-content {
-  height: 100%;
-}
-
-.tab-content h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  color: #303133;
-  font-size: 18px;
-}
-
-.tab-footer {
-  margin-top: 30px;
-  display: flex;
-  gap: 10px;
-}
-
-.placeholder {
-  color: #909399;
-  text-align: center;
-  margin-top: 50px;
-  font-size: 14px;
-}
-
+/* 对话框底部 */
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
+}
+
+:deep(.dialog-footer .el-button) {
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+  .settings-panel {
+    flex-direction: column;
+    height: auto;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+  }
+  
+  .sidebar-menu {
+    display: flex;
+    height: 3.75rem;
+  }
+  
+  :deep(.sidebar-menu .el-menu-item) {
+    flex: 1;
+    text-align: center;
+    margin: 0.25rem;
+  }
+  
+  .content {
+    padding: 1.25rem;
+  }
 }
 </style>
