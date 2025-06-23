@@ -10,21 +10,15 @@
     <div class="settings-panel">
       <!-- 左侧标签页导航 -->
       <div class="sidebar">
-        <el-menu
-          v-model="activeTab"
-          class="sidebar-menu"
-          @select="handleTabSelect"
+        <div
+          v-for="item in menuItems"
+          :key="item.index"
+          :class="['color-block', { active: activeTab === item.index }]"
+          @click="handleTabSelect(item.index)"
         >
-          <el-menu-item index="general" class="menu-item">
-            <span>常规设置</span>
-          </el-menu-item>
-          <el-menu-item index="presets" class="menu-item">
-            <span>预设网站</span>
-          </el-menu-item>
-          <el-menu-item index="shortcut" class="menu-item">
-            <span>批量记录快捷键</span>
-          </el-menu-item>
-        </el-menu>
+          <div class="color-bar"></div>
+          <span class="label">{{ item.label }}</span>
+        </div>
       </div>
       
       <!-- 右侧内容区域 -->
@@ -91,6 +85,13 @@ const visible = computed({
 })
 
 const activeTab = ref('general')
+
+// 侧边栏彩色区块配置
+const menuItems = [
+  { index: 'general', label: '常规设置', color: '#f87171' },
+  { index: 'presets', label: '预设网站', color: '#34d399' },
+  { index: 'shortcut', label: '批量记录快捷键', color: '#60a5fa' },
+] as const
 
 const handleSave = (settings: BatchKeySettings) => {
   emit('save', settings)
@@ -208,6 +209,48 @@ const handleClosed = () => {
   justify-content: center;
 }
 
+/* 新侧边栏彩色区块样式 */
+.color-block {
+  display: flex;
+  align-items: center;
+  height: 3.5rem;
+  margin: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.color-bar {
+  width: 0.25rem;
+  height: 100%;
+  border-radius: 0.25rem 0 0 0.25rem;
+  margin-right: 0.75rem;
+  background-color: var(--el-color-primary, #409eff) !important;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.color-block .label {
+  flex: 1;
+  text-align: center;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #606266;
+  transition: color 0.3s ease;
+}
+
+.color-block.active {
+  background-color: var(--el-color-primary-light-9, #eef4ff);
+}
+
+.color-block.active .color-bar {
+  opacity: 1;
+}
+
+.color-block.active .label {
+  color: var(--el-color-primary, #409eff);
+  font-weight: 600;
+}
 
 /* 内容区域样式 */
 .content {

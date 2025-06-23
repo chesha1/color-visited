@@ -6,7 +6,6 @@ import path from 'path';
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-// @ts-ignore
 import postcssPxToRem from 'postcss-pxtorem';
 
 const includeArray = Object.values(PRESET_RULES).flatMap(rule => rule.pages);
@@ -43,7 +42,7 @@ export default defineConfig({
       entry: 'src/main.ts',
       userscript: {
         name: 'color-visited 对已访问过的链接染色',
-        version: '2.0.10',
+        version: '2.0.11',
         description: '把访问过的链接染色成灰色',
         author: 'chesha1',
         license: 'GPL-3.0-only',
