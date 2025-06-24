@@ -1,0 +1,11 @@
+/* Element Plus CSS 变量覆盖 */
+:root {
+  /* 输入框边框相关变量 */
+  --el-input-border-color: #dcdfe6;
+  --el-input-hover-border-color: #c0c4cc;
+  --el-input-focus-border-color: var(--el-color-primary);
+  --el-input-transparent-border: 0 0 0 1px transparent inset;
+  
+  /* 确保 inner 不显示边框 */
+  --el-input-inner-border: none;
+} 

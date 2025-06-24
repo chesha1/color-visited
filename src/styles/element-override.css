@@ -1,0 +1,92 @@
+/* Element Plus 样式覆盖 */
+
+/* 修复 el-input 双层边框问题 */
+.el-input__wrapper {
+  /* 使用 box-shadow 而不是 border 来创建边框效果 */
+  box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset;
+  border: none;
+  transition: box-shadow var(--el-transition-duration);
+}
+
+.el-input__inner {
+  /* 移除所有边框相关样式 */
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 确保各种状态下的样式正确 */
+.el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--el-input-hover-border-color, var(--el-border-color-hover)) inset;
+}
+
+.el-input__wrapper:focus,
+.el-input__wrapper:focus-within,
+.el-input.is-focus .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+}
+
+.el-input.is-disabled .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--el-input-disabled-border, var(--el-disabled-border-color)) inset;
+  background-color: var(--el-disabled-bg-color);
+  cursor: not-allowed;
+}
+
+/* 错误状态 */
+.el-input__wrapper.is-error,
+.el-form-item.is-error .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--el-color-danger) inset !important;
+}
+
+/* 清除可能的全局 input 样式影响 */
+.el-input input,
+.el-input__inner,
+.el-textarea__inner {
+  border: none;
+  outline: none;
+}
+
+/* 针对 textarea 的修复 */
+.el-textarea__inner {
+  border: none !important;
+  box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset !important;
+  transition: box-shadow var(--el-transition-duration);
+}
+
+.el-textarea__inner:hover {
+  box-shadow: 0 0 0 1px var(--el-input-hover-border-color, var(--el-border-color-hover)) inset !important;
+}
+
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+}
+
+/* 确保带前缀/后缀的输入框样式正确 */
+.el-input-group__prepend,
+.el-input-group__append {
+  border: 1px solid var(--el-input-border-color, var(--el-border-color));
+}
+
+.el-input-group--prepend .el-input__wrapper {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.el-input-group--append .el-input__wrapper {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* 清除任何可能的全局 CSS 重置影响 */
+.el-input *,
+.el-textarea * {
+  box-sizing: border-box;
+}
+
+/* 确保 clearable 按钮等内部元素没有边框 */
+.el-input__suffix,
+.el-input__prefix,
+.el-input__suffix-inner,
+.el-input__prefix-inner {
+  border: none;
+} 

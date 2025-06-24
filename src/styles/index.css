@@ -1,0 +1,32 @@
+/* 
+ * 全局样式入口文件
+ * 用于统一管理和引入所有样式文件
+ */
+
+/* Element Plus 变量覆盖 - 必须在 Element 样式之前 */
+@import './element-variables.css';
+
+/* Element Plus 样式修复 */
+@import './element-override.css';
+
+/* 其他全局样式可以在这里添加 */
+
+/* 全局 CSS 重置，避免影响 Element Plus 组件 */
+* {
+  box-sizing: border-box;
+}
+
+/* 确保所有 input 元素不会有浏览器默认边框 */
+input,
+textarea,
+select {
+  border: 0;
+  outline: 0;
+}
+
+/* 但排除非 Element Plus 的表单元素，避免影响其他组件 */
+input:not([class*="el-"]),
+textarea:not([class*="el-"]),
+select:not([class*="el-"]) {
+  border: 1px solid #dcdfe6;
+} 
