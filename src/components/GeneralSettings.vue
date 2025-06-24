@@ -24,18 +24,20 @@
       </el-form-item>
       
       <el-form-item label="过期时间" class="expiration-form-item">
-        <div class="input-with-unit">
-          <el-input-number
-            v-model="expirationDays"
-            :min="1"
-            :max="3650"
-            controls-position="right"
-            size="large"
-            class="expiration-input"
-          />
-          <span class="unit-text">天</span>
+        <div class="expiration-container">
+          <div class="input-with-unit">
+            <el-input-number
+              v-model="expirationDays"
+              :min="1"
+              :max="3650"
+              controls-position="right"
+              size="large"
+              class="expiration-input"
+            />
+            <span class="unit-text">天</span>
+          </div>
+          <div class="form-item-help">设置已访问链接的记录保留时间</div>
         </div>
-        <div class="form-item-help">设置已访问链接的记录保留时间</div>
       </el-form-item>
       
       <el-form-item label="调试模式" class="debug-form-item">
@@ -43,8 +45,6 @@
           <el-switch
             v-model="formData.debug"
             size="large"
-            active-text="开启"
-            inactive-text="关闭"
             inline-prompt
           />
           <div class="form-item-help">开启后将在控制台显示详细调试信息</div>
@@ -184,6 +184,13 @@ defineExpose({
   color: #6b7280;
   font-size: 0.875rem;
   font-weight: 500;
+}
+
+/* 过期时间输入&帮助文本容器 */
+.expiration-form-item .expiration-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* 调试模式样式 */
