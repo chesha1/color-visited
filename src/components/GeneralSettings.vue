@@ -19,7 +19,6 @@
             placeholder="请输入颜色值"
             clearable
           >
-            <template #prepend>#</template>
           </el-input>
         </div>
       </el-form-item>
