@@ -7,6 +7,9 @@
     class="settings-dialog"
     @closed="handleClosed"
   >
+    <template #header>
+      <span class="dialog-title">设置</span>
+    </template>
     <div class="settings-panel">
       <!-- 左侧标签页导航 -->
       <div class="sidebar">
@@ -28,8 +31,7 @@
           v-show="activeTab === 'general'"
           :current-settings="currentGeneralSettings"
           :default-settings="defaultGeneralSettings"
-          @save="handleGeneralSave"
-          @reset="handleGeneralReset"
+          ref="generalSettingsRef"
         />
         
         <!-- 预设网站 -->
@@ -44,11 +46,26 @@
           :default-settings="defaultSettings"
           :is-mac="isMac"
           :visible="visible"
-          @save="handleSave"
-          @reset="handleReset"
+          ref="shortcutSettingsRef"
         />
       </div>
     </div>
+    
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="handleReset" size="large" plain>
+          重置为默认
+        </el-button>
+        <el-button
+          type="primary"
+          size="large"
+          @click="handleSave"
+          :disabled="!canSave"
+        >
+          保存设置
+        </el-button>
+      </div>
+    </template>
   </el-dialog>
 </template>
 
@@ -85,6 +102,16 @@ const visible = computed({
 })
 
 const activeTab = ref('general')
+const generalSettingsRef = ref()
+const shortcutSettingsRef = ref()
+
+// 计算是否可以保存
+const canSave = computed(() => {
+  if (activeTab.value === 'shortcut') {
+    return shortcutSettingsRef.value?.hasNewKeyPress ?? false
+  }
+  return true
+})
 
 // 侧边栏彩色区块配置
 const menuItems = [
@@ -93,9 +120,21 @@ const menuItems = [
   { index: 'shortcut', label: '批量记录快捷键', color: '#60a5fa' },
 ] as const
 
-const handleSave = (settings: BatchKeySettings) => {
-  emit('save', settings)
-  visible.value = false
+const handleSave = () => {
+  if (activeTab.value === 'general') {
+    // 获取常规设置的当前数据并触发保存事件
+    const generalData = generalSettingsRef.value?.getFormData()
+    if (generalData) {
+      emit('generalSave', generalData)
+    }
+  } else if (activeTab.value === 'shortcut') {
+    // 获取快捷键设置的当前数据并触发保存事件
+    const shortcutData = shortcutSettingsRef.value?.getFormData()
+    if (shortcutData) {
+      emit('save', shortcutData)
+    }
+  }
+  // 预设网站暂时没有保存逻辑
 }
 
 const handleCancel = () => {
@@ -103,17 +142,14 @@ const handleCancel = () => {
 }
 
 const handleReset = () => {
-  emit('reset')
-  visible.value = false
+  if (activeTab.value === 'general') {
+    emit('generalReset')
+  } else if (activeTab.value === 'shortcut') {
+    emit('reset')
+  }
+  // 预设网站暂时没有重置逻辑
 }
 
-const handleGeneralSave = (settings: GeneralSettings) => {
-  emit('generalSave', settings)
-}
-
-const handleGeneralReset = () => {
-  emit('generalReset')
-}
 
 const handleTabSelect = (index: string) => {
   activeTab.value = index
@@ -151,6 +187,12 @@ const handleClosed = () => {
   border-top: 0.0625rem solid #f0f0f0;
   background-color: #fafafa;
   padding: 1rem 1.5rem;
+}
+
+.dialog-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
 }
 
 /* 主面板布局 */
@@ -264,12 +306,14 @@ const handleClosed = () => {
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
+  gap: 0.75rem;
 }
 
 :deep(.dialog-footer .el-button) {
-  padding: 0.625rem 1.25rem;
-  border-radius: 0.375rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
   font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 /* 响应式适配 */

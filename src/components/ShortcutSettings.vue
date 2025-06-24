@@ -28,20 +28,6 @@
         />
       </el-form-item>
     </el-form>
-    
-    <div class="tab-footer">
-      <el-button @click="handleReset" size="large" plain>
-        重置为默认
-      </el-button>
-      <el-button
-        type="primary"
-        size="large"
-        @click="handleSave"
-        :disabled="!hasNewKeyPress"
-      >
-        保存快捷键
-      </el-button>
-    </div>
   </div>
 </template>
 
@@ -140,6 +126,14 @@ watch(() => props.visible, (isVisible) => {
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeyDown)
 })
+
+// 暴露给父组件调用的方法和属性
+defineExpose({
+  save: handleSave,
+  reset: handleReset,
+  hasNewKeyPress,
+  getFormData: () => hasNewKeyPress.value ? ({ ...newSettings.value }) : ({ ...formData.value })
+})
 </script>
 
 <style scoped>
@@ -204,21 +198,5 @@ onUnmounted(() => {
   border-radius: 8px;
 }
 
-/* 底部按钮区域 */
-.tab-footer {
-  margin-top: auto;
-  padding-top: 24px;
-  border-top: 1px solid #f0f0f0;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-:deep(.tab-footer .el-button) {
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
 
 </style>

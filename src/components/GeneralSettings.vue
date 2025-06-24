@@ -52,19 +52,6 @@
         </div>
       </el-form-item>
     </el-form>
-    
-    <div class="tab-footer">
-      <el-button @click="handleReset" size="large" plain>
-        重置为默认
-      </el-button>
-      <el-button
-        type="primary"
-        size="large"
-        @click="handleSave"
-      >
-        保存设置
-      </el-button>
-    </div>
   </div>
 </template>
 
@@ -122,6 +109,13 @@ const handleReset = () => {
 watch(() => props.currentSettings, (newSettings) => {
   formData.value = { ...newSettings }
 }, { immediate: true, deep: true })
+
+// 暴露给父组件调用的方法
+defineExpose({
+  save: handleSave,
+  reset: handleReset,
+  getFormData: () => ({ ...formData.value })
+})
 </script>
 
 <style scoped>
@@ -208,21 +202,5 @@ watch(() => props.currentSettings, (newSettings) => {
   line-height: 1.4;
 }
 
-/* 底部按钮区域 */
-.tab-footer {
-  margin-top: auto;
-  padding-top: 24px;
-  border-top: 1px solid #f0f0f0;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-:deep(.tab-footer .el-button) {
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
 
 </style>
