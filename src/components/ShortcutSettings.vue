@@ -184,7 +184,6 @@ defineExpose({
 }
 
 :deep(.shortcut-display .el-input__inner) {
-  text-align: center;
   font-weight: 600;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   letter-spacing: 1px;
