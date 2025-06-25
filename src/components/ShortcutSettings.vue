@@ -12,9 +12,6 @@
           size="large"
           class="shortcut-display"
         >
-          <template #prepend>
-            🔑
-          </template>
         </el-input>
       </el-form-item>
       
@@ -32,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { BatchKeySettings } from '@/core/eventBus'
 
@@ -180,6 +177,10 @@ defineExpose({
 /* 快捷键显示样式 */
 .shortcut-display-item .shortcut-display {
   max-width: 400px;
+}
+
+:deep(.shortcut-display .el-input__inner) {
+  background-color: transparent !important;
 }
 
 :deep(.shortcut-display .el-input__inner) {
