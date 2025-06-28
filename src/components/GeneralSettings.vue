@@ -148,11 +148,11 @@ defineExpose({
   flex: 1;
 }
 
-:deep(.settings-form .el-form-item) {
+.settings-form :deep(.el-form-item) {
   margin-bottom: 28px;
 }
 
-:deep(.settings-form .el-form-item__label) {
+.settings-form :deep(.el-form-item__label) {
   font-weight: 500;
   color: #374151;
   font-size: 0.875rem;
@@ -177,17 +177,6 @@ defineExpose({
   gap: 12px;
 }
 
-/* 修复在部分站点中 el-input-number 控制按钮被全局样式覆盖后上下产生空隙的问题 */
-:deep(.el-input-number__increase),
-:deep(.el-input-number__decrease) {
-  /* 强制高度各占父元素一半，确保两按钮紧贴 */
-  height: 50% !important;
-  /* 去除可能被覆盖的行高、内边距 */
-  line-height: 1 !important;
-  padding: 0 !important;
-  /* 统一盒模型，避免 border 额外撑高 */
-  box-sizing: border-box !important;
-}
 
 .expiration-input {
   width: 180px;

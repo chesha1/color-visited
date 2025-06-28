@@ -163,27 +163,27 @@ const handleClosed = () => {
 
 <style scoped>
 /* 对话框整体样式 */
-:deep(.settings-dialog) {
+.settings-dialog :deep(.el-dialog) {
   border-radius: 0.75rem;
   overflow: hidden;
 }
 
-:deep(.settings-dialog .el-dialog__header) {
+.settings-dialog :deep(.el-dialog__header) {
   padding: 1.25rem 1.5rem;
   margin: 0;
   border-bottom: none;
 }
 
-:deep(.settings-dialog .el-dialog__title) {
+.settings-dialog :deep(.el-dialog__title) {
   font-size: 1.25rem;
   font-weight: 600;
 }
 
-:deep(.settings-dialog .el-dialog__body) {
+.settings-dialog :deep(.el-dialog__body) {
   padding: 0;
 }
 
-:deep(.settings-dialog .el-dialog__footer) {
+.settings-dialog :deep(.el-dialog__footer) {
   border-top: 0.0625rem solid #f0f0f0;
   background-color: #fafafa;
   padding: 1rem 1.5rem;
@@ -215,36 +215,8 @@ const handleClosed = () => {
   background: transparent;
 }
 
-:deep(.sidebar-menu .el-menu-item) {
-  height: 3.5rem;
-  line-height: 3.5rem;
-  margin: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  transition: all 0.3s ease;
-  border: none;
-}
-
-:deep(.sidebar-menu .el-menu-item.is-active) {
-  background-color: var(--el-color-primary);
-  color: white;
-}
 
 /* 移除标签页内文字的 hover 效果 */
-:deep(.sidebar-menu .el-menu-item span:hover) {
-  background-color: transparent !important;
-}
-
-
-/* 移除输入框内部文字 hover 时的额外框效果 */
-:deep(.el-input__inner:hover) {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-:deep(.el-input-number__inner:hover) {
-  outline: none !important;
-  box-shadow: none !important;
-}
 
 .menu-item {
   display: flex;
@@ -310,7 +282,7 @@ const handleClosed = () => {
   gap: 0.75rem;
 }
 
-:deep(.dialog-footer .el-button) {
+.dialog-footer :deep(.el-button) {
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   font-weight: 500;
@@ -334,7 +306,7 @@ const handleClosed = () => {
     height: 3.75rem;
   }
   
-  :deep(.sidebar-menu .el-menu-item) {
+  .sidebar-menu :deep(.el-menu-item) {
     flex: 1;
     text-align: center;
     margin: 0.25rem;

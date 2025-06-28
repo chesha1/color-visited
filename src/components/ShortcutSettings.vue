@@ -164,11 +164,11 @@ defineExpose({
   flex: 1;
 }
 
-:deep(.settings-form .el-form-item) {
+.settings-form :deep(.el-form-item) {
   margin-bottom: 28px;
 }
 
-:deep(.settings-form .el-form-item__label) {
+.settings-form :deep(.el-form-item__label) {
   font-weight: 500;
   color: #374151;
   font-size: 0.875rem;
@@ -179,11 +179,7 @@ defineExpose({
   max-width: 400px;
 }
 
-:deep(.shortcut-display .el-input__inner) {
-  background-color: transparent !important;
-}
-
-:deep(.shortcut-display .el-input__inner) {
+.shortcut-display :deep(.el-input__inner) {
   font-weight: 600;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   letter-spacing: 1px;
