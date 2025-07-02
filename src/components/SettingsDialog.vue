@@ -10,46 +10,39 @@
     <template #header>
       <span class="dialog-title">设置</span>
     </template>
-    <div class="settings-panel">
-      <!-- 左侧标签页导航 -->
-      <div class="sidebar">
-        <div
-          v-for="item in menuItems"
-          :key="item.index"
-          :class="['color-block', { active: activeTab === item.index }]"
-          @click="handleTabSelect(item.index)"
-        >
-          <div class="color-bar"></div>
-          <span class="label">{{ item.label }}</span>
+    <!-- 使用 el-tabs 纵向布局 -->
+    <el-tabs
+      v-model="activeTab"
+      tab-position="left"
+      class="settings-tabs"
+      stretch
+    >
+      <el-tab-pane label="常规设置" name="general">
+        <div class="content">
+          <GeneralSettingsComponent
+            :current-settings="currentGeneralSettings"
+            :default-settings="defaultGeneralSettings"
+            ref="generalSettingsRef"
+          />
         </div>
-      </div>
-      
-      <!-- 右侧内容区域 -->
-      <div class="content">
-        <!-- 常规设置 -->
-        <GeneralSettingsComponent
-          v-show="activeTab === 'general'"
-          :current-settings="currentGeneralSettings"
-          :default-settings="defaultGeneralSettings"
-          ref="generalSettingsRef"
-        />
-        
-        <!-- 预设网站 -->
-        <PresetSettingsComponent
-          v-show="activeTab === 'presets'"
-        />
-        
-        <!-- 批量记录快捷键设置 -->
-        <ShortcutSettingsComponent
-          v-show="activeTab === 'shortcut'"
-          :current-settings="currentSettings"
-          :default-settings="defaultSettings"
-          :is-mac="isMac"
-          :visible="visible"
-          ref="shortcutSettingsRef"
-        />
-      </div>
-    </div>
+      </el-tab-pane>
+      <el-tab-pane label="预设网站" name="presets">
+        <div class="content">
+          <PresetSettingsComponent />
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="批量记录快捷键" name="shortcut">
+        <div class="content">
+          <ShortcutSettingsComponent
+            :current-settings="currentSettings"
+            :default-settings="defaultSettings"
+            :is-mac="isMac"
+            :visible="visible"
+            ref="shortcutSettingsRef"
+          />
+        </div>
+      </el-tab-pane>
+    </el-tabs>
     
     <template #footer>
       <div class="dialog-footer">
@@ -113,13 +106,6 @@ const canSave = computed(() => {
   return true
 })
 
-// 侧边栏彩色区块配置
-const menuItems = [
-  { index: 'general', label: '常规设置', color: '#f87171' },
-  { index: 'presets', label: '预设网站', color: '#34d399' },
-  { index: 'shortcut', label: '批量记录快捷键', color: '#60a5fa' },
-] as const
-
 const handleSave = () => {
   if (activeTab.value === 'general') {
     // 获取常规设置的当前数据并触发保存事件
@@ -148,11 +134,6 @@ const handleReset = () => {
     emit('reset')
   }
   // 预设网站暂时没有重置逻辑
-}
-
-
-const handleTabSelect = (index: string) => {
-  activeTab.value = index
 }
 
 const handleClosed = () => {
@@ -196,80 +177,12 @@ const handleClosed = () => {
 }
 
 /* 主面板布局 */
-.settings-panel {
-  display: flex;
+.settings-tabs {
   height: 35rem;
-  background-color: #ffffff;
-}
-
-/* 侧边栏样式 */
-.sidebar {
-  width: 13.75rem;
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  border-right: 0.0625rem solid #e2e8f0;
-}
-
-.sidebar-menu {
-  border-right: none;
-  height: 100%;
-  background: transparent;
-}
-
-
-/* 移除标签页内文字的 hover 效果 */
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 新侧边栏彩色区块样式 */
-.color-block {
-  display: flex;
-  align-items: center;
-  height: 3.5rem;
-  margin: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.color-bar {
-  width: 0.25rem;
-  height: 100%;
-  border-radius: 0.25rem 0 0 0.25rem;
-  margin-right: 0.75rem;
-  background-color: var(--el-color-primary, #409eff) !important;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.color-block .label {
-  flex: 1;
-  text-align: center;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: #606266;
-  transition: color 0.3s ease;
-}
-
-.color-block.active {
-  background-color: var(--el-color-primary-light-9, #eef4ff);
-}
-
-.color-block.active .color-bar {
-  opacity: 1;
-}
-
-.color-block.active .label {
-  color: var(--el-color-primary, #409eff);
-  font-weight: 600;
 }
 
 /* 内容区域样式 */
 .content {
-  flex: 1;
   padding: 2rem;
   overflow-y: auto;
   background-color: #ffffff;
@@ -291,25 +204,8 @@ const handleClosed = () => {
 
 /* 响应式适配 */
 @media (max-width: 768px) {
-  .settings-panel {
-    flex-direction: column;
+  .settings-tabs {
     height: auto;
-  }
-  
-  .sidebar {
-    width: 100%;
-    height: auto;
-  }
-  
-  .sidebar-menu {
-    display: flex;
-    height: 3.75rem;
-  }
-  
-  .sidebar-menu :deep(.el-menu-item) {
-    flex: 1;
-    text-align: center;
-    margin: 0.25rem;
   }
   
   .content {
