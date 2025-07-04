@@ -129,8 +129,10 @@ const handleCancel = () => {
 
 const handleReset = () => {
   if (activeTab.value === 'general') {
-    emit('generalReset')
+    // 仅重置表单显示，实际保存需用户点击「保存设置」
+    generalSettingsRef.value?.reset()
   } else if (activeTab.value === 'shortcut') {
+    // 快捷键重置逻辑保持原状，立即生效
     emit('reset')
   }
   // 预设网站暂时没有重置逻辑

@@ -99,8 +99,9 @@ const handleSave = () => {
   ElMessage.success('常规设置已保存！')
 }
 
+// 重置为默认值，但仅更新界面，真正保存需用户点击「保存设置」
 const handleReset = () => {
-  emit('reset')
+  formData.value = { ...props.defaultSettings }
   ElMessage.success('常规设置已重置为默认！')
 }
 
