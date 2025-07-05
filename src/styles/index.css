@@ -84,4 +84,10 @@
 
 .el-textarea__inner:focus {
   box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+}
+
+/* 修复 Element Plus el-tabs 在纵向布局下导航宽度过窄导致标签不可见的问题 */
+.el-tabs {
+  /* 将导航宽度改为自适应或更合适的数值，覆盖默认的 40px */
+  --el-tabs-header-height: auto; /* 或者根据需要设置为固定宽度，如 120px */
 } 
