@@ -3,29 +3,24 @@
 import { config } from '@/core/config';
 import { getSyncSettings, saveSyncSettings, validateGitHubToken } from '@/core/sync';
 import { eventBus, type BatchKeySettings, type GeneralSettings } from '@/core/eventBus';
+import { ElMessage } from 'element-plus';
+import 'element-plus/es/components/message/style/css';
 
 // ================== 通知组件 ==================
 
 // 显示通知
 export function showNotification(message: string): void {
-  const notification = document.createElement('div');
-  notification.textContent = message;
-  notification.style.position = 'fixed';
-  notification.style.top = '20px';
-  notification.style.left = '50%';
-  notification.style.transform = 'translateX(-50%)';
-  notification.style.backgroundColor = '#4CAF50';
-  notification.style.color = 'white';
-  notification.style.padding = '10px 20px';
-  notification.style.borderRadius = '5px';
-  notification.style.zIndex = '10001';
-  notification.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+  // 根据消息内容简单判断类型
+  const type = /失败|错误|error/i.test(message) ? 'error' : 'success';
 
-  document.body.appendChild(notification);
-
-  setTimeout(function () {
-    document.body.removeChild(notification);
-  }, 2000);
+  ElMessage({
+    message,
+    type: type as any,
+    duration: 2000,
+    showClose: true,
+    grouping: true,
+    offset: 20,
+  });
 }
 
 // ================== 样式管理 ==================
