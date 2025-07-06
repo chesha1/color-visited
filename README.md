@@ -60,3 +60,4 @@
 - [ ] 在页面中排除某些链接不染色，比如在 bilibili 稍后再看中，不对标题的视频详情链接染色，其他照染
 - [ ] 正则表达式协议头，考虑速度差别
 - [ ] `visitedLinks` 冗余程度过高，考虑使用字典树存储（之前先做一个 benchmark 确定是否是性能瓶颈），可以[参考](https://stackoverflow.com/questions/16823686/where-does-gm-setvalue-store-data)
+- [ ] v2ex 上 el-message icon 过小
