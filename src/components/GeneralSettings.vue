@@ -4,7 +4,7 @@
       <h3>常规设置</h3>
       <p class="content-desc">自定义链接颜色和行为设置</p>
     </div>
-    <el-form :model="formData" label-width="7.5rem" class="settings-form">
+    <el-form :model="formData" label-width="120px" class="settings-form">
       <el-form-item label="链接颜色" class="color-form-item">
         <div class="color-picker-container">
           <el-color-picker
@@ -140,7 +140,7 @@ defineExpose({
 .content-desc {
   margin: 0;
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -156,7 +156,7 @@ defineExpose({
 .settings-form :deep(.el-form-item__label) {
   font-weight: 500;
   color: #374151;
-  font-size: 0.875rem;
+  font-size: 14px;
 }
 
 /* 颜色选择器样式 */
@@ -185,7 +185,7 @@ defineExpose({
 
 .unit-text {
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 14px;
   font-weight: 500;
 }
 

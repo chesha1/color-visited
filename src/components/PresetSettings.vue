@@ -28,7 +28,7 @@
 }
 
 .content-header h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 8px 0;
   color: #1f2937;
   font-size: 24px;
   font-weight: 600;
@@ -37,7 +37,7 @@
 .content-desc {
   margin: 0;
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -61,13 +61,13 @@
 .placeholder {
   color: #6b7280;
   font-size: 16px;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 8px 0;
   font-weight: 500;
 }
 
 .placeholder-sub {
   color: #9ca3af;
-  font-size: 0.875rem;
+  font-size: 14px;
   margin: 0;
 }
 </style>

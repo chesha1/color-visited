@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    width="56.25rem"
+    width="900px"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
     class="settings-dialog"
@@ -147,18 +147,18 @@ const handleClosed = () => {
 <style scoped>
 /* 对话框整体样式 */
 .settings-dialog :deep(.el-dialog) {
-  border-radius: 0.75rem;
+  border-radius: 12px;
   overflow: hidden;
 }
 
 .settings-dialog :deep(.el-dialog__header) {
-  padding: 1.25rem 1.5rem;
+  padding: 20px 24px;
   margin: 0;
   border-bottom: none;
 }
 
 .settings-dialog :deep(.el-dialog__title) {
-  font-size: 1.25rem;
+  font-size: 20px;
   font-weight: 600;
 }
 
@@ -167,25 +167,25 @@ const handleClosed = () => {
 }
 
 .settings-dialog :deep(.el-dialog__footer) {
-  border-top: 0.0625rem solid #f0f0f0;
+  border-top: 1px solid #f0f0f0;
   background-color: #fafafa;
-  padding: 1rem 1.5rem;
+  padding: 16px 24px;
 }
 
 .dialog-title {
-  font-size: 1.25rem;
+  font-size: 20px;
   font-weight: 600;
   color: #1f2937;
 }
 
 /* 主面板布局 */
 .settings-tabs {
-  height: 35rem;
+  height: 560px;
 }
 
 /* 内容区域样式 */
 .content {
-  padding: 2rem;
+  padding: 32px;
   overflow-y: auto;
   background-color: #ffffff;
 }
@@ -194,12 +194,12 @@ const handleClosed = () => {
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: 12px;
 }
 
 .dialog-footer :deep(.el-button) {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  padding: 12px 24px;
+  border-radius: 8px;
   font-weight: 500;
   transition: all 0.3s ease;
 }
@@ -211,7 +211,7 @@ const handleClosed = () => {
   }
   
   .content {
-    padding: 1.25rem;
+    padding: 20px;
   }
 }
 </style>
