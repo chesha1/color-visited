@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.0.24
+// @version      2.0.25
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -79,7 +79,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-BZ3L06ee.js"(exports, module$1) {
+        "main-CnSWruoj.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21735,7 +21735,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 elementPlusLink.href = "https://unpkg.com/element-plus/dist/index.css";
                 shadowRoot.appendChild(elementPlusLink);
                 const customStyles = document.createElement("style");
-                const stylesModule = await __vitePreload(() => module.import('./index-e0tErWhH-C-FtDZq4.js'), true ? void 0 : void 0);
+                const stylesModule = await __vitePreload(() => module.import('./index-uGrVwhcz-DBFW6AaE.js'), true ? void 0 : void 0);
                 customStyles.textContent = stylesModule.default || `
                 /* 基础样式重置，仅在 Shadow DOM 内生效 */
                 :host {
@@ -21840,12 +21840,12 @@ System.register("./__entry.js", [], (function (exports, module) {
   };
 }));
 
-System.register("./index-e0tErWhH-C-FtDZq4.js", [], (function (exports, module) {
+System.register("./index-uGrVwhcz-DBFW6AaE.js", [], (function (exports, module) {
   'use strict';
   return {
     execute: (function () {
 
-      const index = exports("default", ":host{all:initial;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Open Sans,Helvetica Neue,sans-serif;font-size:14px;line-height:1.5;color:#303133}*{box-sizing:border-box}:host{--el-color-primary: #409eff;--el-input-border-color: #dcdfe6;--el-input-hover-border-color: #c0c4cc;--el-input-focus-border-color: var(--el-color-primary);--el-border-color: #dcdfe6;--el-border-color-hover: #c0c4cc;--el-disabled-bg-color: #f5f7fa;--el-disabled-border-color: #e4e7ed;--el-color-danger: #f56c6c;--el-transition-duration: .3s}.el-input__wrapper{box-shadow:0 0 0 1px var(--el-input-border-color) inset;border:none;transition:box-shadow var(--el-transition-duration)}.el-input__inner{border:none!important;outline:none!important;box-shadow:none!important;margin:0!important;padding:0!important;line-height:normal!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;vertical-align:middle!important}.el-input__wrapper:hover{box-shadow:0 0 0 1px var(--el-input-hover-border-color) inset}.el-input__wrapper:focus,.el-input__wrapper:focus-within,.el-input.is-focus .el-input__wrapper{box-shadow:0 0 0 1px var(--el-color-primary) inset!important}.el-input.is-disabled .el-input__wrapper{box-shadow:0 0 0 1px var(--el-disabled-border-color) inset;background-color:var(--el-disabled-bg-color);cursor:not-allowed}.el-input__wrapper.is-error,.el-form-item.is-error .el-input__wrapper{box-shadow:0 0 0 1px var(--el-color-danger) inset!important}.el-textarea__inner{border:none!important;box-shadow:0 0 0 1px var(--el-input-border-color) inset!important;transition:box-shadow var(--el-transition-duration)}.el-textarea__inner:hover{box-shadow:0 0 0 1px var(--el-input-hover-border-color) inset!important}.el-textarea__inner:focus{box-shadow:0 0 0 1px var(--el-color-primary) inset!important}.el-tabs{--el-tabs-header-height: auto}");
+      const index = exports("default", ":host{all:initial;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Open Sans,Helvetica Neue,sans-serif;font-size:14px;line-height:1.5;color:#303133}*{box-sizing:border-box}:host{--el-color-primary: #409eff;--el-input-border-color: #dcdfe6;--el-input-hover-border-color: #c0c4cc;--el-input-focus-border-color: var(--el-color-primary);--el-border-color: #dcdfe6;--el-border-color-hover: #c0c4cc;--el-disabled-bg-color: #f5f7fa;--el-disabled-border-color: #e4e7ed;--el-color-danger: #f56c6c;--el-transition-duration: .3s}.el-input__wrapper{box-shadow:0 0 0 1px var(--el-input-border-color) inset;border:none;transition:box-shadow var(--el-transition-duration)}.el-input__inner{border:none!important;outline:none!important;box-shadow:none!important;margin:0!important;padding:0!important;line-height:normal!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;vertical-align:middle!important}.el-input__wrapper:hover{box-shadow:0 0 0 1px var(--el-input-hover-border-color) inset}.el-input__wrapper:focus,.el-input__wrapper:focus-within,.el-input.is-focus .el-input__wrapper{box-shadow:0 0 0 1px var(--el-color-primary) inset!important}.el-input.is-disabled .el-input__wrapper{box-shadow:0 0 0 1px var(--el-disabled-border-color) inset;background-color:var(--el-disabled-bg-color);cursor:not-allowed}.el-input__wrapper.is-error,.el-form-item.is-error .el-input__wrapper{box-shadow:0 0 0 1px var(--el-color-danger) inset!important}.el-textarea__inner{border:none!important;box-shadow:0 0 0 1px var(--el-input-border-color) inset!important;transition:box-shadow var(--el-transition-duration)}.el-textarea__inner:hover{box-shadow:0 0 0 1px var(--el-input-hover-border-color) inset!important}.el-textarea__inner:focus{box-shadow:0 0 0 1px var(--el-color-primary) inset!important}.el-tabs{--el-tabs-header-height: auto}.settings-dialog .el-dialog__body{height:400px;padding:0!important;overflow-y:auto!important}.settings-dialog .el-tabs__content,.settings-dialog .el-tab-pane{height:100%}");
 
     })
   };
