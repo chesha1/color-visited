@@ -1,27 +1,26 @@
 <template>
-  <div class="tab-content">
-    <div class="content-header">
-      <h3>批量记录快捷键设置</h3>
-      <p class="content-desc">自定义批量标记链接的快捷键组合</p>
+  <div class="space-y-6">
+    <div class="border-b pb-4">
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">批量记录快捷键设置</h3>
+      <p class="text-sm text-gray-600">自定义批量标记链接的快捷键组合</p>
     </div>
-    <el-form :model="formData" label-width="120px" class="settings-form">
-      <el-form-item label="当前快捷键" class="shortcut-display-item">
+    <el-form :model="formData" label-width="120px" class="space-y-6">
+      <el-form-item label="当前快捷键">
         <el-input
           v-model="currentShortcutDisplay"
           readonly
           size="large"
-          class="shortcut-display"
+          class="font-mono"
         >
         </el-input>
       </el-form-item>
       
-      <el-form-item class="hint-item">
+      <el-form-item>
         <el-alert
           :title="hintText"
           :type="hasNewKeyPress ? 'success' : 'info'"
           show-icon
           :closable="false"
-          class="hint-alert"
         />
       </el-form-item>
     </el-form>

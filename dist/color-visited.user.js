@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.0.26
+// @version      2.1.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -79,7 +79,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-iTzwda7l.js"(exports, module$1) {
+        "main-B-7xL1g8.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20303,11 +20303,11 @@ System.register("./__entry.js", [], (function (exports, module) {
           message.closeAll = closeAll;
           message._context = null;
           const ElMessage = withInstallFunction(message, "$message");
-          const _hoisted_1$3 = { class: "tab-content" };
-          const _hoisted_2$1 = { class: "color-picker-container" };
-          const _hoisted_3$1 = { class: "expiration-container" };
-          const _hoisted_4$1 = { class: "input-with-unit" };
-          const _hoisted_5 = { class: "switch-container" };
+          const _hoisted_1$3 = { class: "space-y-6" };
+          const _hoisted_2$1 = { class: "flex items-center gap-3" };
+          const _hoisted_3$1 = { class: "space-y-2" };
+          const _hoisted_4$1 = { class: "flex items-center gap-2" };
+          const _hoisted_5 = { class: "space-y-2" };
           const _sfc_main$4 = /* @__PURE__ */ defineComponent({
             __name: "GeneralSettings",
             props: {
@@ -20369,20 +20369,17 @@ System.register("./__entry.js", [], (function (exports, module) {
                 const _component_el_switch = ElSwitch;
                 const _component_el_form = ElForm;
                 return openBlock(), createElementBlock("div", _hoisted_1$3, [
-                  _cache[7] || (_cache[7] = createBaseVNode("div", { class: "content-header" }, [
-                    createBaseVNode("h3", null, "常规设置"),
-                    createBaseVNode("p", { class: "content-desc" }, "自定义链接颜色和行为设置")
+                  _cache[7] || (_cache[7] = createBaseVNode("div", { class: "border-b pb-4" }, [
+                    createBaseVNode("h3", { class: "text-lg font-semibold text-gray-900 mb-2" }, "常规设置"),
+                    createBaseVNode("p", { class: "text-sm text-gray-600" }, "自定义链接颜色和行为设置")
                   ], -1)),
                   createVNode(_component_el_form, {
                     model: formData.value,
                     "label-width": "120px",
-                    class: "settings-form"
+                    class: "space-y-6"
                   }, {
                     default: withCtx(() => [
-                      createVNode(_component_el_form_item, {
-                        label: "链接颜色",
-                        class: "color-form-item"
-                      }, {
+                      createVNode(_component_el_form_item, { label: "链接颜色" }, {
                         default: withCtx(() => [
                           createBaseVNode("div", _hoisted_2$1, [
                             createVNode(_component_el_color_picker, {
@@ -20395,7 +20392,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                             createVNode(_component_el_input, {
                               modelValue: formData.value.color,
                               "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => formData.value.color = $event),
-                              class: "color-input",
+                              class: "flex-1",
                               placeholder: "请输入颜色值",
                               clearable: ""
                             }, null, 8, ["modelValue"])
@@ -20403,10 +20400,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                         ]),
                         _: 1
                       }),
-                      createVNode(_component_el_form_item, {
-                        label: "过期时间",
-                        class: "expiration-form-item"
-                      }, {
+                      createVNode(_component_el_form_item, { label: "过期时间" }, {
                         default: withCtx(() => [
                           createBaseVNode("div", _hoisted_3$1, [
                             createBaseVNode("div", _hoisted_4$1, [
@@ -20417,19 +20411,16 @@ System.register("./__entry.js", [], (function (exports, module) {
                                 max: 3650,
                                 "controls-position": "right",
                                 size: "large",
-                                class: "expiration-input"
+                                class: "w-32"
                               }, null, 8, ["modelValue"]),
-                              _cache[4] || (_cache[4] = createBaseVNode("span", { class: "unit-text" }, "天", -1))
+                              _cache[4] || (_cache[4] = createBaseVNode("span", { class: "text-sm text-gray-600" }, "天", -1))
                             ]),
-                            _cache[5] || (_cache[5] = createBaseVNode("div", { class: "form-item-help" }, "设置已访问链接的记录保留时间", -1))
+                            _cache[5] || (_cache[5] = createBaseVNode("div", { class: "text-xs text-gray-500" }, "设置已访问链接的记录保留时间", -1))
                           ])
                         ]),
                         _: 1
                       }),
-                      createVNode(_component_el_form_item, {
-                        label: "调试模式",
-                        class: "debug-form-item"
-                      }, {
+                      createVNode(_component_el_form_item, { label: "调试模式" }, {
                         default: withCtx(() => [
                           createBaseVNode("div", _hoisted_5, [
                             createVNode(_component_el_switch, {
@@ -20438,7 +20429,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                               size: "large",
                               "inline-prompt": ""
                             }, null, 8, ["modelValue"]),
-                            _cache[6] || (_cache[6] = createBaseVNode("div", { class: "form-item-help" }, "开启后将在控制台显示详细调试信息", -1))
+                            _cache[6] || (_cache[6] = createBaseVNode("div", { class: "text-xs text-gray-500" }, "开启后将在控制台显示详细调试信息", -1))
                           ])
                         ]),
                         _: 1
@@ -20458,14 +20449,14 @@ System.register("./__entry.js", [], (function (exports, module) {
             return target;
           };
           const _sfc_main$3 = {};
-          const _hoisted_1$2 = { class: "tab-content" };
+          const _hoisted_1$2 = { class: "space-y-6" };
           function _sfc_render(_ctx, _cache) {
             return openBlock(), createElementBlock("div", _hoisted_1$2, _cache[0] || (_cache[0] = [
-              createStaticVNode('<div class="content-header"><h3>预设网站</h3><p class="content-desc">管理支持的网站和链接模式</p></div><div class="placeholder-container"><div class="placeholder-icon">⚙️</div><p class="placeholder">预设网站功能正在开发中...</p><p class="placeholder-sub">即将支持自定义网站规则配置</p></div>', 2)
+              createStaticVNode('<div class="border-b pb-4"><h3 class="text-lg font-semibold text-gray-900 mb-2">预设网站</h3><p class="text-sm text-gray-600">管理支持的网站和链接模式</p></div><div class="flex flex-col items-center justify-center py-16 space-y-4"><div class="text-4xl">⚙️</div><p class="text-gray-600 text-center">预设网站功能正在开发中...</p><p class="text-sm text-gray-500 text-center">即将支持自定义网站规则配置</p></div>', 2)
             ]));
           }
           const PresetSettingsComponent = /* @__PURE__ */ _export_sfc(_sfc_main$3, [["render", _sfc_render]]);
-          const _hoisted_1$1 = { class: "tab-content" };
+          const _hoisted_1$1 = { class: "space-y-6" };
           const _sfc_main$2 = /* @__PURE__ */ defineComponent({
             __name: "ShortcutSettings",
             props: {
@@ -20546,39 +20537,35 @@ System.register("./__entry.js", [], (function (exports, module) {
                 const _component_el_alert = ElAlert;
                 const _component_el_form = ElForm;
                 return openBlock(), createElementBlock("div", _hoisted_1$1, [
-                  _cache[1] || (_cache[1] = createBaseVNode("div", { class: "content-header" }, [
-                    createBaseVNode("h3", null, "批量记录快捷键设置"),
-                    createBaseVNode("p", { class: "content-desc" }, "自定义批量标记链接的快捷键组合")
+                  _cache[1] || (_cache[1] = createBaseVNode("div", { class: "border-b pb-4" }, [
+                    createBaseVNode("h3", { class: "text-lg font-semibold text-gray-900 mb-2" }, "批量记录快捷键设置"),
+                    createBaseVNode("p", { class: "text-sm text-gray-600" }, "自定义批量标记链接的快捷键组合")
                   ], -1)),
                   createVNode(_component_el_form, {
                     model: formData.value,
                     "label-width": "120px",
-                    class: "settings-form"
+                    class: "space-y-6"
                   }, {
                     default: withCtx(() => [
-                      createVNode(_component_el_form_item, {
-                        label: "当前快捷键",
-                        class: "shortcut-display-item"
-                      }, {
+                      createVNode(_component_el_form_item, { label: "当前快捷键" }, {
                         default: withCtx(() => [
                           createVNode(_component_el_input, {
                             modelValue: currentShortcutDisplay.value,
                             "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => currentShortcutDisplay.value = $event),
                             readonly: "",
                             size: "large",
-                            class: "shortcut-display"
+                            class: "font-mono"
                           }, null, 8, ["modelValue"])
                         ]),
                         _: 1
                       }),
-                      createVNode(_component_el_form_item, { class: "hint-item" }, {
+                      createVNode(_component_el_form_item, null, {
                         default: withCtx(() => [
                           createVNode(_component_el_alert, {
                             title: hintText.value,
                             type: hasNewKeyPress.value ? "success" : "info",
                             "show-icon": "",
-                            closable: false,
-                            class: "hint-alert"
+                            closable: false
                           }, null, 8, ["title", "type"])
                         ]),
                         _: 1
@@ -20590,10 +20577,10 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          const _hoisted_1 = { class: "content" };
-          const _hoisted_2 = { class: "content" };
-          const _hoisted_3 = { class: "content" };
-          const _hoisted_4 = { class: "dialog-footer" };
+          const _hoisted_1 = { class: "p-6" };
+          const _hoisted_2 = { class: "p-6" };
+          const _hoisted_3 = { class: "p-6" };
+          const _hoisted_4 = { class: "flex justify-end gap-3" };
           const _sfc_main$1 = /* @__PURE__ */ defineComponent({
             __name: "SettingsDialog",
             props: {
@@ -20659,7 +20646,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                   onClosed: handleClosed
                 }, {
                   header: withCtx(() => _cache[2] || (_cache[2] = [
-                    createBaseVNode("span", { class: "dialog-title" }, "设置", -1)
+                    createBaseVNode("span", { class: "text-lg font-semibold" }, "设置", -1)
                   ])),
                   footer: withCtx(() => [
                     createBaseVNode("div", _hoisted_4, [
@@ -21731,8 +21718,12 @@ System.register("./__entry.js", [], (function (exports, module) {
                 elementPlusLink.rel = "stylesheet";
                 elementPlusLink.href = "https://unpkg.com/element-plus/dist/index.css";
                 shadowRoot.appendChild(elementPlusLink);
+                const tailwindStyles = document.createElement("style");
+                const tailwindModule = await __vitePreload(() => module.import('./tailwind-c9Sljf1k-wH0WCAks.js'), true ? void 0 : void 0);
+                tailwindStyles.textContent = tailwindModule.default;
+                shadowRoot.appendChild(tailwindStyles);
                 const customStyles = document.createElement("style");
-                const stylesModule = await __vitePreload(() => module.import('./index-uGrVwhcz-DBFW6AaE.js'), true ? void 0 : void 0);
+                const stylesModule = await __vitePreload(() => module.import('./index-BY2yUTcq-ByP5HRq6.js'), true ? void 0 : void 0);
                 customStyles.textContent = stylesModule.default;
                 shadowRoot.appendChild(customStyles);
               } catch (error) {
@@ -21754,12 +21745,23 @@ System.register("./__entry.js", [], (function (exports, module) {
   };
 }));
 
-System.register("./index-uGrVwhcz-DBFW6AaE.js", [], (function (exports, module) {
+System.register("./tailwind-c9Sljf1k-wH0WCAks.js", [], (function (exports, module) {
   'use strict';
   return {
     execute: (function () {
 
-      const index = exports("default", ":host{all:initial;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Open Sans,Helvetica Neue,sans-serif;font-size:14px;line-height:1.5;color:#303133}*{box-sizing:border-box}:host{--el-color-primary: #409eff;--el-input-border-color: #dcdfe6;--el-input-hover-border-color: #c0c4cc;--el-input-focus-border-color: var(--el-color-primary);--el-border-color: #dcdfe6;--el-border-color-hover: #c0c4cc;--el-disabled-bg-color: #f5f7fa;--el-disabled-border-color: #e4e7ed;--el-color-danger: #f56c6c;--el-transition-duration: .3s}.el-input__wrapper{box-shadow:0 0 0 1px var(--el-input-border-color) inset;border:none;transition:box-shadow var(--el-transition-duration)}.el-input__inner{border:none!important;outline:none!important;box-shadow:none!important;margin:0!important;padding:0!important;line-height:normal!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;vertical-align:middle!important}.el-input__wrapper:hover{box-shadow:0 0 0 1px var(--el-input-hover-border-color) inset}.el-input__wrapper:focus,.el-input__wrapper:focus-within,.el-input.is-focus .el-input__wrapper{box-shadow:0 0 0 1px var(--el-color-primary) inset!important}.el-input.is-disabled .el-input__wrapper{box-shadow:0 0 0 1px var(--el-disabled-border-color) inset;background-color:var(--el-disabled-bg-color);cursor:not-allowed}.el-input__wrapper.is-error,.el-form-item.is-error .el-input__wrapper{box-shadow:0 0 0 1px var(--el-color-danger) inset!important}.el-textarea__inner{border:none!important;box-shadow:0 0 0 1px var(--el-input-border-color) inset!important;transition:box-shadow var(--el-transition-duration)}.el-textarea__inner:hover{box-shadow:0 0 0 1px var(--el-input-hover-border-color) inset!important}.el-textarea__inner:focus{box-shadow:0 0 0 1px var(--el-color-primary) inset!important}.el-tabs{--el-tabs-header-height: auto}.settings-dialog .el-dialog__body{height:400px;padding:0!important;overflow-y:auto!important}.settings-dialog .el-tabs__content,.settings-dialog .el-tab-pane{height:100%}");
+      const tailwind = exports("default", '/*! tailwindcss v4.1.11 | MIT License | https://tailwindcss.com */@layer properties{@supports (((-webkit-hyphens:none)) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw-rotate-x:initial;--tw-rotate-y:initial;--tw-rotate-z:initial;--tw-skew-x:initial;--tw-skew-y:initial;--tw-space-y-reverse:0;--tw-border-style:solid;--tw-font-weight:initial;--tw-blur:initial;--tw-brightness:initial;--tw-contrast:initial;--tw-grayscale:initial;--tw-hue-rotate:initial;--tw-invert:initial;--tw-opacity:initial;--tw-saturate:initial;--tw-sepia:initial;--tw-drop-shadow:initial;--tw-drop-shadow-color:initial;--tw-drop-shadow-alpha:100%;--tw-drop-shadow-size:initial}}}@layer theme{:root,:host{--font-sans:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";--font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;--color-red-600:oklch(57.7% .245 27.325);--color-gray-500:oklch(55.1% .027 264.364);--color-gray-600:oklch(44.6% .03 256.802);--color-gray-900:oklch(21% .034 264.665);--spacing:.25rem;--text-xs:.75rem;--text-xs--line-height:calc(1/.75);--text-sm:.875rem;--text-sm--line-height:calc(1.25/.875);--text-lg:1.125rem;--text-lg--line-height:calc(1.75/1.125);--text-4xl:2.25rem;--text-4xl--line-height:calc(2.5/2.25);--font-weight-semibold:600;--default-transition-duration:.15s;--default-transition-timing-function:cubic-bezier(.4,0,.2,1);--default-font-family:var(--font-sans);--default-mono-font-family:var(--font-mono)}}@layer base{*,:after,:before,::backdrop{box-sizing:border-box;border:0 solid;margin:0;padding:0}::file-selector-button{box-sizing:border-box;border:0 solid;margin:0;padding:0}html,:host{-webkit-text-size-adjust:100%;tab-size:4;line-height:1.5;font-family:var(--default-font-family,ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji");font-feature-settings:var(--default-font-feature-settings,normal);font-variation-settings:var(--default-font-variation-settings,normal);-webkit-tap-highlight-color:transparent}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;-webkit-text-decoration:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:var(--default-mono-font-family,ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace);font-feature-settings:var(--default-mono-font-feature-settings,normal);font-variation-settings:var(--default-mono-font-variation-settings,normal);font-size:1em}small{font-size:80%}sub,sup{vertical-align:baseline;font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}:-moz-focusring{outline:auto}progress{vertical-align:baseline}summary{display:list-item}ol,ul,menu{list-style:none}img,svg,video,canvas,audio,iframe,embed,object{vertical-align:middle;display:block}img,video{max-width:100%;height:auto}button,input,select,optgroup,textarea{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}::file-selector-button{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}:where(select:is([multiple],[size])) optgroup{font-weight:bolder}:where(select:is([multiple],[size])) optgroup option{padding-inline-start:20px}::file-selector-button{margin-inline-end:4px}::placeholder{opacity:1}@supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px){::placeholder{color:currentColor}@supports (color:color-mix(in lab,red,red)){::placeholder{color:color-mix(in oklab,currentcolor 50%,transparent)}}}textarea{resize:vertical}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-date-and-time-value{min-height:1lh;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-datetime-edit{padding-block:0}::-webkit-datetime-edit-year-field{padding-block:0}::-webkit-datetime-edit-month-field{padding-block:0}::-webkit-datetime-edit-day-field{padding-block:0}::-webkit-datetime-edit-hour-field{padding-block:0}::-webkit-datetime-edit-minute-field{padding-block:0}::-webkit-datetime-edit-second-field{padding-block:0}::-webkit-datetime-edit-millisecond-field{padding-block:0}::-webkit-datetime-edit-meridiem-field{padding-block:0}:-moz-ui-invalid{box-shadow:none}button,input:where([type=button],[type=reset],[type=submit]){appearance:button}::file-selector-button{appearance:button}::-webkit-inner-spin-button{height:auto}::-webkit-outer-spin-button{height:auto}[hidden]:where(:not([hidden=until-found])){display:none!important}}@layer components;@layer utilities{.visible{visibility:visible}.absolute{position:absolute}.fixed{position:fixed}.static{position:static}.container{width:100%}@media (min-width:40rem){.container{max-width:40rem}}@media (min-width:48rem){.container{max-width:48rem}}@media (min-width:64rem){.container{max-width:64rem}}@media (min-width:80rem){.container{max-width:80rem}}@media (min-width:96rem){.container{max-width:96rem}}.mb-2{margin-bottom:calc(var(--spacing)*2)}.block{display:block}.flex{display:flex}.grid{display:grid}.hidden{display:none}.inline{display:inline}.table{display:table}.w-32{width:calc(var(--spacing)*32)}.flex-1{flex:1}.transform{transform:var(--tw-rotate-x,)var(--tw-rotate-y,)var(--tw-rotate-z,)var(--tw-skew-x,)var(--tw-skew-y,)}.resize{resize:both}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-center{justify-content:center}.justify-end{justify-content:flex-end}.gap-2{gap:calc(var(--spacing)*2)}.gap-3{gap:calc(var(--spacing)*3)}:where(.space-y-2>:not(:last-child)){--tw-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing)*2)*var(--tw-space-y-reverse));margin-block-end:calc(calc(var(--spacing)*2)*calc(1 - var(--tw-space-y-reverse)))}:where(.space-y-4>:not(:last-child)){--tw-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing)*4)*var(--tw-space-y-reverse));margin-block-end:calc(calc(var(--spacing)*4)*calc(1 - var(--tw-space-y-reverse)))}:where(.space-y-6>:not(:last-child)){--tw-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing)*6)*var(--tw-space-y-reverse));margin-block-end:calc(calc(var(--spacing)*6)*calc(1 - var(--tw-space-y-reverse)))}.border{border-style:var(--tw-border-style);border-width:1px}.border-b{border-bottom-style:var(--tw-border-style);border-bottom-width:1px}.p-2{padding:calc(var(--spacing)*2)}.p-6{padding:calc(var(--spacing)*6)}.p-10{padding:calc(var(--spacing)*10)}.py-16{padding-block:calc(var(--spacing)*16)}.pb-4{padding-bottom:calc(var(--spacing)*4)}.text-center{text-align:center}.font-mono{font-family:var(--font-mono)}.text-4xl{font-size:var(--text-4xl);line-height:var(--tw-leading,var(--text-4xl--line-height))}.text-lg{font-size:var(--text-lg);line-height:var(--tw-leading,var(--text-lg--line-height))}.text-sm{font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}.text-xs{font-size:var(--text-xs);line-height:var(--tw-leading,var(--text-xs--line-height))}.font-semibold{--tw-font-weight:var(--font-weight-semibold);font-weight:var(--font-weight-semibold)}.text-gray-500{color:var(--color-gray-500)}.text-gray-600{color:var(--color-gray-600)}.text-gray-900{color:var(--color-gray-900)}.text-red-600{color:var(--color-red-600)}.capitalize{text-transform:capitalize}.lowercase{text-transform:lowercase}.uppercase{text-transform:uppercase}.blur{--tw-blur:blur(8px);filter:var(--tw-blur,)var(--tw-brightness,)var(--tw-contrast,)var(--tw-grayscale,)var(--tw-hue-rotate,)var(--tw-invert,)var(--tw-saturate,)var(--tw-sepia,)var(--tw-drop-shadow,)}.filter{filter:var(--tw-blur,)var(--tw-brightness,)var(--tw-contrast,)var(--tw-grayscale,)var(--tw-hue-rotate,)var(--tw-invert,)var(--tw-saturate,)var(--tw-sepia,)var(--tw-drop-shadow,)}.transition{transition-property:color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,--tw-gradient-from,--tw-gradient-via,--tw-gradient-to,opacity,box-shadow,transform,translate,scale,rotate,filter,-webkit-backdrop-filter,backdrop-filter,display,visibility,content-visibility,overlay,pointer-events;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-space-y-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}');
+
+    })
+  };
+}));
+
+System.register("./index-BY2yUTcq-ByP5HRq6.js", [], (function (exports, module) {
+  'use strict';
+  return {
+    execute: (function () {
+
+      const index = exports("default", ":host{all:initial;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif;font-size:14px;line-height:1.5;color:#303133}*{box-sizing:border-box}:host{--el-color-primary: #409eff;--el-input-border-color: #dcdfe6;--el-input-hover-border-color: #c0c4cc;--el-input-focus-border-color: var(--el-color-primary);--el-border-color: #dcdfe6;--el-border-color-hover: #c0c4cc;--el-disabled-bg-color: #f5f7fa;--el-disabled-border-color: #e4e7ed;--el-color-danger: #f56c6c;--el-transition-duration: .3s}.el-input__wrapper{box-shadow:0 0 0 1px var(--el-input-border-color) inset;border:none;transition:box-shadow var(--el-transition-duration)}.el-input__inner{border:none!important;outline:none!important;box-shadow:none!important;margin:0!important;padding:0!important;line-height:normal!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;vertical-align:middle!important}.el-input__wrapper:hover{box-shadow:0 0 0 1px var(--el-input-hover-border-color) inset}.el-input__wrapper:focus,.el-input__wrapper:focus-within,.el-input.is-focus .el-input__wrapper{box-shadow:0 0 0 1px var(--el-color-primary) inset!important}.el-input.is-disabled .el-input__wrapper{box-shadow:0 0 0 1px var(--el-disabled-border-color) inset;background-color:var(--el-disabled-bg-color);cursor:not-allowed}.el-input__wrapper.is-error,.el-form-item.is-error .el-input__wrapper{box-shadow:0 0 0 1px var(--el-color-danger) inset!important}.el-textarea__inner{border:none!important;box-shadow:0 0 0 1px var(--el-input-border-color) inset!important;transition:box-shadow var(--el-transition-duration)}.el-textarea__inner:hover{box-shadow:0 0 0 1px var(--el-input-hover-border-color) inset!important}.el-textarea__inner:focus{box-shadow:0 0 0 1px var(--el-color-primary) inset!important}.el-tabs{--el-tabs-header-height: auto}.settings-dialog .el-dialog__body{height:400px;padding:0!important;overflow-y:auto!important}.settings-dialog .el-tabs__content,.settings-dialog .el-tab-pane{height:100%}");
 
     })
   };

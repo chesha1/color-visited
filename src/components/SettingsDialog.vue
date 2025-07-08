@@ -8,7 +8,7 @@
     @closed="handleClosed"
   >
     <template #header>
-      <span class="dialog-title">设置</span>
+      <span class="text-lg font-semibold">设置</span>
     </template>
     <!-- 使用 el-tabs 纵向布局 -->
     <el-tabs
@@ -18,7 +18,7 @@
       stretch
     >
       <el-tab-pane label="常规设置" name="general">
-        <div class="content">
+        <div class="p-6">
           <GeneralSettingsComponent
             :current-settings="currentGeneralSettings"
             :default-settings="defaultGeneralSettings"
@@ -27,12 +27,12 @@
         </div>
       </el-tab-pane>
       <el-tab-pane label="预设网站" name="presets">
-        <div class="content">
+        <div class="p-6">
           <PresetSettingsComponent />
         </div>
       </el-tab-pane>
       <el-tab-pane label="批量记录快捷键" name="shortcut">
-        <div class="content">
+        <div class="p-6">
           <ShortcutSettingsComponent
             :current-settings="currentSettings"
             :default-settings="defaultSettings"
@@ -45,7 +45,7 @@
     </el-tabs>
     
     <template #footer>
-      <div class="dialog-footer">
+      <div class="flex justify-end gap-3">
         <el-button @click="handleReset" size="large" plain>
           重置为默认
         </el-button>
@@ -123,9 +123,6 @@ const handleSave = () => {
   // 预设网站暂时没有保存逻辑
 }
 
-const handleCancel = () => {
-  visible.value = false
-}
 
 const handleReset = () => {
   if (activeTab.value === 'general') {

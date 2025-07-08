@@ -1,12 +1,12 @@
 <template>
-  <div class="tab-content">
-    <div class="content-header">
-      <h3>常规设置</h3>
-      <p class="content-desc">自定义链接颜色和行为设置</p>
+  <div class="space-y-6">
+    <div class="border-b pb-4">
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">常规设置</h3>
+      <p class="text-sm text-gray-600">自定义链接颜色和行为设置</p>
     </div>
-    <el-form :model="formData" label-width="120px" class="settings-form">
-      <el-form-item label="链接颜色" class="color-form-item">
-        <div class="color-picker-container">
+    <el-form :model="formData" label-width="120px" class="space-y-6">
+      <el-form-item label="链接颜色">
+        <div class="flex items-center gap-3">
           <el-color-picker
             v-model="formData.color"
             show-alpha
@@ -15,7 +15,7 @@
           />
           <el-input
             v-model="formData.color"
-            class="color-input"
+            class="flex-1"
             placeholder="请输入颜色值"
             clearable
           >
@@ -23,31 +23,31 @@
         </div>
       </el-form-item>
       
-      <el-form-item label="过期时间" class="expiration-form-item">
-        <div class="expiration-container">
-          <div class="input-with-unit">
+      <el-form-item label="过期时间">
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
             <el-input-number
               v-model="expirationDays"
               :min="1"
               :max="3650"
               controls-position="right"
               size="large"
-              class="expiration-input"
+              class="w-32"
             />
-            <span class="unit-text">天</span>
+            <span class="text-sm text-gray-600">天</span>
           </div>
-          <div class="form-item-help">设置已访问链接的记录保留时间</div>
+          <div class="text-xs text-gray-500">设置已访问链接的记录保留时间</div>
         </div>
       </el-form-item>
       
-      <el-form-item label="调试模式" class="debug-form-item">
-        <div class="switch-container">
+      <el-form-item label="调试模式">
+        <div class="space-y-2">
           <el-switch
             v-model="formData.debug"
             size="large"
             inline-prompt
           />
-          <div class="form-item-help">开启后将在控制台显示详细调试信息</div>
+          <div class="text-xs text-gray-500">开启后将在控制台显示详细调试信息</div>
         </div>
       </el-form-item>
     </el-form>

@@ -27,13 +27,16 @@ const createIsolatedApp = () => {
             elementPlusLink.href = 'https://unpkg.com/element-plus/dist/index.css';
             shadowRoot.appendChild(elementPlusLink);
 
+            // 注入 Tailwind CSS 样式
+            const tailwindStyles = document.createElement('style');
+            const tailwindModule = await import('@/styles/tailwind.css?inline');
+            tailwindStyles.textContent = tailwindModule.default;
+            shadowRoot.appendChild(tailwindStyles);
+
             // 注入自定义样式 (从 index.css 获取)
             const customStyles = document.createElement('style');
-
-            // 由于在 Shadow DOM 中，需要将样式内容直接嵌入
             const stylesModule = await import('@/styles/index.css?inline');
             customStyles.textContent = stylesModule.default;
-
             shadowRoot.appendChild(customStyles);
         } catch (error) {
             console.warn('Failed to inject styles:', error);
