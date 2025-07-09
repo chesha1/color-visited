@@ -15,7 +15,7 @@
       <el-tabs
         v-model="activeTab"
         tab-position="left"
-        class="settings-tabs h-full"
+        class="h-full"
         stretch
       >
         <el-tab-pane label="常规设置" name="general" class="h-full">
