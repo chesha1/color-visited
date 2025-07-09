@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.1.3
+// @version      2.1.4
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -79,7 +79,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-DFQdhUy6.js"(exports, module$1) {
+        "main-BKYpoaJs.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21729,7 +21729,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 tailwindStyles.textContent = tailwindModule.default;
                 shadowRoot.appendChild(tailwindStyles);
                 const customStyles = document.createElement("style");
-                const stylesModule = await __vitePreload(() => module.import('./index-Drxim_Ob-BG7OZGdk.js'), true ? void 0 : void 0);
+                const stylesModule = await __vitePreload(() => module.import('./index-Dd27cyou-rv-KGBld.js'), true ? void 0 : void 0);
                 customStyles.textContent = stylesModule.default;
                 shadowRoot.appendChild(customStyles);
               } catch (error) {
@@ -21762,12 +21762,12 @@ System.register("./tailwind-BqSzTI75-CzV-kKrm.js", [], (function (exports, modul
   };
 }));
 
-System.register("./index-Drxim_Ob-BG7OZGdk.js", [], (function (exports, module) {
+System.register("./index-Dd27cyou-rv-KGBld.js", [], (function (exports, module) {
   'use strict';
   return {
     execute: (function () {
 
-      const index = exports("default", ":host{all:initial;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif;font-size:14px;line-height:1.5;color:#303133}*{box-sizing:border-box}:host{--el-color-primary: #409eff;--el-input-border-color: #dcdfe6;--el-input-hover-border-color: #c0c4cc;--el-input-focus-border-color: var(--el-color-primary);--el-border-color: #dcdfe6;--el-border-color-hover: #c0c4cc;--el-disabled-bg-color: #f5f7fa;--el-disabled-border-color: #e4e7ed;--el-color-danger: #f56c6c;--el-transition-duration: .3s}");
+      const index = exports("default", ":host{all:initial;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif;font-size:14px;line-height:1.5;color:#303133}:host{--el-color-primary: #409eff;--el-input-border-color: #dcdfe6;--el-input-hover-border-color: #c0c4cc;--el-input-focus-border-color: var(--el-color-primary);--el-border-color: #dcdfe6;--el-border-color-hover: #c0c4cc;--el-disabled-bg-color: #f5f7fa;--el-disabled-border-color: #e4e7ed;--el-color-danger: #f56c6c;--el-transition-duration: .3s}");
 
     })
   };

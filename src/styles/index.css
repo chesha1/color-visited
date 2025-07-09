@@ -15,10 +15,6 @@
   color: #303133;
 }
 
-* {
-  box-sizing: border-box;
-}
-
 /* Element Plus 变量定义 */
 :host {
   --el-color-primary: #409eff;
