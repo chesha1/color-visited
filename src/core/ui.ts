@@ -13,6 +13,10 @@ export function showNotification(message: string): void {
   // 根据消息内容简单判断类型
   const type = /失败|错误|error/i.test(message) ? 'error' : 'success';
 
+  // 尝试获取 Shadow DOM 根节点，若不存在则退回 document.body
+  const container = document.querySelector('#color-visited-root') as HTMLElement | null;
+  const appendTarget = (container && (container.shadowRoot as unknown as HTMLElement)) || document.body;
+
   ElMessage({
     message,
     type: type as any,
@@ -20,6 +24,8 @@ export function showNotification(message: string): void {
     showClose: true,
     grouping: true,
     offset: 20,
+    // 将 Message 组件挂载到 Shadow DOM 中
+    appendTo: appendTarget as any,
   });
 }
 

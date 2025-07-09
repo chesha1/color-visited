@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.1.4
+// @version      2.1.5
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -79,7 +79,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-BKYpoaJs.js"(exports, module$1) {
+        "main-CucgRF6D.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21222,13 +21222,17 @@ System.register("./__entry.js", [], (function (exports, module) {
           }
           function showNotification(message2) {
             const type = /失败|错误|error/i.test(message2) ? "error" : "success";
+            const container = document.querySelector("#color-visited-root");
+            const appendTarget = container && container.shadowRoot || document.body;
             ElMessage({
               message: message2,
               type,
               duration: 2e3,
               showClose: true,
               grouping: true,
-              offset: 20
+              offset: 20,
+              // 将 Message 组件挂载到 Shadow DOM 中
+              appendTo: appendTarget
             });
           }
           function injectCustomStyles() {
