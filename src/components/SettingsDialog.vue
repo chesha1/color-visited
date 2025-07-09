@@ -4,45 +4,47 @@
     width="900px"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
-    class="settings-dialog"
+    :body-style="{ padding: '0' }"
     @closed="handleClosed"
   >
     <template #header>
       <span class="text-lg font-semibold">设置</span>
     </template>
-    <!-- 使用 el-tabs 纵向布局 -->
-    <el-tabs
-      v-model="activeTab"
-      tab-position="left"
-      class="settings-tabs"
-      stretch
-    >
-      <el-tab-pane label="常规设置" name="general">
-        <div class="p-6">
-          <GeneralSettingsComponent
-            :current-settings="currentGeneralSettings"
-            :default-settings="defaultGeneralSettings"
-            ref="generalSettingsRef"
-          />
-        </div>
-      </el-tab-pane>
-      <el-tab-pane label="预设网站" name="presets">
-        <div class="p-6">
-          <PresetSettingsComponent />
-        </div>
-      </el-tab-pane>
-      <el-tab-pane label="批量记录快捷键" name="shortcut">
-        <div class="p-6">
-          <ShortcutSettingsComponent
-            :current-settings="currentSettings"
-            :default-settings="defaultSettings"
-            :is-mac="isMac"
-            :visible="visible"
-            ref="shortcutSettingsRef"
-          />
-        </div>
-      </el-tab-pane>
-    </el-tabs>
+    <div class="h-[400px] overflow-y-auto">
+      <!-- 使用 el-tabs 纵向布局 -->
+      <el-tabs
+        v-model="activeTab"
+        tab-position="left"
+        class="settings-tabs h-full"
+        stretch
+      >
+        <el-tab-pane label="常规设置" name="general" class="h-full">
+          <div class="p-6 h-full">
+            <GeneralSettingsComponent
+              :current-settings="currentGeneralSettings"
+              :default-settings="defaultGeneralSettings"
+              ref="generalSettingsRef"
+            />
+          </div>
+        </el-tab-pane>
+        <el-tab-pane label="预设网站" name="presets" class="h-full">
+          <div class="p-6 h-full">
+            <PresetSettingsComponent />
+          </div>
+        </el-tab-pane>
+        <el-tab-pane label="批量记录快捷键" name="shortcut" class="h-full">
+          <div class="p-6 h-full">
+            <ShortcutSettingsComponent
+              :current-settings="currentSettings"
+              :default-settings="defaultSettings"
+              :is-mac="isMac"
+              :visible="visible"
+              ref="shortcutSettingsRef"
+            />
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+    </div>
     
     <template #footer>
       <div class="flex justify-end gap-3">

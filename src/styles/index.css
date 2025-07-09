@@ -93,16 +93,3 @@
 .el-tabs {
   --el-tabs-header-height: auto;
 }
-
-/* 固定对话框高度并让超出部分滚动 */
-.settings-dialog .el-dialog__body {
-  height: 400px;      /* 需要的固定高度 */
-  padding: 0 !important;
-  overflow-y: auto !important;
-}
-
-/* 让 tabs 内容区域充满并可滚动 */
-.settings-dialog .el-tabs__content,
-.settings-dialog .el-tab-pane {
-  height: 100%;
-}
