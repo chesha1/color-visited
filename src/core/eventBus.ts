@@ -9,21 +9,39 @@ export interface GeneralSettings {
   debug: boolean;
 }
 
-// 定义事件类型
+// 定义设置对话框相关的数据接口
+export interface SettingsDialogPayload {
+  currentSettings: BatchKeySettings;
+  defaultSettings: BatchKeySettings;
+  currentGeneralSettings: GeneralSettings;
+  defaultGeneralSettings: GeneralSettings;
+  isMac: boolean;
+}
+
+// 定义同步对话框相关的数据接口
+export interface SyncDialogPayload {
+  // 同步对话框暂时不需要额外数据
+}
+
+// 定义简化后的事件类型
 export type Events = {
-  'showSettingsDialog': {
-    currentSettings: BatchKeySettings;
-    defaultSettings: BatchKeySettings;
-    currentGeneralSettings: GeneralSettings;
-    defaultGeneralSettings: GeneralSettings;
-    isMac: boolean;
-    onSave: (settings: BatchKeySettings) => void;
-    onReset: () => void;
-    onGeneralSave: (settings: GeneralSettings) => void;
-    onGeneralReset: () => void;
+  'dialog:show-settings': {
+    type: 'settings';
+    payload: SettingsDialogPayload;
   };
-  'showSyncDialog': {
-    onMenuUpdate: () => void;
+  'dialog:show-sync': {
+    type: 'sync';
+    payload: SyncDialogPayload;
+  };
+  'settings:save': {
+    type: 'batch-key' | 'general';
+    settings: BatchKeySettings | GeneralSettings;
+  };
+  'settings:reset': {
+    type: 'batch-key' | 'general';
+  };
+  'menu:update': {
+    // 菜单更新事件
   };
 }
 

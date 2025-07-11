@@ -70,26 +70,68 @@ export function showSettingsDialog(
   onReset: () => void,
   onGeneralSave: (settings: GeneralSettings) => void,
   onGeneralReset: () => void
-): void {
+): () => void {
   // 通过事件总线发送显示对话框事件
-  eventBus.emit('showSettingsDialog', {
-    currentSettings,
-    defaultSettings,
-    currentGeneralSettings,
-    defaultGeneralSettings,
-    isMac,
-    onSave,
-    onReset,
-    onGeneralSave,
-    onGeneralReset
+  eventBus.emit('dialog:show-settings', {
+    type: 'settings',
+    payload: {
+      currentSettings,
+      defaultSettings,
+      currentGeneralSettings,
+      defaultGeneralSettings,
+      isMac
+    }
   });
+
+  // 监听设置保存事件
+  const handleBatchKeySave = (event: { type: 'batch-key' | 'general'; settings: BatchKeySettings | GeneralSettings }) => {
+    if (event.type === 'batch-key') {
+      onSave(event.settings as BatchKeySettings);
+    }
+  };
+
+  const handleGeneralSave = (event: { type: 'batch-key' | 'general'; settings: BatchKeySettings | GeneralSettings }) => {
+    if (event.type === 'general') {
+      onGeneralSave(event.settings as GeneralSettings);
+    }
+  };
+
+  const handleBatchKeyReset = (event: { type: 'batch-key' | 'general' }) => {
+    if (event.type === 'batch-key') {
+      onReset();
+    }
+  };
+
+  const handleGeneralReset = (event: { type: 'batch-key' | 'general' }) => {
+    if (event.type === 'general') {
+      onGeneralReset();
+    }
+  };
+
+  // 注册事件监听器
+  eventBus.on('settings:save', handleBatchKeySave);
+  eventBus.on('settings:save', handleGeneralSave);
+  eventBus.on('settings:reset', handleBatchKeyReset);
+  eventBus.on('settings:reset', handleGeneralReset);
+
+  // 在对话框关闭时清理事件监听器
+  // 这里可以通过一个一次性的事件来实现
+  const cleanup = () => {
+    eventBus.off('settings:save', handleBatchKeySave);
+    eventBus.off('settings:save', handleGeneralSave);
+    eventBus.off('settings:reset', handleBatchKeyReset);
+    eventBus.off('settings:reset', handleGeneralReset);
+  };
+
+  // 返回清理函数供外部使用
+  return cleanup;
 }
 
 
 // ================== 同步设置对话框 ==================
 
 // 显示同步设置对话框
-export function showSyncSettingsDialog(onMenuUpdate: () => void): void {
+export function showSyncSettingsDialog(onMenuUpdate: () => void): () => void {
   const syncSettings = getSyncSettings();
 
   // 创建设置弹窗
@@ -274,4 +316,11 @@ export function showSyncSettingsDialog(onMenuUpdate: () => void): void {
     document.body.removeChild(dialog);
     document.body.removeChild(overlay);
   }
+
+  // 返回清理函数
+  return () => {
+    if (document.body.contains(dialog)) {
+      closeDialog();
+    }
+  };
 }

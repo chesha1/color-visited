@@ -79,7 +79,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-CucgRF6D.js"(exports, module$1) {
+        "main-7cS3JJ5h.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20766,14 +20766,36 @@ System.register("./__entry.js", [], (function (exports, module) {
             __name: "App",
             setup(__props) {
               const dialogData = ref(null);
-              const handleShowDialog = (data) => {
-                dialogData.value = { ...data, visible: true };
+              const handleShowDialog = (event) => {
+                dialogData.value = { ...event.payload, visible: true };
+              };
+              const handleSettingsSave = (settings) => {
+                eventBus.emit("settings:save", {
+                  type: "batch-key",
+                  settings
+                });
+              };
+              const handleSettingsReset = () => {
+                eventBus.emit("settings:reset", {
+                  type: "batch-key"
+                });
+              };
+              const handleGeneralSave = (settings) => {
+                eventBus.emit("settings:save", {
+                  type: "general",
+                  settings
+                });
+              };
+              const handleGeneralReset = () => {
+                eventBus.emit("settings:reset", {
+                  type: "general"
+                });
               };
               onMounted(() => {
-                eventBus.on("showSettingsDialog", handleShowDialog);
+                eventBus.on("dialog:show-settings", handleShowDialog);
               });
               onUnmounted(() => {
-                eventBus.off("showSettingsDialog", handleShowDialog);
+                eventBus.off("dialog:show-settings", handleShowDialog);
               });
               return (_ctx, _cache) => {
                 return dialogData.value ? (openBlock(), createBlock(_sfc_main$1, {
@@ -20785,11 +20807,11 @@ System.register("./__entry.js", [], (function (exports, module) {
                   "current-general-settings": dialogData.value.currentGeneralSettings,
                   "default-general-settings": dialogData.value.defaultGeneralSettings,
                   "is-mac": dialogData.value.isMac,
-                  onSave: dialogData.value.onSave,
-                  onReset: dialogData.value.onReset,
-                  onGeneralSave: dialogData.value.onGeneralSave,
-                  onGeneralReset: dialogData.value.onGeneralReset
-                }, null, 8, ["modelValue", "current-settings", "default-settings", "current-general-settings", "default-general-settings", "is-mac", "onSave", "onReset", "onGeneralSave", "onGeneralReset"])) : createCommentVNode("", true);
+                  onSave: handleSettingsSave,
+                  onReset: handleSettingsReset,
+                  onGeneralSave: handleGeneralSave,
+                  onGeneralReset: handleGeneralReset
+                }, null, 8, ["modelValue", "current-settings", "default-settings", "current-general-settings", "default-general-settings", "is-mac"])) : createCommentVNode("", true);
               };
             }
           });
@@ -21256,17 +21278,47 @@ System.register("./__entry.js", [], (function (exports, module) {
             }
           }
           function showSettingsDialog(currentSettings, defaultSettings, currentGeneralSettings, defaultGeneralSettings, isMac2, onSave, onReset, onGeneralSave, onGeneralReset) {
-            eventBus.emit("showSettingsDialog", {
-              currentSettings,
-              defaultSettings,
-              currentGeneralSettings,
-              defaultGeneralSettings,
-              isMac: isMac2,
-              onSave,
-              onReset,
-              onGeneralSave,
-              onGeneralReset
+            eventBus.emit("dialog:show-settings", {
+              type: "settings",
+              payload: {
+                currentSettings,
+                defaultSettings,
+                currentGeneralSettings,
+                defaultGeneralSettings,
+                isMac: isMac2
+              }
             });
+            const handleBatchKeySave = (event) => {
+              if (event.type === "batch-key") {
+                onSave(event.settings);
+              }
+            };
+            const handleGeneralSave = (event) => {
+              if (event.type === "general") {
+                onGeneralSave(event.settings);
+              }
+            };
+            const handleBatchKeyReset = (event) => {
+              if (event.type === "batch-key") {
+                onReset();
+              }
+            };
+            const handleGeneralReset = (event) => {
+              if (event.type === "general") {
+                onGeneralReset();
+              }
+            };
+            eventBus.on("settings:save", handleBatchKeySave);
+            eventBus.on("settings:save", handleGeneralSave);
+            eventBus.on("settings:reset", handleBatchKeyReset);
+            eventBus.on("settings:reset", handleGeneralReset);
+            const cleanup = () => {
+              eventBus.off("settings:save", handleBatchKeySave);
+              eventBus.off("settings:save", handleGeneralSave);
+              eventBus.off("settings:reset", handleBatchKeyReset);
+              eventBus.off("settings:reset", handleGeneralReset);
+            };
+            return cleanup;
           }
           function showSyncSettingsDialog(onMenuUpdate) {
             const syncSettings = getSyncSettings();
@@ -21410,6 +21462,11 @@ System.register("./__entry.js", [], (function (exports, module) {
               document.body.removeChild(dialog);
               document.body.removeChild(overlay);
             }
+            return () => {
+              if (document.body.contains(dialog)) {
+                closeDialog();
+              }
+            };
           }
           const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
           const defaultBatchKeySettings = {
