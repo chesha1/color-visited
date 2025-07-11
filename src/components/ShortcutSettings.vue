@@ -30,7 +30,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { BatchKeySettings } from '@/core/eventBus'
+import type { BatchKeySettings } from '@/types'
 
 interface Props {
   currentSettings: BatchKeySettings

@@ -1,12 +1,6 @@
 // ================== 同步模块 ==================
 
-// 同步设置接口
-export interface SyncSettings {
-  enabled: boolean;
-  githubToken: string;
-  gistId: string;
-  lastSyncTime: number;
-}
+import type { SyncSettings } from '@/types';
 
 // 简化的同步配置 - 代码中的默认值
 export const defaultSyncSettings: SyncSettings = {

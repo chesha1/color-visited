@@ -1,3 +1,5 @@
+import type { PresetRules } from '@/types';
+
 // 配置参数
 export const config = {
   color: '#f1f5f9', // 链接颜色，默认为 slate-100
@@ -7,7 +9,7 @@ export const config = {
 };
 
 // 预设规则集合
-export const PRESET_RULES = {
+export const PRESET_RULES: PresetRules = {
   '36kr': {
     pages: [
       /https:\/\/36kr\.com\/$/, // 首页

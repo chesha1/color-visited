@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import SettingsDialog from '@/components/SettingsDialog.vue'
-import { eventBus, type BatchKeySettings, type GeneralSettings, type SettingsDialogPayload } from '@/core/eventBus'
+import { eventBus } from '@/core/eventBus'
+import type { BatchKeySettings, GeneralSettings, SettingsDialogPayload } from '@/types'
 
 const dialogData = ref<{
   visible: boolean

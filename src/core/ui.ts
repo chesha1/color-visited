@@ -2,7 +2,8 @@
 
 import { config } from '@/core/config';
 import { getSyncSettings, saveSyncSettings, validateGitHubToken } from '@/core/sync';
-import { eventBus, type BatchKeySettings, type GeneralSettings } from '@/core/eventBus';
+import { eventBus } from '@/core/eventBus';
+import type { BatchKeySettings, GeneralSettings } from '@/types';
 import { ElMessage } from 'element-plus';
 import 'element-plus/es/components/message/style/css';
 

@@ -11,7 +11,7 @@ import {
   showSettingsDialog,
   showSyncSettingsDialog
 } from '@/core/ui';
-import { type BatchKeySettings, type GeneralSettings } from '@/core/eventBus';
+import type { BatchKeySettings, GeneralSettings } from '@/types';
 import {
   isMac,
   defaultBatchKeySettings,

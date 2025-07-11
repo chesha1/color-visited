@@ -1,6 +1,6 @@
 // ================== 工具函数模块 ==================
 
-import type { BatchKeySettings } from '@/core/eventBus';
+import type { BatchKeySettings } from '@/types';
 
 // ================== 操作系统检测 ==================
 

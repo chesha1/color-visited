@@ -66,7 +66,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { BatchKeySettings, GeneralSettings } from '@/core/eventBus'
+import type { BatchKeySettings, GeneralSettings } from '@/types'
 import GeneralSettingsComponent from './GeneralSettings.vue'
 import PresetSettingsComponent from './PresetSettings.vue'
 import ShortcutSettingsComponent from './ShortcutSettings.vue'

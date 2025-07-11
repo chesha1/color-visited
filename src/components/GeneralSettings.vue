@@ -57,7 +57,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { GeneralSettings } from '@/core/eventBus'
+import type { GeneralSettings } from '@/types'
 
 interface Props {
   currentSettings: GeneralSettings
