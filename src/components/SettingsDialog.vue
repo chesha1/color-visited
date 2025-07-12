@@ -118,11 +118,8 @@ const handleSave = () => {
       emit('generalSave', generalData)
     }
   } else if (activeTab.value === 'shortcut') {
-    // 获取快捷键设置的当前数据并触发保存事件
-    const shortcutData = shortcutSettingsRef.value?.getFormData()
-    if (shortcutData) {
-      emit('save', shortcutData)
-    }
+    // 直接调用子组件的 save 方法，该方法会emit事件并重置状态
+    shortcutSettingsRef.value?.save()
   }
   // 预设网站暂时没有保存逻辑
 }

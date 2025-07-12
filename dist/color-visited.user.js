@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.1.7
+// @version      2.1.8
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -79,7 +79,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-DiXMQTo-.js"(exports, module$1) {
+        "main-DBxxmyc0.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20679,10 +20679,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                     emit2("generalSave", generalData);
                   }
                 } else if (activeTab.value === "shortcut") {
-                  const shortcutData = shortcutSettingsRef.value?.getFormData();
-                  if (shortcutData) {
-                    emit2("save", shortcutData);
-                  }
+                  shortcutSettingsRef.value?.save();
                 }
               };
               const handleReset = () => {
