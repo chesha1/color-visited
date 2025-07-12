@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.1.6
+// @version      2.1.7
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -79,7 +79,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-CjLxSfwN.js"(exports, module$1) {
+        "main-DiXMQTo-.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20476,8 +20476,12 @@ System.register("./__entry.js", [], (function (exports, module) {
               const formData = ref({ ...props.currentSettings });
               const newSettings = ref({ ...props.currentSettings });
               const hasNewKeyPress = ref(false);
+              const isResetMode = ref(false);
               const hintText = computed(() => {
-                return hasNewKeyPress.value ? "已记录新快捷键，点击保存应用设置" : "请按下您想要使用的快捷键组合...";
+                if (hasNewKeyPress.value) {
+                  return isResetMode.value ? "已设置为默认快捷键，点击保存应用设置" : "已记录新快捷键，点击保存应用设置";
+                }
+                return "请按下您想要使用的快捷键组合...";
               });
               const currentShortcutDisplay = computed(() => {
                 const settings = hasNewKeyPress.value ? newSettings.value : formData.value;
@@ -20486,48 +20490,101 @@ System.register("./__entry.js", [], (function (exports, module) {
                 if (settings.ctrlKey) shortcutText.push(props.isMac ? "⌃ Control" : "Ctrl");
                 if (settings.altKey) shortcutText.push(props.isMac ? "⌥ Option" : "Alt");
                 if (settings.shiftKey) shortcutText.push(props.isMac ? "⇧ Shift" : "Shift");
-                shortcutText.push(settings.key);
-                return shortcutText.join(" + ");
+                let keyDisplay = settings.key;
+                if (settings.key) {
+                  const keyMap = {
+                    "ArrowUp": "↑",
+                    "ArrowDown": "↓",
+                    "ArrowLeft": "←",
+                    "ArrowRight": "→",
+                    "Enter": "⏎",
+                    "Backspace": "⌫",
+                    "Delete": "⌦",
+                    "Escape": "Esc",
+                    " ": "Space"
+                  };
+                  keyDisplay = keyMap[settings.key] || settings.key;
+                }
+                if (keyDisplay) {
+                  shortcutText.push(keyDisplay);
+                }
+                return shortcutText.length > 0 ? shortcutText.join(" + ") : "未设置";
               });
               const handleKeyDown = (e) => {
                 if (e.key === "Control" || e.key === "Shift" || e.key === "Alt" || e.key === "Meta") {
                   return;
                 }
+                const ignoredKeys = ["Tab", "CapsLock", "NumLock", "ScrollLock", "Insert", "PrintScreen", "Pause"];
+                if (ignoredKeys.includes(e.key)) {
+                  return;
+                }
                 e.preventDefault();
+                e.stopPropagation();
+                let keyName = e.key;
+                if (e.key.length === 1) {
+                  keyName = e.key.toUpperCase();
+                } else {
+                  keyName = e.key;
+                }
+                console.log("快捷键记录:", {
+                  key: keyName,
+                  ctrlKey: e.ctrlKey,
+                  shiftKey: e.shiftKey,
+                  altKey: e.altKey,
+                  metaKey: e.metaKey,
+                  code: e.code
+                });
                 newSettings.value = {
                   ctrlKey: e.ctrlKey,
                   shiftKey: e.shiftKey,
                   altKey: e.altKey,
                   metaKey: e.metaKey,
-                  key: e.key.toUpperCase()
+                  key: keyName
                 };
                 hasNewKeyPress.value = true;
+                isResetMode.value = false;
               };
               const handleSave = () => {
                 if (hasNewKeyPress.value) {
-                  emit2("save", newSettings.value);
-                  ElMessage.success("批量记录快捷键设置已保存！");
+                  if (isResetMode.value) {
+                    emit2("reset");
+                    ElMessage.success("批量记录快捷键已重置为默认！");
+                  } else {
+                    emit2("save", newSettings.value);
+                    ElMessage.success("批量记录快捷键设置已保存！");
+                  }
                   formData.value = { ...newSettings.value };
                   hasNewKeyPress.value = false;
+                  isResetMode.value = false;
                 }
               };
               const handleReset = () => {
-                emit2("reset");
-                ElMessage.success("批量记录快捷键已重置为默认！");
-                hasNewKeyPress.value = false;
+                newSettings.value = { ...props.defaultSettings };
+                hasNewKeyPress.value = true;
+                isResetMode.value = true;
+                ElMessage.success("已重置为默认快捷键，点击保存应用设置！");
               };
-              watch(() => props.currentSettings, (newSettings2) => {
-                formData.value = { ...newSettings2 };
+              watch(() => props.currentSettings, (currentSettings) => {
+                formData.value = { ...currentSettings };
+                if (!hasNewKeyPress.value) {
+                  newSettings.value = { ...currentSettings };
+                }
+                isResetMode.value = false;
               }, { immediate: true, deep: true });
               watch(() => props.visible, (isVisible) => {
+                console.log("对话框状态变化:", { isVisible });
                 if (isVisible) {
-                  document.addEventListener("keydown", handleKeyDown);
+                  console.log("添加键盘监听器");
+                  document.addEventListener("keydown", handleKeyDown, true);
                 } else {
-                  document.removeEventListener("keydown", handleKeyDown);
+                  console.log("移除键盘监听器");
+                  document.removeEventListener("keydown", handleKeyDown, true);
+                  hasNewKeyPress.value = false;
+                  isResetMode.value = false;
                 }
-              });
+              }, { immediate: true });
               onUnmounted(() => {
-                document.removeEventListener("keydown", handleKeyDown);
+                document.removeEventListener("keydown", handleKeyDown, true);
               });
               __expose({
                 save: handleSave,
@@ -20632,7 +20689,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 if (activeTab.value === "general") {
                   generalSettingsRef.value?.reset();
                 } else if (activeTab.value === "shortcut") {
-                  emit2("reset");
+                  shortcutSettingsRef.value?.reset();
                 }
               };
               const handleClosed = () => {

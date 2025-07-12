@@ -50,11 +50,15 @@ const emit = defineEmits<Emits>()
 const formData = ref<BatchKeySettings>({ ...props.currentSettings })
 const newSettings = ref<BatchKeySettings>({ ...props.currentSettings })
 const hasNewKeyPress = ref(false)
+const isResetMode = ref(false) // 标识是否处于重置模式
 
 const hintText = computed(() => {
-  return hasNewKeyPress.value 
-    ? '已记录新快捷键，点击保存应用设置'
-    : '请按下您想要使用的快捷键组合...'
+  if (hasNewKeyPress.value) {
+    return isResetMode.value 
+      ? '已设置为默认快捷键，点击保存应用设置'
+      : '已记录新快捷键，点击保存应用设置'
+  }
+  return '请按下您想要使用的快捷键组合...'
 })
 
 const currentShortcutDisplay = computed(() => {
@@ -65,9 +69,30 @@ const currentShortcutDisplay = computed(() => {
   if (settings.ctrlKey) shortcutText.push(props.isMac ? '⌃ Control' : 'Ctrl')
   if (settings.altKey) shortcutText.push(props.isMac ? '⌥ Option' : 'Alt')
   if (settings.shiftKey) shortcutText.push(props.isMac ? '⇧ Shift' : 'Shift')
-  shortcutText.push(settings.key)
+  
+  // 改进键名显示
+  let keyDisplay = settings.key
+  if (settings.key) {
+    // 特殊键名映射
+    const keyMap: Record<string, string> = {
+      'ArrowUp': '↑',
+      'ArrowDown': '↓',
+      'ArrowLeft': '←',
+      'ArrowRight': '→',
+      'Enter': '⏎',
+      'Backspace': '⌫',
+      'Delete': '⌦',
+      'Escape': 'Esc',
+      ' ': 'Space'
+    }
+    keyDisplay = keyMap[settings.key] || settings.key
+  }
+  
+  if (keyDisplay) {
+    shortcutText.push(keyDisplay)
+  }
 
-  return shortcutText.join(' + ')
+  return shortcutText.length > 0 ? shortcutText.join(' + ') : '未设置'
 })
 
 const handleKeyDown = (e: KeyboardEvent) => {
@@ -76,51 +101,102 @@ const handleKeyDown = (e: KeyboardEvent) => {
     return
   }
 
+  // 忽略一些不适合作为快捷键的键
+  const ignoredKeys = ['Tab', 'CapsLock', 'NumLock', 'ScrollLock', 'Insert', 'PrintScreen', 'Pause']
+  if (ignoredKeys.includes(e.key)) {
+    return
+  }
+
   e.preventDefault()
+  e.stopPropagation()
+
+  // 处理特殊键名
+  let keyName = e.key
+  if (e.key.length === 1) {
+    keyName = e.key.toUpperCase()
+  } else {
+    // 对于功能键，保持原始名称
+    keyName = e.key
+  }
+
+  console.log('快捷键记录:', {
+    key: keyName,
+    ctrlKey: e.ctrlKey,
+    shiftKey: e.shiftKey,
+    altKey: e.altKey,
+    metaKey: e.metaKey,
+    code: e.code
+  })
 
   newSettings.value = {
     ctrlKey: e.ctrlKey,
     shiftKey: e.shiftKey,
     altKey: e.altKey,
     metaKey: e.metaKey,
-    key: e.key.toUpperCase(),
+    key: keyName,
   }
 
   hasNewKeyPress.value = true
+  isResetMode.value = false // 手动按键时取消重置模式
 }
 
 const handleSave = () => {
   if (hasNewKeyPress.value) {
-    emit('save', newSettings.value)
-    ElMessage.success('批量记录快捷键设置已保存！')
+    if (isResetMode.value) {
+      // 如果是重置模式，发送重置事件
+      emit('reset')
+      ElMessage.success('批量记录快捷键已重置为默认！')
+    } else {
+      // 否则正常保存
+      emit('save', newSettings.value)
+      ElMessage.success('批量记录快捷键设置已保存！')
+    }
+    
     // 保存后重置状态
     formData.value = { ...newSettings.value }
     hasNewKeyPress.value = false
+    isResetMode.value = false
   }
 }
 
 const handleReset = () => {
-  emit('reset')
-  ElMessage.success('批量记录快捷键已重置为默认！')
-  hasNewKeyPress.value = false
+  // 仅重置界面显示为默认值，不立即生效
+  newSettings.value = { ...props.defaultSettings }
+  hasNewKeyPress.value = true // 标记为有新的按键设置，需要保存
+  isResetMode.value = true // 标记为重置模式
+  
+  ElMessage.success('已重置为默认快捷键，点击保存应用设置！')
 }
 
 // 监听 props.currentSettings 变化，同步更新 formData
-watch(() => props.currentSettings, (newSettings) => {
-  formData.value = { ...newSettings }
+watch(() => props.currentSettings, (currentSettings) => {
+  formData.value = { ...currentSettings }
+  // 当外部设置变化时，也重置新设置状态
+  if (!hasNewKeyPress.value) {
+    newSettings.value = { ...currentSettings }
+  }
+  // 重置模式标识
+  isResetMode.value = false
 }, { immediate: true, deep: true })
 
 // 监听对话框显示状态，只在对话框显示时添加键盘监听器
 watch(() => props.visible, (isVisible) => {
+  console.log('对话框状态变化:', { isVisible })
+  
   if (isVisible) {
-    document.addEventListener('keydown', handleKeyDown)
+    console.log('添加键盘监听器')
+    document.addEventListener('keydown', handleKeyDown, true)
   } else {
-    document.removeEventListener('keydown', handleKeyDown)
+    console.log('移除键盘监听器')
+    document.removeEventListener('keydown', handleKeyDown, true)
+    // 当对话框关闭时，重置新按键状态
+    hasNewKeyPress.value = false
+    isResetMode.value = false
   }
-})
+}, { immediate: true })
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeyDown)
+  document.removeEventListener('keydown', handleKeyDown, true)
 })
 
 // 暴露给父组件调用的方法和属性

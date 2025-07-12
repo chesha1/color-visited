@@ -133,8 +133,8 @@ const handleReset = () => {
     // 仅重置表单显示，实际保存需用户点击「保存设置」
     generalSettingsRef.value?.reset()
   } else if (activeTab.value === 'shortcut') {
-    // 快捷键重置逻辑保持原状，立即生效
-    emit('reset')
+    // 快捷键重置逻辑改为仅重置表单显示，实际保存需用户点击「保存设置」
+    shortcutSettingsRef.value?.reset()
   }
   // 预设网站暂时没有重置逻辑
 }
