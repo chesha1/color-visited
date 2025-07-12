@@ -56,8 +56,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
 import type { GeneralSettings } from '@/types'
+import { showNotification } from '@/core/ui'
 
 interface Props {
   currentSettings: GeneralSettings
@@ -101,13 +101,13 @@ const expirationDays = computed({
 
 const handleSave = () => {
   emit('save', { ...formData.value })
-  ElMessage.success('常规设置已保存！')
+  showNotification('常规设置已保存！')
 }
 
 // 重置为默认值，但仅更新界面，真正保存需用户点击「保存设置」
 const handleReset = () => {
   formData.value = { ...props.defaultSettings }
-  ElMessage.success('常规设置已重置为默认！')
+  showNotification('常规设置已重置为默认！')
 }
 
 // 监听 props.currentSettings 变化，同步更新 formData

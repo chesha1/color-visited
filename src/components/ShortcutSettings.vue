@@ -29,8 +29,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
-import { ElMessage } from 'element-plus'
 import type { BatchKeySettings } from '@/types'
+import { showNotification } from '@/core/ui'
 
 interface Props {
   currentSettings: BatchKeySettings
@@ -145,11 +145,11 @@ const handleSave = () => {
     if (isResetMode.value) {
       // 如果是重置模式，发送重置事件
       emit('reset')
-      ElMessage.success('批量记录快捷键已重置为默认！')
+      showNotification('批量记录快捷键已重置为默认！')
     } else {
       // 否则正常保存
       emit('save', newSettings.value)
-      ElMessage.success('批量记录快捷键设置已保存！')
+      showNotification('批量记录快捷键设置已保存！')
     }
     
     // 保存后重置状态
@@ -165,7 +165,7 @@ const handleReset = () => {
   hasNewKeyPress.value = true // 标记为有新的按键设置，需要保存
   isResetMode.value = true // 标记为重置模式
   
-  ElMessage.success('已重置为默认快捷键，点击保存应用设置！')
+  showNotification('已重置为默认快捷键，点击保存应用设置！')
 }
 
 // 监听 props.currentSettings 变化，同步更新 formData

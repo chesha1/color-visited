@@ -5,14 +5,15 @@ import { getSyncSettings, saveSyncSettings, validateGitHubToken } from '@/core/s
 import { eventBus } from '@/core/eventBus';
 import type { BatchKeySettings, GeneralSettings } from '@/types';
 import { ElMessage } from 'element-plus';
+import type { MessageProps } from 'element-plus';
 import 'element-plus/es/components/message/style/css';
 
 // ================== 通知组件 ==================
 
 // 显示通知
-export function showNotification(message: string): void {
-  // 根据消息内容简单判断类型
-  const type = /失败|错误|error/i.test(message) ? 'error' : 'success';
+export function showNotification(message: string, type?: MessageProps['type']): void {
+  // 如果没有指定类型，根据消息内容简单判断类型
+  const messageType = type || (/失败|错误|error/i.test(message) ? 'error' : 'success');
 
   // 尝试获取 Shadow DOM 根节点，若不存在则退回 document.body
   const container = document.querySelector('#color-visited-root') as HTMLElement | null;
@@ -20,7 +21,7 @@ export function showNotification(message: string): void {
 
   ElMessage({
     message,
-    type: type as any,
+    type: messageType,
     duration: 2000,
     showClose: true,
     grouping: true,
