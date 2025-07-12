@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.1.5
+// @version      2.1.6
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -79,7 +79,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-7cS3JJ5h.js"(exports, module$1) {
+        "main-CjLxSfwN.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20319,6 +20319,9 @@ System.register("./__entry.js", [], (function (exports, module) {
               const props = __props;
               const emit2 = __emit;
               const formData = ref({ ...props.currentSettings });
+              const hasChanges = computed(() => {
+                return JSON.stringify(formData.value) !== JSON.stringify(props.currentSettings);
+              });
               const colorPresets = [
                 "#f1f5f9",
                 // slate-100
@@ -20359,7 +20362,8 @@ System.register("./__entry.js", [], (function (exports, module) {
               __expose({
                 save: handleSave,
                 reset: handleReset,
-                getFormData: () => ({ ...formData.value })
+                getFormData: () => ({ ...formData.value }),
+                hasChanges
               });
               return (_ctx, _cache) => {
                 const _component_el_color_picker = ElColorPicker;
@@ -20606,8 +20610,10 @@ System.register("./__entry.js", [], (function (exports, module) {
               const canSave = computed(() => {
                 if (activeTab.value === "shortcut") {
                   return shortcutSettingsRef.value?.hasNewKeyPress ?? false;
+                } else if (activeTab.value === "general") {
+                  return generalSettingsRef.value?.hasChanges ?? false;
                 }
-                return true;
+                return false;
               });
               const handleSave = () => {
                 if (activeTab.value === "general") {

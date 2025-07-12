@@ -74,6 +74,11 @@ const emit = defineEmits<Emits>()
 
 const formData = ref<GeneralSettings>({ ...props.currentSettings })
 
+// 检测是否有改动
+const hasChanges = computed(() => {
+  return JSON.stringify(formData.value) !== JSON.stringify(props.currentSettings)
+})
+
 const colorPresets = [
   '#f1f5f9', // slate-100
   '#e2e8f0', // slate-200
@@ -114,6 +119,7 @@ watch(() => props.currentSettings, (newSettings) => {
 defineExpose({
   save: handleSave,
   reset: handleReset,
-  getFormData: () => ({ ...formData.value })
+  getFormData: () => ({ ...formData.value }),
+  hasChanges
 })
 </script>

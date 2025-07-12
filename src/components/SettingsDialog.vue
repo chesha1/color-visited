@@ -104,8 +104,10 @@ const shortcutSettingsRef = ref()
 const canSave = computed(() => {
   if (activeTab.value === 'shortcut') {
     return shortcutSettingsRef.value?.hasNewKeyPress ?? false
+  } else if (activeTab.value === 'general') {
+    return generalSettingsRef.value?.hasChanges ?? false
   }
-  return true
+  return false // 预设网站暂时没有保存功能，所以返回false
 })
 
 const handleSave = () => {
