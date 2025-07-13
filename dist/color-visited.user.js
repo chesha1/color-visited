@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.1.9
+// @version      2.2.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -79,7 +79,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-CPwfyypv.js"(exports, module$1) {
+        "main-VFazbvJ4.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -3289,6 +3289,13 @@ System.register("./__entry.js", [], (function (exports, module) {
               return true;
             }) ? vnodes : null;
           }
+          function toHandlers(obj, preserveCaseIfNecessary) {
+            const ret = {};
+            for (const key in obj) {
+              ret[toHandlerKey(key)] = obj[key];
+            }
+            return ret;
+          }
           const getPublicInstance = (i) => {
             if (!i) return null;
             if (isStatefulComponent(i)) return getComponentPublicInstance(i);
@@ -6274,11 +6281,6 @@ System.register("./__entry.js", [], (function (exports, module) {
           }
           function createTextVNode(text = " ", flag = 0) {
             return createVNode(Text, null, text, flag);
-          }
-          function createStaticVNode(content, numberOfNodes) {
-            const vnode = createVNode(Static, null, content);
-            vnode.staticCount = numberOfNodes;
-            return vnode;
           }
           function createCommentVNode(text = "", asBlock = false) {
             return asBlock ? (openBlock(), createBlock(Comment, null, text)) : createVNode(Comment, null, text);
@@ -9741,7 +9743,7 @@ System.register("./__entry.js", [], (function (exports, module) {
           const UPDATE_MODEL_EVENT = "update:modelValue";
           const CHANGE_EVENT = "change";
           const INPUT_EVENT = "input";
-          var _export_sfc$1 = (sfc, props) => {
+          var _export_sfc = (sfc, props) => {
             const target = sfc.__vccOpts || sfc;
             for (const [key, val] of props) {
               target[key] = val;
@@ -9848,12 +9850,12 @@ System.register("./__entry.js", [], (function (exports, module) {
               type: String
             }
           });
-          const __default__$n = /* @__PURE__ */ defineComponent({
+          const __default__$o = /* @__PURE__ */ defineComponent({
             name: "ElIcon",
             inheritAttrs: false
           });
-          const _sfc_main$x = /* @__PURE__ */ defineComponent({
-            ...__default__$n,
+          const _sfc_main$y = /* @__PURE__ */ defineComponent({
+            ...__default__$o,
             props: iconProps,
             setup(__props) {
               const props = __props;
@@ -9877,7 +9879,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var Icon = /* @__PURE__ */ _export_sfc$1(_sfc_main$x, [["__file", "icon.vue"]]);
+          var Icon = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__file", "icon.vue"]]);
           const ElIcon = withInstall(Icon);
           function useTimeout() {
             let timeoutHandle;
@@ -10268,11 +10270,11 @@ System.register("./__entry.js", [], (function (exports, module) {
             open: () => true,
             close: (evt) => isUndefined(evt) || evt instanceof Event
           };
-          const __default__$m = /* @__PURE__ */ defineComponent({
+          const __default__$n = /* @__PURE__ */ defineComponent({
             name: "ElAlert"
           });
-          const _sfc_main$w = /* @__PURE__ */ defineComponent({
-            ...__default__$m,
+          const _sfc_main$x = /* @__PURE__ */ defineComponent({
+            ...__default__$n,
             props: alertProps,
             emits: alertEmits,
             setup(__props, { emit: emit2 }) {
@@ -10367,7 +10369,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var Alert = /* @__PURE__ */ _export_sfc$1(_sfc_main$w, [["__file", "alert.vue"]]);
+          var Alert = /* @__PURE__ */ _export_sfc(_sfc_main$x, [["__file", "alert.vue"]]);
           const ElAlert = withInstall(Alert);
           const isFirefox = () => isClient && /firefox/i.test(window.navigator.userAgent);
           let hiddenTextarea = void 0;
@@ -10816,12 +10818,12 @@ System.register("./__entry.js", [], (function (exports, module) {
             return [recordCursor, setCursor];
           }
           const COMPONENT_NAME$7 = "ElInput";
-          const __default__$l = /* @__PURE__ */ defineComponent({
+          const __default__$m = /* @__PURE__ */ defineComponent({
             name: COMPONENT_NAME$7,
             inheritAttrs: false
           });
-          const _sfc_main$v = /* @__PURE__ */ defineComponent({
-            ...__default__$l,
+          const _sfc_main$w = /* @__PURE__ */ defineComponent({
+            ...__default__$m,
             props: inputProps,
             emits: inputEmits,
             setup(__props, { expose, emit: emit2 }) {
@@ -11230,7 +11232,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var Input = /* @__PURE__ */ _export_sfc$1(_sfc_main$v, [["__file", "input.vue"]]);
+          var Input = /* @__PURE__ */ _export_sfc(_sfc_main$w, [["__file", "input.vue"]]);
           const ElInput = withInstall(Input);
           const POPPER_INJECTION_KEY = Symbol("popper");
           const POPPER_CONTENT_INJECTION_KEY = Symbol("popperContent");
@@ -11251,12 +11253,12 @@ System.register("./__entry.js", [], (function (exports, module) {
               default: "tooltip"
             }
           });
-          const __default__$k = /* @__PURE__ */ defineComponent({
+          const __default__$l = /* @__PURE__ */ defineComponent({
             name: "ElPopper",
             inheritAttrs: false
           });
-          const _sfc_main$u = /* @__PURE__ */ defineComponent({
-            ...__default__$k,
+          const _sfc_main$v = /* @__PURE__ */ defineComponent({
+            ...__default__$l,
             props: popperProps,
             setup(__props, { expose }) {
               const props = __props;
@@ -11279,13 +11281,13 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var Popper = /* @__PURE__ */ _export_sfc$1(_sfc_main$u, [["__file", "popper.vue"]]);
-          const __default__$j = /* @__PURE__ */ defineComponent({
+          var Popper = /* @__PURE__ */ _export_sfc(_sfc_main$v, [["__file", "popper.vue"]]);
+          const __default__$k = /* @__PURE__ */ defineComponent({
             name: "ElPopperArrow",
             inheritAttrs: false
           });
-          const _sfc_main$t = /* @__PURE__ */ defineComponent({
-            ...__default__$j,
+          const _sfc_main$u = /* @__PURE__ */ defineComponent({
+            ...__default__$k,
             setup(__props, { expose }) {
               const ns = useNamespace("popper");
               const { arrowRef, arrowStyle } = inject(POPPER_CONTENT_INJECTION_KEY, void 0);
@@ -11306,7 +11308,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var ElPopperArrow = /* @__PURE__ */ _export_sfc$1(_sfc_main$t, [["__file", "arrow.vue"]]);
+          var ElPopperArrow = /* @__PURE__ */ _export_sfc(_sfc_main$u, [["__file", "arrow.vue"]]);
           const popperTriggerProps = buildProps({
             virtualRef: {
               type: definePropType(Object)
@@ -11412,12 +11414,12 @@ System.register("./__entry.js", [], (function (exports, module) {
               "class": ns.e("content")
             }, [s]);
           }
-          const __default__$i = /* @__PURE__ */ defineComponent({
+          const __default__$j = /* @__PURE__ */ defineComponent({
             name: "ElPopperTrigger",
             inheritAttrs: false
           });
-          const _sfc_main$s = /* @__PURE__ */ defineComponent({
-            ...__default__$i,
+          const _sfc_main$t = /* @__PURE__ */ defineComponent({
+            ...__default__$j,
             props: popperTriggerProps,
             setup(__props, { expose }) {
               const props = __props;
@@ -11528,7 +11530,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var ElPopperTrigger = /* @__PURE__ */ _export_sfc$1(_sfc_main$s, [["__file", "trigger.vue"]]);
+          var ElPopperTrigger = /* @__PURE__ */ _export_sfc(_sfc_main$t, [["__file", "trigger.vue"]]);
           const FOCUS_AFTER_TRAPPED = "focus-trap.focus-after-trapped";
           const FOCUS_AFTER_RELEASED = "focus-trap.focus-after-released";
           const FOCUSOUT_PREVENTED = "focus-trap.focusout-prevented";
@@ -11718,7 +11720,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               }
             });
           };
-          const _sfc_main$r = /* @__PURE__ */ defineComponent({
+          const _sfc_main$s = /* @__PURE__ */ defineComponent({
             name: "ElFocusTrap",
             inheritAttrs: false,
             props: {
@@ -11960,10 +11962,10 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          function _sfc_render$4(_ctx, _cache, $props, $setup, $data, $options) {
+          function _sfc_render$3(_ctx, _cache, $props, $setup, $data, $options) {
             return renderSlot(_ctx.$slots, "default", { handleKeydown: _ctx.onKeydown });
           }
-          var ElFocusTrap = /* @__PURE__ */ _export_sfc$1(_sfc_main$r, [["render", _sfc_render$4], ["__file", "focus-trap.vue"]]);
+          var ElFocusTrap = /* @__PURE__ */ _export_sfc(_sfc_main$s, [["render", _sfc_render$3], ["__file", "focus-trap.vue"]]);
           var E = "top", R = "bottom", W = "right", P = "left", me = "auto", G = [E, R, W, P], U = "start", J = "end", Xe = "clippingParents", je = "viewport", K = "popper", Ye = "reference", De = G.reduce(function(t, e) {
             return t.concat([e + "-" + U, e + "-" + J]);
           }, []), Ee = [].concat(G, [me]).reduce(function(t, e) {
@@ -12878,11 +12880,11 @@ System.register("./__entry.js", [], (function (exports, module) {
               updateZIndex
             };
           };
-          const __default__$h = /* @__PURE__ */ defineComponent({
+          const __default__$i = /* @__PURE__ */ defineComponent({
             name: "ElPopperContent"
           });
-          const _sfc_main$q = /* @__PURE__ */ defineComponent({
-            ...__default__$h,
+          const _sfc_main$r = /* @__PURE__ */ defineComponent({
+            ...__default__$i,
             props: popperContentProps,
             emits: popperContentEmits,
             setup(__props, { expose, emit: emit2 }) {
@@ -12996,7 +12998,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var ElPopperContent = /* @__PURE__ */ _export_sfc$1(_sfc_main$q, [["__file", "content.vue"]]);
+          var ElPopperContent = /* @__PURE__ */ _export_sfc(_sfc_main$r, [["__file", "content.vue"]]);
           const ElPopper = withInstall(Popper);
           const TOOLTIP_INJECTION_KEY = Symbol("elTooltip");
           const teleportProps = buildProps({
@@ -13209,11 +13211,11 @@ System.register("./__entry.js", [], (function (exports, module) {
             };
             return handleEvent;
           };
-          const __default__$g = /* @__PURE__ */ defineComponent({
+          const __default__$h = /* @__PURE__ */ defineComponent({
             name: "ElTooltipTrigger"
           });
-          const _sfc_main$p = /* @__PURE__ */ defineComponent({
-            ...__default__$g,
+          const _sfc_main$q = /* @__PURE__ */ defineComponent({
+            ...__default__$h,
             props: useTooltipTriggerProps,
             setup(__props, { expose }) {
               const props = __props;
@@ -13272,8 +13274,8 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var ElTooltipTrigger = /* @__PURE__ */ _export_sfc$1(_sfc_main$p, [["__file", "trigger.vue"]]);
-          const _sfc_main$o = /* @__PURE__ */ defineComponent({
+          var ElTooltipTrigger = /* @__PURE__ */ _export_sfc(_sfc_main$q, [["__file", "trigger.vue"]]);
+          const _sfc_main$p = /* @__PURE__ */ defineComponent({
             __name: "teleport",
             props: teleportProps,
             setup(__props) {
@@ -13287,7 +13289,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var Teleport = /* @__PURE__ */ _export_sfc$1(_sfc_main$o, [["__file", "teleport.vue"]]);
+          var Teleport = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__file", "teleport.vue"]]);
           const ElTeleport = withInstall(Teleport);
           const usePopperContainerId = () => {
             const namespace = useGetDerivedNamespace();
@@ -13321,12 +13323,12 @@ System.register("./__entry.js", [], (function (exports, module) {
               selector
             };
           };
-          const __default__$f = /* @__PURE__ */ defineComponent({
+          const __default__$g = /* @__PURE__ */ defineComponent({
             name: "ElTooltipContent",
             inheritAttrs: false
           });
-          const _sfc_main$n = /* @__PURE__ */ defineComponent({
-            ...__default__$f,
+          const _sfc_main$o = /* @__PURE__ */ defineComponent({
+            ...__default__$g,
             props: useTooltipContentProps,
             setup(__props, { expose }) {
               const props = __props;
@@ -13499,12 +13501,12 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var ElTooltipContent = /* @__PURE__ */ _export_sfc$1(_sfc_main$n, [["__file", "content.vue"]]);
-          const __default__$e = /* @__PURE__ */ defineComponent({
+          var ElTooltipContent = /* @__PURE__ */ _export_sfc(_sfc_main$o, [["__file", "content.vue"]]);
+          const __default__$f = /* @__PURE__ */ defineComponent({
             name: "ElTooltip"
           });
-          const _sfc_main$m = /* @__PURE__ */ defineComponent({
-            ...__default__$e,
+          const _sfc_main$n = /* @__PURE__ */ defineComponent({
+            ...__default__$f,
             props: useTooltipProps,
             emits: tooltipEmits,
             setup(__props, { expose, emit: emit2 }) {
@@ -13656,7 +13658,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var Tooltip = /* @__PURE__ */ _export_sfc$1(_sfc_main$m, [["__file", "tooltip.vue"]]);
+          var Tooltip = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__file", "tooltip.vue"]]);
           const ElTooltip = withInstall(Tooltip);
           const badgeProps = buildProps({
             value: {
@@ -13690,11 +13692,11 @@ System.register("./__entry.js", [], (function (exports, module) {
               type: String
             }
           });
-          const __default__$d = /* @__PURE__ */ defineComponent({
+          const __default__$e = /* @__PURE__ */ defineComponent({
             name: "ElBadge"
           });
-          const _sfc_main$l = /* @__PURE__ */ defineComponent({
-            ...__default__$d,
+          const _sfc_main$m = /* @__PURE__ */ defineComponent({
+            ...__default__$e,
             props: badgeProps,
             setup(__props, { expose }) {
               const props = __props;
@@ -13755,7 +13757,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var Badge = /* @__PURE__ */ _export_sfc$1(_sfc_main$l, [["__file", "badge.vue"]]);
+          var Badge = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__file", "badge.vue"]]);
           const ElBadge = withInstall(Badge);
           const buttonGroupContextKey = Symbol("buttonGroupContextKey");
           const useDeprecated = ({ from, replacement, scope, version: version2, ref: ref2, type = "API" }, condition) => {
@@ -14839,11 +14841,11 @@ System.register("./__entry.js", [], (function (exports, module) {
               return styles;
             });
           }
-          const __default__$c = /* @__PURE__ */ defineComponent({
+          const __default__$d = /* @__PURE__ */ defineComponent({
             name: "ElButton"
           });
-          const _sfc_main$k = /* @__PURE__ */ defineComponent({
-            ...__default__$c,
+          const _sfc_main$l = /* @__PURE__ */ defineComponent({
+            ...__default__$d,
             props: buttonProps,
             emits: buttonEmits,
             setup(__props, { expose, emit: emit2 }) {
@@ -14919,16 +14921,16 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var Button = /* @__PURE__ */ _export_sfc$1(_sfc_main$k, [["__file", "button.vue"]]);
+          var Button = /* @__PURE__ */ _export_sfc(_sfc_main$l, [["__file", "button.vue"]]);
           const buttonGroupProps = {
             size: buttonProps.size,
             type: buttonProps.type
           };
-          const __default__$b = /* @__PURE__ */ defineComponent({
+          const __default__$c = /* @__PURE__ */ defineComponent({
             name: "ElButtonGroup"
           });
-          const _sfc_main$j = /* @__PURE__ */ defineComponent({
-            ...__default__$b,
+          const _sfc_main$k = /* @__PURE__ */ defineComponent({
+            ...__default__$c,
             props: buttonGroupProps,
             setup(__props) {
               const props = __props;
@@ -14946,7 +14948,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var ButtonGroup = /* @__PURE__ */ _export_sfc$1(_sfc_main$j, [["__file", "button-group.vue"]]);
+          var ButtonGroup = /* @__PURE__ */ _export_sfc(_sfc_main$k, [["__file", "button-group.vue"]]);
           const ElButton = withInstall(Button, {
             ButtonGroup
           });
@@ -15117,6 +15119,90 @@ System.register("./__entry.js", [], (function (exports, module) {
               nodeList.delete(el);
             }
           };
+          const __default__$b = /* @__PURE__ */ defineComponent({
+            name: "ElCollapseTransition"
+          });
+          const _sfc_main$j = /* @__PURE__ */ defineComponent({
+            ...__default__$b,
+            setup(__props) {
+              const ns = useNamespace("collapse-transition");
+              const reset = (el) => {
+                el.style.maxHeight = "";
+                el.style.overflow = el.dataset.oldOverflow;
+                el.style.paddingTop = el.dataset.oldPaddingTop;
+                el.style.paddingBottom = el.dataset.oldPaddingBottom;
+              };
+              const on2 = {
+                beforeEnter(el) {
+                  if (!el.dataset)
+                    el.dataset = {};
+                  el.dataset.oldPaddingTop = el.style.paddingTop;
+                  el.dataset.oldPaddingBottom = el.style.paddingBottom;
+                  if (el.style.height)
+                    el.dataset.elExistsHeight = el.style.height;
+                  el.style.maxHeight = 0;
+                  el.style.paddingTop = 0;
+                  el.style.paddingBottom = 0;
+                },
+                enter(el) {
+                  requestAnimationFrame(() => {
+                    el.dataset.oldOverflow = el.style.overflow;
+                    if (el.dataset.elExistsHeight) {
+                      el.style.maxHeight = el.dataset.elExistsHeight;
+                    } else if (el.scrollHeight !== 0) {
+                      el.style.maxHeight = `${el.scrollHeight}px`;
+                    } else {
+                      el.style.maxHeight = 0;
+                    }
+                    el.style.paddingTop = el.dataset.oldPaddingTop;
+                    el.style.paddingBottom = el.dataset.oldPaddingBottom;
+                    el.style.overflow = "hidden";
+                  });
+                },
+                afterEnter(el) {
+                  el.style.maxHeight = "";
+                  el.style.overflow = el.dataset.oldOverflow;
+                },
+                enterCancelled(el) {
+                  reset(el);
+                },
+                beforeLeave(el) {
+                  if (!el.dataset)
+                    el.dataset = {};
+                  el.dataset.oldPaddingTop = el.style.paddingTop;
+                  el.dataset.oldPaddingBottom = el.style.paddingBottom;
+                  el.dataset.oldOverflow = el.style.overflow;
+                  el.style.maxHeight = `${el.scrollHeight}px`;
+                  el.style.overflow = "hidden";
+                },
+                leave(el) {
+                  if (el.scrollHeight !== 0) {
+                    el.style.maxHeight = 0;
+                    el.style.paddingTop = 0;
+                    el.style.paddingBottom = 0;
+                  }
+                },
+                afterLeave(el) {
+                  reset(el);
+                },
+                leaveCancelled(el) {
+                  reset(el);
+                }
+              };
+              return (_ctx, _cache) => {
+                return openBlock(), createBlock(Transition, mergeProps({
+                  name: unref(ns).b()
+                }, toHandlers(on2)), {
+                  default: withCtx(() => [
+                    renderSlot(_ctx.$slots, "default")
+                  ]),
+                  _: 3
+                }, 16, ["name"]);
+              };
+            }
+          });
+          var CollapseTransition = /* @__PURE__ */ _export_sfc(_sfc_main$j, [["__file", "collapse-transition.vue"]]);
+          const ElCollapseTransition = withInstall(CollapseTransition);
           const alphaSliderProps = buildProps({
             color: {
               type: definePropType(Object),
@@ -15375,7 +15461,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var AlphaSlider = /* @__PURE__ */ _export_sfc$1(_sfc_main$i, [["__file", "alpha-slider.vue"]]);
+          var AlphaSlider = /* @__PURE__ */ _export_sfc(_sfc_main$i, [["__file", "alpha-slider.vue"]]);
           const _sfc_main$h = /* @__PURE__ */ defineComponent({
             name: "ElColorHueSlider",
             props: {
@@ -15477,7 +15563,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          function _sfc_render$3(_ctx, _cache, $props, $setup, $data, $options) {
+          function _sfc_render$2(_ctx, _cache, $props, $setup, $data, $options) {
             return openBlock(), createElementBlock("div", {
               class: normalizeClass([_ctx.ns.b(), _ctx.ns.is("vertical", _ctx.vertical)])
             }, [
@@ -15496,7 +15582,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               }, null, 6)
             ], 2);
           }
-          var HueSlider = /* @__PURE__ */ _export_sfc$1(_sfc_main$h, [["render", _sfc_render$3], ["__file", "hue-slider.vue"]]);
+          var HueSlider = /* @__PURE__ */ _export_sfc(_sfc_main$h, [["render", _sfc_render$2], ["__file", "hue-slider.vue"]]);
           const colorPickerProps = buildProps({
             modelValue: {
               type: definePropType(String),
@@ -15668,7 +15754,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          function _sfc_render$2(_ctx, _cache, $props, $setup, $data, $options) {
+          function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
             return openBlock(), createElementBlock("div", {
               class: normalizeClass(_ctx.ns.b())
             }, [
@@ -15693,7 +15779,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               ], 2)
             ], 2);
           }
-          var Predefine = /* @__PURE__ */ _export_sfc$1(_sfc_main$g, [["render", _sfc_render$2], ["__file", "predefine.vue"]]);
+          var Predefine = /* @__PURE__ */ _export_sfc(_sfc_main$g, [["render", _sfc_render$1], ["__file", "predefine.vue"]]);
           const _sfc_main$f = /* @__PURE__ */ defineComponent({
             name: "ElSlPanel",
             props: {
@@ -15764,7 +15850,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
+          function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
             return openBlock(), createElementBlock("div", {
               class: normalizeClass(_ctx.ns.b()),
               style: normalizeStyle({
@@ -15788,7 +15874,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               ], 6)
             ], 6);
           }
-          var SvPanel = /* @__PURE__ */ _export_sfc$1(_sfc_main$f, [["render", _sfc_render$1], ["__file", "sv-panel.vue"]]);
+          var SvPanel = /* @__PURE__ */ _export_sfc(_sfc_main$f, [["render", _sfc_render], ["__file", "sv-panel.vue"]]);
           const __default__$9 = /* @__PURE__ */ defineComponent({
             name: "ElColorPicker"
           });
@@ -16164,7 +16250,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var ColorPicker = /* @__PURE__ */ _export_sfc$1(_sfc_main$e, [["__file", "color-picker.vue"]]);
+          var ColorPicker = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__file", "color-picker.vue"]]);
           const ElColorPicker = withInstall(ColorPicker);
           const messageConfig = {};
           const REPEAT_INTERVAL = 100;
@@ -16479,7 +16565,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var ElDialogContent = /* @__PURE__ */ _export_sfc$1(_sfc_main$d, [["__file", "dialog-content.vue"]]);
+          var ElDialogContent = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__file", "dialog-content.vue"]]);
           const dialogProps = buildProps({
             ...dialogContentProps,
             appendToBody: Boolean,
@@ -16920,7 +17006,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var Dialog = /* @__PURE__ */ _export_sfc$1(_sfc_main$c, [["__file", "dialog.vue"]]);
+          var Dialog = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__file", "dialog.vue"]]);
           const ElDialog = withInstall(Dialog);
           const formMetaProps = buildProps({
             size: {
@@ -17159,7 +17245,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var Form = /* @__PURE__ */ _export_sfc$1(_sfc_main$b, [["__file", "form.vue"]]);
+          var Form = /* @__PURE__ */ _export_sfc(_sfc_main$b, [["__file", "form.vue"]]);
           function _extends() {
             _extends = Object.assign ? Object.assign.bind() : function(target) {
               for (var i = 1; i < arguments.length; i++) {
@@ -18634,7 +18720,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var FormItem = /* @__PURE__ */ _export_sfc$1(_sfc_main$a, [["__file", "form-item.vue"]]);
+          var FormItem = /* @__PURE__ */ _export_sfc(_sfc_main$a, [["__file", "form-item.vue"]]);
           const ElForm = withInstall(Form, {
             FormItem
           });
@@ -19031,7 +19117,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var InputNumber = /* @__PURE__ */ _export_sfc$1(_sfc_main$9, [["__file", "input-number.vue"]]);
+          var InputNumber = /* @__PURE__ */ _export_sfc(_sfc_main$9, [["__file", "input-number.vue"]]);
           const ElInputNumber = withInstall(InputNumber);
           const capitalize = (str) => capitalize$1(str);
           const isValidComponentSize = (val) => ["", ...componentSizes].includes(val);
@@ -19315,7 +19401,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var Switch = /* @__PURE__ */ _export_sfc$1(_sfc_main$8, [["__file", "switch.vue"]]);
+          var Switch = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["__file", "switch.vue"]]);
           const ElSwitch = withInstall(Switch);
           const tabsRootContextKey = Symbol("tabsRootContextKey");
           const tabBarProps = buildProps({
@@ -19406,7 +19492,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var TabBar = /* @__PURE__ */ _export_sfc$1(_sfc_main$7, [["__file", "tab-bar.vue"]]);
+          var TabBar = /* @__PURE__ */ _export_sfc(_sfc_main$7, [["__file", "tab-bar.vue"]]);
           const tabNavProps = buildProps({
             panes: {
               type: definePropType(Array),
@@ -19927,7 +20013,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var TabPane = /* @__PURE__ */ _export_sfc$1(_sfc_main$6, [["__file", "tab-pane.vue"]]);
+          var TabPane = /* @__PURE__ */ _export_sfc(_sfc_main$6, [["__file", "tab-pane.vue"]]);
           const ElTabs = withInstall(Tabs$1, {
             TabPane
           });
@@ -20186,7 +20272,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          var MessageConstructor = /* @__PURE__ */ _export_sfc$1(_sfc_main$5, [["__file", "message.vue"]]);
+          var MessageConstructor = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["__file", "message.vue"]]);
           let seed = 1;
           const normalizeOptions = (params) => {
             const options = !params || isString$1(params) || isVNode(params) || isFunction$1(params) ? { message: params } : params;
@@ -20975,10 +21061,10 @@ System.register("./__entry.js", [], (function (exports, module) {
             };
           }
           const _hoisted_1$3 = { class: "space-y-6" };
-          const _hoisted_2$1 = { class: "flex items-center gap-3" };
-          const _hoisted_3$1 = { class: "space-y-2" };
-          const _hoisted_4$1 = { class: "flex items-center gap-2" };
-          const _hoisted_5$1 = { class: "space-y-2" };
+          const _hoisted_2$2 = { class: "flex items-center gap-3" };
+          const _hoisted_3$2 = { class: "space-y-2" };
+          const _hoisted_4$2 = { class: "flex items-center gap-2" };
+          const _hoisted_5$2 = { class: "space-y-2" };
           const _sfc_main$4 = /* @__PURE__ */ defineComponent({
             __name: "GeneralSettings",
             props: {
@@ -21056,7 +21142,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                     default: withCtx(() => [
                       createVNode(_component_el_form_item, { label: "链接颜色" }, {
                         default: withCtx(() => [
-                          createBaseVNode("div", _hoisted_2$1, [
+                          createBaseVNode("div", _hoisted_2$2, [
                             createVNode(_component_el_color_picker, {
                               modelValue: formData.value.color,
                               "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => formData.value.color = $event),
@@ -21077,8 +21163,8 @@ System.register("./__entry.js", [], (function (exports, module) {
                       }),
                       createVNode(_component_el_form_item, { label: "过期时间" }, {
                         default: withCtx(() => [
-                          createBaseVNode("div", _hoisted_3$1, [
-                            createBaseVNode("div", _hoisted_4$1, [
+                          createBaseVNode("div", _hoisted_3$2, [
+                            createBaseVNode("div", _hoisted_4$2, [
                               createVNode(_component_el_input_number, {
                                 modelValue: expirationDays.value,
                                 "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => expirationDays.value = $event),
@@ -21097,7 +21183,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                       }),
                       createVNode(_component_el_form_item, { label: "调试模式" }, {
                         default: withCtx(() => [
-                          createBaseVNode("div", _hoisted_5$1, [
+                          createBaseVNode("div", _hoisted_5$2, [
                             createVNode(_component_el_switch, {
                               modelValue: formData.value.debug,
                               "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => formData.value.debug = $event),
@@ -21116,21 +21202,120 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
-          const _export_sfc = (sfc, props) => {
-            const target = sfc.__vccOpts || sfc;
-            for (const [key, val] of props) {
-              target[key] = val;
-            }
-            return target;
+          const _hoisted_1$2 = { class: "space-y-6 h-full overflow-y-auto" };
+          const _hoisted_2$1 = { class: "space-y-3" };
+          const _hoisted_3$1 = ["onClick"];
+          const _hoisted_4$1 = { class: "flex items-center justify-between" };
+          const _hoisted_5$1 = { class: "flex items-center space-x-3" };
+          const _hoisted_6 = { class: "font-medium text-gray-900 capitalize" };
+          const _hoisted_7 = { class: "text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded" };
+          const _hoisted_8 = { class: "flex items-center space-x-2" };
+          const _hoisted_9 = { class: "px-4 pb-4 border-t border-gray-100" };
+          const _hoisted_10 = { class: "space-y-3 text-sm pt-3" };
+          const _hoisted_11 = {
+            key: 0,
+            class: "text-gray-600 text-xs bg-blue-50 p-2 rounded"
           };
-          const _sfc_main$3 = {};
-          const _hoisted_1$2 = { class: "space-y-6" };
-          function _sfc_render(_ctx, _cache) {
-            return openBlock(), createElementBlock("div", _hoisted_1$2, _cache[0] || (_cache[0] = [
-              createStaticVNode('<div class="border-b pb-4"><h3 class="text-lg font-semibold text-gray-900 mb-2">预设网站</h3><p class="text-sm text-gray-600">管理支持的网站和链接模式</p></div><div class="flex flex-col items-center justify-center py-16 space-y-4"><div class="text-4xl">⚙️</div><p class="text-gray-600 text-center">预设网站功能正在开发中...</p><p class="text-sm text-gray-500 text-center">即将支持自定义网站规则配置</p></div>', 2)
-            ]));
-          }
-          const PresetSettingsComponent = /* @__PURE__ */ _export_sfc(_sfc_main$3, [["render", _sfc_render]]);
+          const _hoisted_12 = { key: 1 };
+          const _hoisted_13 = { class: "font-medium text-gray-700 text-xs" };
+          const _hoisted_14 = { class: "mt-1 space-y-1 max-h-32 overflow-y-auto" };
+          const _hoisted_15 = { key: 2 };
+          const _hoisted_16 = { class: "font-medium text-gray-700 text-xs" };
+          const _hoisted_17 = { class: "mt-1 space-y-1 max-h-32 overflow-y-auto" };
+          const _sfc_main$3 = /* @__PURE__ */ defineComponent({
+            __name: "PresetSettings",
+            setup(__props) {
+              const presetRules = PRESET_RULES;
+              const expandedSites = ref(/* @__PURE__ */ new Set());
+              const toggleExpanded = (siteName) => {
+                if (expandedSites.value.has(siteName)) {
+                  expandedSites.value.delete(siteName);
+                } else {
+                  expandedSites.value.add(siteName);
+                }
+              };
+              const formatRegex = (regex) => {
+                if (regex instanceof RegExp) {
+                  return regex.source;
+                }
+                return regex;
+              };
+              return (_ctx, _cache) => {
+                const _component_el_icon = ElIcon;
+                const _component_el_collapse_transition = ElCollapseTransition;
+                return openBlock(), createElementBlock("div", _hoisted_1$2, [
+                  _cache[0] || (_cache[0] = createBaseVNode("div", { class: "border-b pb-4" }, [
+                    createBaseVNode("h3", { class: "text-lg font-semibold text-gray-900 mb-2" }, "预设网站"),
+                    createBaseVNode("p", { class: "text-sm text-gray-600" }, "管理支持的网站和链接模式")
+                  ], -1)),
+                  createBaseVNode("div", _hoisted_2$1, [
+                    (openBlock(true), createElementBlock(Fragment, null, renderList(unref(presetRules), (rule, siteName) => {
+                      return openBlock(), createElementBlock("div", {
+                        key: siteName,
+                        class: "border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
+                      }, [
+                        createBaseVNode("div", {
+                          class: "p-4 cursor-pointer",
+                          onClick: ($event) => toggleExpanded(siteName)
+                        }, [
+                          createBaseVNode("div", _hoisted_4$1, [
+                            createBaseVNode("div", _hoisted_5$1, [
+                              createBaseVNode("h4", _hoisted_6, toDisplayString(siteName), 1),
+                              createBaseVNode("span", _hoisted_7, toDisplayString(rule.pages.length + rule.patterns.length) + " 条规则 ", 1)
+                            ]),
+                            createBaseVNode("div", _hoisted_8, [
+                              createVNode(_component_el_icon, {
+                                class: normalizeClass(["text-gray-400 transition-transform duration-200", { "rotate-90": expandedSites.value.has(siteName) }])
+                              }, {
+                                default: withCtx(() => [
+                                  createVNode(unref(arrow_right_default))
+                                ]),
+                                _: 2
+                              }, 1032, ["class"])
+                            ])
+                          ])
+                        ], 8, _hoisted_3$1),
+                        createVNode(_component_el_collapse_transition, null, {
+                          default: withCtx(() => [
+                            withDirectives(createBaseVNode("div", _hoisted_9, [
+                              createBaseVNode("div", _hoisted_10, [
+                                rule.description ? (openBlock(), createElementBlock("div", _hoisted_11, toDisplayString(rule.description), 1)) : createCommentVNode("", true),
+                                rule.pages.length > 0 ? (openBlock(), createElementBlock("div", _hoisted_12, [
+                                  createBaseVNode("span", _hoisted_13, "页面规则（" + toDisplayString(rule.pages.length) + "）：", 1),
+                                  createBaseVNode("div", _hoisted_14, [
+                                    (openBlock(true), createElementBlock(Fragment, null, renderList(rule.pages, (page, index) => {
+                                      return openBlock(), createElementBlock("div", {
+                                        key: index,
+                                        class: "text-xs text-gray-600 font-mono bg-gray-50 px-2 py-1 rounded break-all"
+                                      }, toDisplayString(formatRegex(page)), 1);
+                                    }), 128))
+                                  ])
+                                ])) : createCommentVNode("", true),
+                                rule.patterns.length > 0 ? (openBlock(), createElementBlock("div", _hoisted_15, [
+                                  createBaseVNode("span", _hoisted_16, "链接模式（" + toDisplayString(rule.patterns.length) + "）：", 1),
+                                  createBaseVNode("div", _hoisted_17, [
+                                    (openBlock(true), createElementBlock(Fragment, null, renderList(rule.patterns, (pattern, index) => {
+                                      return openBlock(), createElementBlock("div", {
+                                        key: index,
+                                        class: "text-xs text-gray-600 font-mono bg-gray-50 px-2 py-1 rounded break-all"
+                                      }, toDisplayString(formatRegex(pattern)), 1);
+                                    }), 128))
+                                  ])
+                                ])) : createCommentVNode("", true)
+                              ])
+                            ], 512), [
+                              [vShow, expandedSites.value.has(siteName)]
+                            ])
+                          ]),
+                          _: 2
+                        }, 1024)
+                      ]);
+                    }), 128))
+                  ])
+                ]);
+              };
+            }
+          });
           const _hoisted_1$1 = { class: "space-y-6" };
           const _sfc_main$2 = /* @__PURE__ */ defineComponent({
             __name: "ShortcutSettings",
@@ -21441,7 +21626,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                           }, {
                             default: withCtx(() => [
                               createBaseVNode("div", _hoisted_3, [
-                                createVNode(PresetSettingsComponent)
+                                createVNode(_sfc_main$3)
                               ])
                             ]),
                             _: 1
@@ -21846,7 +22031,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 elementPlusLink.href = "https://unpkg.com/element-plus/dist/index.css";
                 shadowRoot.appendChild(elementPlusLink);
                 const tailwindStyles = document.createElement("style");
-                const tailwindModule = await __vitePreload(() => module.import('./tailwind-BqSzTI75-CzV-kKrm.js'), true ? void 0 : void 0);
+                const tailwindModule = await __vitePreload(() => module.import('./tailwind-BsT7FQEU-IeAP8zb0.js'), true ? void 0 : void 0);
                 tailwindStyles.textContent = tailwindModule.default;
                 shadowRoot.appendChild(tailwindStyles);
                 const customStyles = document.createElement("style");
@@ -21872,12 +22057,12 @@ System.register("./__entry.js", [], (function (exports, module) {
   };
 }));
 
-System.register("./tailwind-BqSzTI75-CzV-kKrm.js", [], (function (exports, module) {
+System.register("./tailwind-BsT7FQEU-IeAP8zb0.js", [], (function (exports, module) {
   'use strict';
   return {
     execute: (function () {
 
-      const tailwind = exports("default", '/*! tailwindcss v4.1.11 | MIT License | https://tailwindcss.com */@layer properties{@supports (((-webkit-hyphens:none)) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw-rotate-x:initial;--tw-rotate-y:initial;--tw-rotate-z:initial;--tw-skew-x:initial;--tw-skew-y:initial;--tw-space-y-reverse:0;--tw-border-style:solid;--tw-font-weight:initial;--tw-blur:initial;--tw-brightness:initial;--tw-contrast:initial;--tw-grayscale:initial;--tw-hue-rotate:initial;--tw-invert:initial;--tw-opacity:initial;--tw-saturate:initial;--tw-sepia:initial;--tw-drop-shadow:initial;--tw-drop-shadow-color:initial;--tw-drop-shadow-alpha:100%;--tw-drop-shadow-size:initial}}}@layer theme{:root,:host{--font-sans:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";--font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;--color-red-600:oklch(57.7% .245 27.325);--color-gray-500:oklch(55.1% .027 264.364);--color-gray-600:oklch(44.6% .03 256.802);--color-gray-900:oklch(21% .034 264.665);--spacing:.25rem;--text-xs:.75rem;--text-xs--line-height:calc(1/.75);--text-sm:.875rem;--text-sm--line-height:calc(1.25/.875);--text-lg:1.125rem;--text-lg--line-height:calc(1.75/1.125);--text-4xl:2.25rem;--text-4xl--line-height:calc(2.5/2.25);--font-weight-semibold:600;--default-transition-duration:.15s;--default-transition-timing-function:cubic-bezier(.4,0,.2,1);--default-font-family:var(--font-sans);--default-mono-font-family:var(--font-mono)}}@layer base{*,:after,:before,::backdrop{box-sizing:border-box;border:0 solid;margin:0;padding:0}::file-selector-button{box-sizing:border-box;border:0 solid;margin:0;padding:0}html,:host{-webkit-text-size-adjust:100%;tab-size:4;line-height:1.5;font-family:var(--default-font-family,ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji");font-feature-settings:var(--default-font-feature-settings,normal);font-variation-settings:var(--default-font-variation-settings,normal);-webkit-tap-highlight-color:transparent}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;-webkit-text-decoration:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:var(--default-mono-font-family,ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace);font-feature-settings:var(--default-mono-font-feature-settings,normal);font-variation-settings:var(--default-mono-font-variation-settings,normal);font-size:1em}small{font-size:80%}sub,sup{vertical-align:baseline;font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}:-moz-focusring{outline:auto}progress{vertical-align:baseline}summary{display:list-item}ol,ul,menu{list-style:none}img,svg,video,canvas,audio,iframe,embed,object{vertical-align:middle;display:block}img,video{max-width:100%;height:auto}button,input,select,optgroup,textarea{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}::file-selector-button{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}:where(select:is([multiple],[size])) optgroup{font-weight:bolder}:where(select:is([multiple],[size])) optgroup option{padding-inline-start:20px}::file-selector-button{margin-inline-end:4px}::placeholder{opacity:1}@supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px){::placeholder{color:currentColor}@supports (color:color-mix(in lab,red,red)){::placeholder{color:color-mix(in oklab,currentcolor 50%,transparent)}}}textarea{resize:vertical}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-date-and-time-value{min-height:1lh;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-datetime-edit{padding-block:0}::-webkit-datetime-edit-year-field{padding-block:0}::-webkit-datetime-edit-month-field{padding-block:0}::-webkit-datetime-edit-day-field{padding-block:0}::-webkit-datetime-edit-hour-field{padding-block:0}::-webkit-datetime-edit-minute-field{padding-block:0}::-webkit-datetime-edit-second-field{padding-block:0}::-webkit-datetime-edit-millisecond-field{padding-block:0}::-webkit-datetime-edit-meridiem-field{padding-block:0}:-moz-ui-invalid{box-shadow:none}button,input:where([type=button],[type=reset],[type=submit]){appearance:button}::file-selector-button{appearance:button}::-webkit-inner-spin-button{height:auto}::-webkit-outer-spin-button{height:auto}[hidden]:where(:not([hidden=until-found])){display:none!important}}@layer components;@layer utilities{.visible{visibility:visible}.absolute{position:absolute}.fixed{position:fixed}.static{position:static}.container{width:100%}@media (min-width:40rem){.container{max-width:40rem}}@media (min-width:48rem){.container{max-width:48rem}}@media (min-width:64rem){.container{max-width:64rem}}@media (min-width:80rem){.container{max-width:80rem}}@media (min-width:96rem){.container{max-width:96rem}}.mb-2{margin-bottom:calc(var(--spacing)*2)}.block{display:block}.flex{display:flex}.grid{display:grid}.hidden{display:none}.inline{display:inline}.table{display:table}.h-\\[400px\\]{height:400px}.h-full{height:100%}.w-32{width:calc(var(--spacing)*32)}.flex-1{flex:1}.transform{transform:var(--tw-rotate-x,)var(--tw-rotate-y,)var(--tw-rotate-z,)var(--tw-skew-x,)var(--tw-skew-y,)}.resize{resize:both}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-center{justify-content:center}.justify-end{justify-content:flex-end}.gap-2{gap:calc(var(--spacing)*2)}.gap-3{gap:calc(var(--spacing)*3)}:where(.space-y-2>:not(:last-child)){--tw-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing)*2)*var(--tw-space-y-reverse));margin-block-end:calc(calc(var(--spacing)*2)*calc(1 - var(--tw-space-y-reverse)))}:where(.space-y-4>:not(:last-child)){--tw-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing)*4)*var(--tw-space-y-reverse));margin-block-end:calc(calc(var(--spacing)*4)*calc(1 - var(--tw-space-y-reverse)))}:where(.space-y-6>:not(:last-child)){--tw-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing)*6)*var(--tw-space-y-reverse));margin-block-end:calc(calc(var(--spacing)*6)*calc(1 - var(--tw-space-y-reverse)))}.overflow-y-auto{overflow-y:auto}.border{border-style:var(--tw-border-style);border-width:1px}.border-b{border-bottom-style:var(--tw-border-style);border-bottom-width:1px}.p-2{padding:calc(var(--spacing)*2)}.p-6{padding:calc(var(--spacing)*6)}.p-10{padding:calc(var(--spacing)*10)}.py-16{padding-block:calc(var(--spacing)*16)}.pb-4{padding-bottom:calc(var(--spacing)*4)}.text-center{text-align:center}.font-mono{font-family:var(--font-mono)}.text-4xl{font-size:var(--text-4xl);line-height:var(--tw-leading,var(--text-4xl--line-height))}.text-lg{font-size:var(--text-lg);line-height:var(--tw-leading,var(--text-lg--line-height))}.text-sm{font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}.text-xs{font-size:var(--text-xs);line-height:var(--tw-leading,var(--text-xs--line-height))}.font-semibold{--tw-font-weight:var(--font-weight-semibold);font-weight:var(--font-weight-semibold)}.text-gray-500{color:var(--color-gray-500)}.text-gray-600{color:var(--color-gray-600)}.text-gray-900{color:var(--color-gray-900)}.text-red-600{color:var(--color-red-600)}.capitalize{text-transform:capitalize}.lowercase{text-transform:lowercase}.uppercase{text-transform:uppercase}.blur{--tw-blur:blur(8px);filter:var(--tw-blur,)var(--tw-brightness,)var(--tw-contrast,)var(--tw-grayscale,)var(--tw-hue-rotate,)var(--tw-invert,)var(--tw-saturate,)var(--tw-sepia,)var(--tw-drop-shadow,)}.filter{filter:var(--tw-blur,)var(--tw-brightness,)var(--tw-contrast,)var(--tw-grayscale,)var(--tw-hue-rotate,)var(--tw-invert,)var(--tw-saturate,)var(--tw-sepia,)var(--tw-drop-shadow,)}.transition{transition-property:color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,--tw-gradient-from,--tw-gradient-via,--tw-gradient-to,opacity,box-shadow,transform,translate,scale,rotate,filter,-webkit-backdrop-filter,backdrop-filter,display,visibility,content-visibility,overlay,pointer-events;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-space-y-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}');
+      const tailwind = exports("default", '/*! tailwindcss v4.1.11 | MIT License | https://tailwindcss.com */@layer properties{@supports (((-webkit-hyphens:none)) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw-rotate-x:initial;--tw-rotate-y:initial;--tw-rotate-z:initial;--tw-skew-x:initial;--tw-skew-y:initial;--tw-space-y-reverse:0;--tw-space-x-reverse:0;--tw-border-style:solid;--tw-font-weight:initial;--tw-blur:initial;--tw-brightness:initial;--tw-contrast:initial;--tw-grayscale:initial;--tw-hue-rotate:initial;--tw-invert:initial;--tw-opacity:initial;--tw-saturate:initial;--tw-sepia:initial;--tw-drop-shadow:initial;--tw-drop-shadow-color:initial;--tw-drop-shadow-alpha:100%;--tw-drop-shadow-size:initial;--tw-duration:initial;--tw-shadow:0 0 #0000;--tw-shadow-color:initial;--tw-shadow-alpha:100%;--tw-inset-shadow:0 0 #0000;--tw-inset-shadow-color:initial;--tw-inset-shadow-alpha:100%;--tw-ring-color:initial;--tw-ring-shadow:0 0 #0000;--tw-inset-ring-color:initial;--tw-inset-ring-shadow:0 0 #0000;--tw-ring-inset:initial;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-offset-shadow:0 0 #0000}}}@layer theme{:root,:host{--font-sans:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";--font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;--color-red-600:oklch(57.7% .245 27.325);--color-blue-50:oklch(97% .014 254.604);--color-gray-50:oklch(98.5% .002 247.839);--color-gray-100:oklch(96.7% .003 264.542);--color-gray-200:oklch(92.8% .006 264.531);--color-gray-400:oklch(70.7% .022 261.325);--color-gray-500:oklch(55.1% .027 264.364);--color-gray-600:oklch(44.6% .03 256.802);--color-gray-700:oklch(37.3% .034 259.733);--color-gray-900:oklch(21% .034 264.665);--spacing:.25rem;--text-xs:.75rem;--text-xs--line-height:calc(1/.75);--text-sm:.875rem;--text-sm--line-height:calc(1.25/.875);--text-lg:1.125rem;--text-lg--line-height:calc(1.75/1.125);--text-4xl:2.25rem;--text-4xl--line-height:calc(2.5/2.25);--font-weight-medium:500;--font-weight-semibold:600;--radius-lg:.5rem;--default-transition-duration:.15s;--default-transition-timing-function:cubic-bezier(.4,0,.2,1);--default-font-family:var(--font-sans);--default-mono-font-family:var(--font-mono)}}@layer base{*,:after,:before,::backdrop{box-sizing:border-box;border:0 solid;margin:0;padding:0}::file-selector-button{box-sizing:border-box;border:0 solid;margin:0;padding:0}html,:host{-webkit-text-size-adjust:100%;tab-size:4;line-height:1.5;font-family:var(--default-font-family,ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji");font-feature-settings:var(--default-font-feature-settings,normal);font-variation-settings:var(--default-font-variation-settings,normal);-webkit-tap-highlight-color:transparent}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;-webkit-text-decoration:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:var(--default-mono-font-family,ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace);font-feature-settings:var(--default-mono-font-feature-settings,normal);font-variation-settings:var(--default-mono-font-variation-settings,normal);font-size:1em}small{font-size:80%}sub,sup{vertical-align:baseline;font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}:-moz-focusring{outline:auto}progress{vertical-align:baseline}summary{display:list-item}ol,ul,menu{list-style:none}img,svg,video,canvas,audio,iframe,embed,object{vertical-align:middle;display:block}img,video{max-width:100%;height:auto}button,input,select,optgroup,textarea{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}::file-selector-button{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}:where(select:is([multiple],[size])) optgroup{font-weight:bolder}:where(select:is([multiple],[size])) optgroup option{padding-inline-start:20px}::file-selector-button{margin-inline-end:4px}::placeholder{opacity:1}@supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px){::placeholder{color:currentColor}@supports (color:color-mix(in lab,red,red)){::placeholder{color:color-mix(in oklab,currentcolor 50%,transparent)}}}textarea{resize:vertical}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-date-and-time-value{min-height:1lh;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-datetime-edit{padding-block:0}::-webkit-datetime-edit-year-field{padding-block:0}::-webkit-datetime-edit-month-field{padding-block:0}::-webkit-datetime-edit-day-field{padding-block:0}::-webkit-datetime-edit-hour-field{padding-block:0}::-webkit-datetime-edit-minute-field{padding-block:0}::-webkit-datetime-edit-second-field{padding-block:0}::-webkit-datetime-edit-millisecond-field{padding-block:0}::-webkit-datetime-edit-meridiem-field{padding-block:0}:-moz-ui-invalid{box-shadow:none}button,input:where([type=button],[type=reset],[type=submit]){appearance:button}::file-selector-button{appearance:button}::-webkit-inner-spin-button{height:auto}::-webkit-outer-spin-button{height:auto}[hidden]:where(:not([hidden=until-found])){display:none!important}}@layer components;@layer utilities{.visible{visibility:visible}.absolute{position:absolute}.fixed{position:fixed}.static{position:static}.container{width:100%}@media (min-width:40rem){.container{max-width:40rem}}@media (min-width:48rem){.container{max-width:48rem}}@media (min-width:64rem){.container{max-width:64rem}}@media (min-width:80rem){.container{max-width:80rem}}@media (min-width:96rem){.container{max-width:96rem}}.mt-1{margin-top:calc(var(--spacing)*1)}.mb-2{margin-bottom:calc(var(--spacing)*2)}.mb-3{margin-bottom:calc(var(--spacing)*3)}.block{display:block}.flex{display:flex}.grid{display:grid}.hidden{display:none}.inline{display:inline}.table{display:table}.h-3{height:calc(var(--spacing)*3)}.h-4{height:calc(var(--spacing)*4)}.h-\\[400px\\]{height:400px}.h-full{height:100%}.max-h-32{max-height:calc(var(--spacing)*32)}.w-3{width:calc(var(--spacing)*3)}.w-4{width:calc(var(--spacing)*4)}.w-32{width:calc(var(--spacing)*32)}.flex-1{flex:1}.rotate-90{rotate:90deg}.rotate-180{rotate:180deg}.transform{transform:var(--tw-rotate-x,)var(--tw-rotate-y,)var(--tw-rotate-z,)var(--tw-skew-x,)var(--tw-skew-y,)}.cursor-pointer{cursor:pointer}.resize{resize:both}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-between{justify-content:space-between}.justify-center{justify-content:center}.justify-end{justify-content:flex-end}.gap-2{gap:calc(var(--spacing)*2)}.gap-3{gap:calc(var(--spacing)*3)}:where(.space-y-1>:not(:last-child)){--tw-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing)*1)*var(--tw-space-y-reverse));margin-block-end:calc(calc(var(--spacing)*1)*calc(1 - var(--tw-space-y-reverse)))}:where(.space-y-2>:not(:last-child)){--tw-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing)*2)*var(--tw-space-y-reverse));margin-block-end:calc(calc(var(--spacing)*2)*calc(1 - var(--tw-space-y-reverse)))}:where(.space-y-3>:not(:last-child)){--tw-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing)*3)*var(--tw-space-y-reverse));margin-block-end:calc(calc(var(--spacing)*3)*calc(1 - var(--tw-space-y-reverse)))}:where(.space-y-6>:not(:last-child)){--tw-space-y-reverse:0;margin-block-start:calc(calc(var(--spacing)*6)*var(--tw-space-y-reverse));margin-block-end:calc(calc(var(--spacing)*6)*calc(1 - var(--tw-space-y-reverse)))}:where(.space-x-2>:not(:last-child)){--tw-space-x-reverse:0;margin-inline-start:calc(calc(var(--spacing)*2)*var(--tw-space-x-reverse));margin-inline-end:calc(calc(var(--spacing)*2)*calc(1 - var(--tw-space-x-reverse)))}:where(.space-x-3>:not(:last-child)){--tw-space-x-reverse:0;margin-inline-start:calc(calc(var(--spacing)*3)*var(--tw-space-x-reverse));margin-inline-end:calc(calc(var(--spacing)*3)*calc(1 - var(--tw-space-x-reverse)))}.overflow-y-auto{overflow-y:auto}.rounded{border-radius:.25rem}.rounded-lg{border-radius:var(--radius-lg)}.border{border-style:var(--tw-border-style);border-width:1px}.border-t{border-top-style:var(--tw-border-style);border-top-width:1px}.border-b{border-bottom-style:var(--tw-border-style);border-bottom-width:1px}.border-gray-100{border-color:var(--color-gray-100)}.border-gray-200{border-color:var(--color-gray-200)}.bg-blue-50{background-color:var(--color-blue-50)}.bg-gray-50{background-color:var(--color-gray-50)}.bg-gray-100{background-color:var(--color-gray-100)}.fill-current{fill:currentColor}.p-2{padding:calc(var(--spacing)*2)}.p-4{padding:calc(var(--spacing)*4)}.p-6{padding:calc(var(--spacing)*6)}.p-10{padding:calc(var(--spacing)*10)}.px-2{padding-inline:calc(var(--spacing)*2)}.px-4{padding-inline:calc(var(--spacing)*4)}.py-1{padding-block:calc(var(--spacing)*1)}.py-16{padding-block:calc(var(--spacing)*16)}.pt-3{padding-top:calc(var(--spacing)*3)}.pb-4{padding-bottom:calc(var(--spacing)*4)}.text-center{text-align:center}.font-mono{font-family:var(--font-mono)}.text-4xl{font-size:var(--text-4xl);line-height:var(--tw-leading,var(--text-4xl--line-height))}.text-lg{font-size:var(--text-lg);line-height:var(--tw-leading,var(--text-lg--line-height))}.text-sm{font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}.text-xs{font-size:var(--text-xs);line-height:var(--tw-leading,var(--text-xs--line-height))}.font-medium{--tw-font-weight:var(--font-weight-medium);font-weight:var(--font-weight-medium)}.font-semibold{--tw-font-weight:var(--font-weight-semibold);font-weight:var(--font-weight-semibold)}.break-all{word-break:break-all}.text-gray-400{color:var(--color-gray-400)}.text-gray-500{color:var(--color-gray-500)}.text-gray-600{color:var(--color-gray-600)}.text-gray-700{color:var(--color-gray-700)}.text-gray-900{color:var(--color-gray-900)}.text-red-600{color:var(--color-red-600)}.capitalize{text-transform:capitalize}.lowercase{text-transform:lowercase}.uppercase{text-transform:uppercase}.blur{--tw-blur:blur(8px);filter:var(--tw-blur,)var(--tw-brightness,)var(--tw-contrast,)var(--tw-grayscale,)var(--tw-hue-rotate,)var(--tw-invert,)var(--tw-saturate,)var(--tw-sepia,)var(--tw-drop-shadow,)}.filter{filter:var(--tw-blur,)var(--tw-brightness,)var(--tw-contrast,)var(--tw-grayscale,)var(--tw-hue-rotate,)var(--tw-invert,)var(--tw-saturate,)var(--tw-sepia,)var(--tw-drop-shadow,)}.transition{transition-property:color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,--tw-gradient-from,--tw-gradient-via,--tw-gradient-to,opacity,box-shadow,transform,translate,scale,rotate,filter,-webkit-backdrop-filter,backdrop-filter,display,visibility,content-visibility,overlay,pointer-events;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.transition-shadow{transition-property:box-shadow;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.transition-transform{transition-property:transform,translate,scale,rotate;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.duration-200{--tw-duration:.2s;transition-duration:.2s}@media (hover:hover){.hover\\:shadow-sm:hover{--tw-shadow:0 1px 3px 0 var(--tw-shadow-color,#0000001a),0 1px 2px -1px var(--tw-shadow-color,#0000001a);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}}}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-space-y-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-space-x-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}@property --tw-duration{syntax:"*";inherits:false}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}');
 
     })
   };
