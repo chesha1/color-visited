@@ -44,6 +44,15 @@ export function startColorVisitedScript() {
   // 从存储中读取快捷键设置，如果没有则使用默认设置
   let batchKeySettings: BatchKeySettings = GM_getValue('batch_shortcut_settings', defaultBatchKeySettings);
 
+  // 从存储中读取预设状态，如果没有则默认全部启用
+  let presetStates: Record<string, boolean> = (() => {
+    const defaultStates: Record<string, boolean> = {};
+    Object.keys(PRESET_RULES).forEach(siteName => {
+      defaultStates[siteName] = true;
+    });
+    return GM_getValue('preset_states', defaultStates);
+  })();
+
   // 从配置中获取常规设置
   const getGeneralSettings = (): GeneralSettings => ({
     color: GM_getValue('color_setting', config.color),
@@ -74,7 +83,7 @@ export function startColorVisitedScript() {
     (config as any).color = currentGeneralSettings.color;
     (config as any).expirationTime = currentGeneralSettings.expirationTime;
     (config as any).debug = currentGeneralSettings.debug;
-    
+
     updateMenu();
 
     // 如果启用同步，在后台进行启动同步（不阻塞主流程）
@@ -90,6 +99,20 @@ export function startColorVisitedScript() {
       (config as any).presets = Object.keys(PRESET_RULES);
     }
     loadUrlPatterns();
+
+    // 监听预设状态更新事件
+    window.addEventListener('preset-states-updated', (event: any) => {
+      const { presetStates: newPresetStates } = event.detail;
+      presetStates = newPresetStates;
+      GM_setValue('preset_states', presetStates);
+
+      // 重新加载 URL 模式
+      allPatterns = [];
+      loadUrlPatterns();
+
+      // 重新设置页面以应用新的预设配置
+      setupPage();
+    });
 
     // 初始运行
     setupPage();
@@ -118,6 +141,12 @@ export function startColorVisitedScript() {
 
   // ================== URL和页面检测模块 ==================
 
+  // 获取启用的预设列表
+  function getEnabledPresets(): string[] {
+    const allPresets = config.presets === 'all' ? Object.keys(PRESET_RULES) : config.presets;
+    return allPresets.filter(preset => presetStates[preset] !== false);
+  }
+
   // 判断当前页面是否符合运行条件
   // 虽然已经用 @include 正则限定了运行范围了，但是有的网站用了 SPA
   // 在首页点击某个帖子链接时，页面并没有真正刷新，而是通过 js 动态地更新了页面内容，同时修改了浏览器的地址栏
@@ -125,8 +154,8 @@ export function startColorVisitedScript() {
   // 目前只有 linux.do 这个网站是这么做的
   function isPageActive() {
     const currentUrl = window.location.href;
-    const presets = config.presets === 'all' ? Object.keys(PRESET_RULES) : config.presets;
-    return presets.some((preset: string) => {
+    const enabledPresets = getEnabledPresets();
+    return enabledPresets.some((preset: string) => {
       const pages = (PRESET_RULES as any)[preset]?.pages || [];
       return pages.some((pattern: RegExp) => pattern.test(currentUrl));
     });
@@ -151,8 +180,8 @@ export function startColorVisitedScript() {
 
   // 加载URL匹配模式 - 根据预设规则构建匹配模式数组
   function loadUrlPatterns() {
-    const presets = config.presets === 'all' ? Object.keys(PRESET_RULES) : config.presets;
-    presets.forEach((preset: string) => {
+    const enabledPresets = getEnabledPresets();
+    enabledPresets.forEach((preset: string) => {
       if ((PRESET_RULES as any)[preset]) {
         allPatterns = allPatterns.concat((PRESET_RULES as any)[preset].patterns);
       }
