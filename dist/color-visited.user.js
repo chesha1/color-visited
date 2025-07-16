@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.2.1
+// @version      2.2.2
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -79,7 +79,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-Ciox6jJY.js"(exports, module$1) {
+        "main-K7azXcG2.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21205,6 +21205,10 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
+          var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
+          var _GM_registerMenuCommand = /* @__PURE__ */ (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
+          var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
+          var _GM_unregisterMenuCommand = /* @__PURE__ */ (() => typeof GM_unregisterMenuCommand != "undefined" ? GM_unregisterMenuCommand : void 0)();
           const _hoisted_1$2 = { class: "space-y-6 h-full overflow-y-auto" };
           const _hoisted_2$1 = { class: "bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6" };
           const _hoisted_3$1 = { class: "flex items-center justify-between" };
@@ -21260,8 +21264,8 @@ System.register("./__entry.js", [], (function (exports, module) {
                   states[siteName] = true;
                 });
                 presetStates.value = states;
-                if (typeof GM_getValue !== "undefined") {
-                  const savedStates = GM_getValue("preset_states", {});
+                if (typeof _GM_getValue !== "undefined") {
+                  const savedStates = _GM_getValue("preset_states", {});
                   Object.keys(states).forEach((siteName) => {
                     if (savedStates.hasOwnProperty(siteName)) {
                       states[siteName] = savedStates[siteName];
@@ -21273,8 +21277,8 @@ System.register("./__entry.js", [], (function (exports, module) {
               const updatePresetState = (siteName, enabled) => {
                 const isEnabled = Boolean(enabled);
                 presetStates.value[siteName] = isEnabled;
-                if (typeof GM_setValue !== "undefined") {
-                  GM_setValue("preset_states", presetStates.value);
+                if (typeof _GM_setValue !== "undefined") {
+                  _GM_setValue("preset_states", presetStates.value);
                 }
                 if (typeof window !== "undefined" && window.dispatchEvent) {
                   window.dispatchEvent(new CustomEvent("preset-states-updated", {
@@ -21286,8 +21290,8 @@ System.register("./__entry.js", [], (function (exports, module) {
                 Object.keys(presetStates.value).forEach((siteName) => {
                   presetStates.value[siteName] = enabled;
                 });
-                if (typeof GM_setValue !== "undefined") {
-                  GM_setValue("preset_states", presetStates.value);
+                if (typeof _GM_setValue !== "undefined") {
+                  _GM_setValue("preset_states", presetStates.value);
                 }
                 if (typeof window !== "undefined" && window.dispatchEvent) {
                   window.dispatchEvent(new CustomEvent("preset-states-updated", {
@@ -21894,20 +21898,20 @@ System.register("./__entry.js", [], (function (exports, module) {
             console.log("Color Visited Script has started!");
             const domain = getCurrentDomain();
             const scriptKey = getScriptKey(domain);
-            let isEnabled = GM_getValue(scriptKey, true);
+            let isEnabled = _GM_getValue(scriptKey, true);
             let allPatterns = [];
-            let batchKeySettings = GM_getValue("batch_shortcut_settings", defaultBatchKeySettings);
+            let batchKeySettings = _GM_getValue("batch_shortcut_settings", defaultBatchKeySettings);
             let presetStates = (() => {
               const defaultStates = {};
               Object.keys(PRESET_RULES).forEach((siteName) => {
                 defaultStates[siteName] = true;
               });
-              return GM_getValue("preset_states", defaultStates);
+              return _GM_getValue("preset_states", defaultStates);
             })();
             const getGeneralSettings = () => ({
-              color: GM_getValue("color_setting", config.color),
-              expirationTime: GM_getValue("expiration_time_setting", config.expirationTime),
-              debug: GM_getValue("debug_setting", config.debug)
+              color: _GM_getValue("color_setting", config.color),
+              expirationTime: _GM_getValue("expiration_time_setting", config.expirationTime),
+              debug: _GM_getValue("debug_setting", config.debug)
             });
             const defaultGeneralSettings = {
               color: config.color,
@@ -21935,7 +21939,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               window.addEventListener("preset-states-updated", (event) => {
                 const { presetStates: newPresetStates } = event.detail;
                 presetStates = newPresetStates;
-                GM_setValue("preset_states", presetStates);
+                _GM_setValue("preset_states", presetStates);
                 allPatterns = [];
                 loadUrlPatterns();
                 setupPage();
@@ -21992,16 +21996,16 @@ System.register("./__entry.js", [], (function (exports, module) {
               return allPatterns.some((pattern) => pattern.test(url));
             }
             function updateMenu() {
-              GM_unregisterMenuCommand("toggleScriptMenuCommand");
-              GM_unregisterMenuCommand("clearLinksMenuCommand");
-              GM_unregisterMenuCommand("batchAddLinksMenuCommand");
-              GM_unregisterMenuCommand("setBatchKeyMenuCommand");
-              GM_unregisterMenuCommand("showSyncSettingsMenuCommand");
+              _GM_unregisterMenuCommand("toggleScriptMenuCommand");
+              _GM_unregisterMenuCommand("clearLinksMenuCommand");
+              _GM_unregisterMenuCommand("batchAddLinksMenuCommand");
+              _GM_unregisterMenuCommand("setBatchKeyMenuCommand");
+              _GM_unregisterMenuCommand("showSyncSettingsMenuCommand");
               const toggleText = isEnabled ? "禁用链接染色脚本" : "启用链接染色脚本";
-              GM_registerMenuCommand(toggleText, toggleScript);
-              GM_registerMenuCommand("清除所有记住的链接", clearLinks);
-              GM_registerMenuCommand("批量记录当前页面链接", batchAddLinks);
-              GM_registerMenuCommand("设置", () => {
+              _GM_registerMenuCommand(toggleText, toggleScript);
+              _GM_registerMenuCommand("清除所有记住的链接", clearLinks);
+              _GM_registerMenuCommand("批量记录当前页面链接", batchAddLinks);
+              _GM_registerMenuCommand("设置", () => {
                 showSettingsDialog(
                   batchKeySettings,
                   defaultBatchKeySettings,
@@ -22010,17 +22014,17 @@ System.register("./__entry.js", [], (function (exports, module) {
                   isMac,
                   (newSettings) => {
                     batchKeySettings = newSettings;
-                    GM_setValue("batch_shortcut_settings", batchKeySettings);
+                    _GM_setValue("batch_shortcut_settings", batchKeySettings);
                   },
                   () => {
                     batchKeySettings = Object.assign({}, defaultBatchKeySettings);
-                    GM_setValue("batch_shortcut_settings", defaultBatchKeySettings);
+                    _GM_setValue("batch_shortcut_settings", defaultBatchKeySettings);
                   },
                   (newGeneralSettings) => {
                     currentGeneralSettings = newGeneralSettings;
-                    GM_setValue("color_setting", newGeneralSettings.color);
-                    GM_setValue("expiration_time_setting", newGeneralSettings.expirationTime);
-                    GM_setValue("debug_setting", newGeneralSettings.debug);
+                    _GM_setValue("color_setting", newGeneralSettings.color);
+                    _GM_setValue("expiration_time_setting", newGeneralSettings.expirationTime);
+                    _GM_setValue("debug_setting", newGeneralSettings.debug);
                     config.color = newGeneralSettings.color;
                     config.expirationTime = newGeneralSettings.expirationTime;
                     config.debug = newGeneralSettings.debug;
@@ -22028,9 +22032,9 @@ System.register("./__entry.js", [], (function (exports, module) {
                   },
                   () => {
                     currentGeneralSettings = { ...defaultGeneralSettings };
-                    GM_setValue("color_setting", defaultGeneralSettings.color);
-                    GM_setValue("expiration_time_setting", defaultGeneralSettings.expirationTime);
-                    GM_setValue("debug_setting", defaultGeneralSettings.debug);
+                    _GM_setValue("color_setting", defaultGeneralSettings.color);
+                    _GM_setValue("expiration_time_setting", defaultGeneralSettings.expirationTime);
+                    _GM_setValue("debug_setting", defaultGeneralSettings.debug);
                     config.color = defaultGeneralSettings.color;
                     config.expirationTime = defaultGeneralSettings.expirationTime;
                     config.debug = defaultGeneralSettings.debug;
@@ -22038,13 +22042,13 @@ System.register("./__entry.js", [], (function (exports, module) {
                   }
                 );
               });
-              GM_registerMenuCommand("同步设置", () => {
+              _GM_registerMenuCommand("同步设置", () => {
                 showSyncSettingsDialog(updateMenu);
               });
             }
             function toggleScript() {
               isEnabled = !isEnabled;
-              GM_setValue(scriptKey, isEnabled);
+              _GM_setValue(scriptKey, isEnabled);
               updateMenu();
               setupPage();
             }
@@ -22059,21 +22063,21 @@ System.register("./__entry.js", [], (function (exports, module) {
               }
             }
             function deleteExpiredLinks() {
-              const visitedLinks = GM_getValue("visitedLinks", {});
+              const visitedLinks = _GM_getValue("visitedLinks", {});
               const now2 = (/* @__PURE__ */ new Date()).getTime();
               Object.keys(visitedLinks).forEach((url) => {
                 if (now2 - visitedLinks[url] > config.expirationTime) {
                   delete visitedLinks[url];
                 }
               });
-              GM_setValue("visitedLinks", visitedLinks);
+              _GM_setValue("visitedLinks", visitedLinks);
             }
             function clearLinks() {
-              GM_setValue("visitedLinks", {});
+              _GM_setValue("visitedLinks", {});
               removeScript();
             }
             function batchAddLinks() {
-              const visitedLinks = GM_getValue("visitedLinks", {});
+              const visitedLinks = _GM_getValue("visitedLinks", {});
               const now2 = (/* @__PURE__ */ new Date()).getTime();
               let addedCount = 0;
               document.querySelectorAll("a[href]").forEach((link) => {
@@ -22085,7 +22089,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 }
               });
               if (addedCount > 0) {
-                GM_setValue("visitedLinks", visitedLinks);
+                _GM_setValue("visitedLinks", visitedLinks);
                 showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
               } else {
                 showNotification("没有找到新的符合规则的链接可添加");
@@ -22139,7 +22143,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 if (!shouldColorLink(inputUrl)) return;
                 if (!Object.hasOwn(visitedLinks, inputUrl)) {
                   visitedLinks[inputUrl] = (/* @__PURE__ */ new Date()).getTime();
-                  GM_setValue("visitedLinks", visitedLinks);
+                  _GM_setValue("visitedLinks", visitedLinks);
                   if (config.debug) console.log(`${inputUrl} saved`);
                   link.classList.add("visited-link");
                   if (config.debug) console.log(`${inputUrl} class added`);
@@ -22154,7 +22158,7 @@ System.register("./__entry.js", [], (function (exports, module) {
             }
             function activateLinkFeatures() {
               deleteExpiredLinks();
-              const visitedLinks = GM_getValue("visitedLinks", {});
+              const visitedLinks = _GM_getValue("visitedLinks", {});
               logStorageInfo(visitedLinks);
               updateAllLinksStatus(visitedLinks);
               setupDOMObserver(visitedLinks);

@@ -129,6 +129,7 @@
 import { ref, onMounted } from 'vue'
 import { PRESET_RULES } from '@/core/config'
 import type { PresetRules } from '@/types'
+import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client'
 
 const presetRules: PresetRules = PRESET_RULES
 const expandedSites = ref<Set<string>>(new Set())
@@ -146,7 +147,7 @@ const initializePresetStates = () => {
   
   // 从 GM storage 中加载已保存的状态
   if (typeof GM_getValue !== 'undefined') {
-    const savedStates = GM_getValue('preset_states', {})
+    const savedStates = GM_getValue('preset_states', {}) as Record<string, boolean>
     Object.keys(states).forEach(siteName => {
       if (savedStates.hasOwnProperty(siteName)) {
         states[siteName] = savedStates[siteName]
@@ -208,12 +209,6 @@ const formatRegex = (regex: string | RegExp): string => {
     return regex.source
   }
   return regex
-}
-
-// 声明全局函数
-declare global {
-  function GM_getValue(key: string, defaultValue?: any): any
-  function GM_setValue(key: string, value: any): void
 }
 
 // 组件挂载时初始化

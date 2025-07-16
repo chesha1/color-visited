@@ -11,7 +11,7 @@ import {
   showSettingsDialog,
   showSyncSettingsDialog
 } from '@/core/ui';
-import type { BatchKeySettings, GeneralSettings } from '@/types';
+import type { BatchKeySettings, GeneralSettings, VisitedLinks } from '@/types';
 import {
   isMac,
   defaultBatchKeySettings,
@@ -20,15 +20,12 @@ import {
   getCurrentDomain,
   getScriptKey
 } from '@/core/utils';
-
-
-// ================== 全局类型声明 ==================
-declare global {
-  function GM_getValue(key: string, defaultValue?: any): any;
-  function GM_setValue(key: string, value: any): void;
-  function GM_registerMenuCommand(caption: string, commandFunc: () => void): void;
-  function GM_unregisterMenuCommand(menuItemId: string): void;
-}
+import {
+  GM_getValue,
+  GM_setValue,
+  GM_registerMenuCommand,
+  GM_unregisterMenuCommand
+} from 'vite-plugin-monkey/dist/client';
 
 export function startColorVisitedScript() {
   'use strict';
@@ -279,7 +276,7 @@ export function startColorVisitedScript() {
   // ================== 链接管理模块 ==================
 
   function deleteExpiredLinks() {
-    const visitedLinks = GM_getValue('visitedLinks', {});
+    const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
     const now = new Date().getTime();
     Object.keys(visitedLinks).forEach((url) => {
       if (now - visitedLinks[url] > config.expirationTime) {
@@ -296,7 +293,7 @@ export function startColorVisitedScript() {
 
   // 批量记录当前页面上的所有符合规则的链接
   function batchAddLinks() {
-    const visitedLinks = GM_getValue('visitedLinks', {});
+    const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
     const now = new Date().getTime();
     let addedCount = 0;
 
@@ -355,7 +352,7 @@ export function startColorVisitedScript() {
 
 
   // 更新单个链接的状态
-  function updateLinkStatus(link: Element, visitedLinks: Record<string, number>) {
+  function updateLinkStatus(link: Element, visitedLinks: VisitedLinks) {
     const inputUrl = getBaseUrl((link as HTMLAnchorElement).href);
     if (!shouldColorLink(inputUrl)) return;
 
@@ -367,7 +364,7 @@ export function startColorVisitedScript() {
   }
 
   // 批量更新页面中所有链接的状态
-  function updateAllLinksStatus(visitedLinks: Record<string, number>) {
+  function updateAllLinksStatus(visitedLinks: VisitedLinks) {
     document.querySelectorAll('a[href]').forEach((link) => {
       updateLinkStatus(link, visitedLinks);
     });
@@ -376,7 +373,7 @@ export function startColorVisitedScript() {
   // ================== DOM监听器和事件处理模块 ==================
 
   // 设置DOM变化监听器
-  function setupDOMObserver(visitedLinks: Record<string, number>) {
+  function setupDOMObserver(visitedLinks: VisitedLinks) {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
@@ -394,7 +391,7 @@ export function startColorVisitedScript() {
   }
 
   // 处理链接点击事件
-  function createLinkClickHandler(visitedLinks: Record<string, number>) {
+  function createLinkClickHandler(visitedLinks: VisitedLinks) {
     return function handleLinkClick(event: Event) {
       // 使用 event.target.closest 来获取被点击的链接元素
       const link = (event.target as Element).closest('a[href]') as HTMLAnchorElement;
@@ -415,7 +412,7 @@ export function startColorVisitedScript() {
   }
 
   // 设置链接点击事件监听器
-  function setupLinkEventListeners(visitedLinks: Record<string, number>) {
+  function setupLinkEventListeners(visitedLinks: VisitedLinks) {
     const handleLinkClick = createLinkClickHandler(visitedLinks);
 
     // 添加事件委托的点击事件监听器
@@ -431,7 +428,7 @@ export function startColorVisitedScript() {
   function activateLinkFeatures() {
     deleteExpiredLinks(); // 删除过期的链接
 
-    const visitedLinks = GM_getValue('visitedLinks', {});
+    const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
 
     logStorageInfo(visitedLinks); // 显示存储信息
     updateAllLinksStatus(visitedLinks); // 更新链接状态
