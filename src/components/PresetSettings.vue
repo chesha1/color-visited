@@ -1,28 +1,33 @@
 <template>
   <div class="space-y-6 h-full overflow-y-auto">
-    <!-- 头部区域 -->
-    <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
-      <div class="flex items-center justify-between">
+    <!-- 头部区域和统计操作区域 -->
+    <div class="border-b pb-4">
+      <div class="flex items-start justify-between">
+        <!-- 左侧头部区域 -->
         <div>
-          <h3 class="text-xl font-bold text-gray-900 mb-2">预设网站管理</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">预设网站管理</h3>
           <p class="text-sm text-gray-600">管理支持的网站和链接匹配规则，控制脚本在哪些网站生效</p>
         </div>
-        <div class="flex items-center space-x-4">
-          <div class="text-right">
-            <div class="text-sm text-gray-500">已启用</div>
-            <div class="text-lg font-bold text-green-600">
-              {{ Object.values(presetStates).filter(Boolean).length }} / {{ Object.keys(presetStates).length }}
+        
+        <!-- 右侧统计和操作区域 -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4 ml-6">
+          <div class="flex items-center justify-between">
+            <div class="text-right">
+              <div class="text-sm text-gray-500">已启用</div>
+              <div class="text-lg font-bold text-green-600">
+                {{ Object.values(presetStates).filter(Boolean).length }} / {{ Object.keys(presetStates).length }}
+              </div>
             </div>
-          </div>
-          <div class="flex space-x-2">
-            <button @click="toggleAllPresets(true)" 
-                    class="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-lg transition-colors">
-              全部启用
-            </button>
-            <button @click="toggleAllPresets(false)" 
-                    class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-              全部禁用
-            </button>
+            <div class="flex space-x-2 ml-4">
+              <button @click="toggleAllPresets(true)" 
+                      class="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-lg transition-colors">
+                全部启用
+              </button>
+              <button @click="toggleAllPresets(false)" 
+                      class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                全部禁用
+              </button>
+            </div>
           </div>
         </div>
       </div>
