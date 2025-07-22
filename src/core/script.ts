@@ -208,6 +208,7 @@ export function startColorVisitedScript() {
         defaultBatchKeySettings,
         currentGeneralSettings,
         defaultGeneralSettings,
+        presetStates,
         isMac,
         (newSettings) => {
           batchKeySettings = newSettings;
@@ -238,6 +239,23 @@ export function startColorVisitedScript() {
           (config as any).color = defaultGeneralSettings.color;
           (config as any).expirationTime = defaultGeneralSettings.expirationTime;
           (config as any).debug = defaultGeneralSettings.debug;
+          // 重新设置页面以应用新设置
+          setupPage();
+        },
+        (newPresetStates) => {
+          presetStates = newPresetStates;
+          GM_setValue('preset_states', presetStates);
+          // 重新设置页面以应用新设置
+          setupPage();
+        },
+        () => {
+          // 重置预设状态为默认值（全部启用）
+          const defaultStates: Record<string, boolean> = {};
+          Object.keys(PRESET_RULES).forEach(key => {
+            defaultStates[key] = true;
+          });
+          presetStates = defaultStates;
+          GM_setValue('preset_states', presetStates);
           // 重新设置页面以应用新设置
           setupPage();
         }

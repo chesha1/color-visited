@@ -131,16 +131,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { PRESET_RULES } from '@/core/config'
 import type { PresetRules } from '@/types'
 import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client'
+import { showNotification } from '@/core/ui'
+
+interface Props {
+  currentPresetStates?: Record<string, boolean>
+}
+
+interface Emits {
+  (e: 'save', states: Record<string, boolean>): void
+  (e: 'reset'): void
+}
+
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
 
 const presetRules: PresetRules = PRESET_RULES
 const expandedSites = ref<Set<string>>(new Set())
 
-// 预设状态管理
+// 预设状态管理 - 使用本地状态，不立即保存
 const presetStates = ref<Record<string, boolean>>({})
+// 保存的状态 - 用于比较是否有变更
+const savedPresetStates = ref<Record<string, boolean>>({})
+
+// 检测是否有改动
+const hasChanges = computed(() => {
+  return JSON.stringify(presetStates.value) !== JSON.stringify(savedPresetStates.value)
+})
 
 // 初始化预设状态 - 默认全部启用
 const initializePresetStates = () => {
@@ -148,7 +168,6 @@ const initializePresetStates = () => {
   Object.keys(presetRules).forEach(siteName => {
     states[siteName] = true // 默认启用
   })
-  presetStates.value = states
   
   // 从 GM storage 中加载已保存的状态
   if (typeof GM_getValue !== 'undefined') {
@@ -158,34 +177,36 @@ const initializePresetStates = () => {
         states[siteName] = savedStates[siteName]
       }
     })
-    presetStates.value = states
   }
+  
+  // 如果父组件传递了状态，优先使用
+  if (props.currentPresetStates) {
+    Object.keys(states).forEach(siteName => {
+      if (props.currentPresetStates!.hasOwnProperty(siteName)) {
+        states[siteName] = props.currentPresetStates![siteName]
+      }
+    })
+  }
+  
+  presetStates.value = { ...states }
+  savedPresetStates.value = { ...states }
 }
 
-// 更新预设状态
+// 更新预设状态 - 只更新本地状态，不立即保存
 const updatePresetState = (siteName: string, enabled: boolean | string | number) => {
   const isEnabled = Boolean(enabled)
   presetStates.value[siteName] = isEnabled
-  
-  // 保存到 GM storage
-  if (typeof GM_setValue !== 'undefined') {
-    GM_setValue('preset_states', presetStates.value)
-  }
-  
-  // 触发事件通知主脚本更新配置
-  if (typeof window !== 'undefined' && window.dispatchEvent) {
-    window.dispatchEvent(new CustomEvent('preset-states-updated', {
-      detail: { presetStates: presetStates.value }
-    }))
-  }
 }
 
-// 批量切换所有预设状态
+// 批量切换所有预设状态 - 只更新本地状态，不立即保存
 const toggleAllPresets = (enabled: boolean) => {
   Object.keys(presetStates.value).forEach(siteName => {
     presetStates.value[siteName] = enabled
   })
-  
+}
+
+// 保存设置
+const handleSave = () => {
   // 保存到 GM storage
   if (typeof GM_setValue !== 'undefined') {
     GM_setValue('preset_states', presetStates.value)
@@ -197,6 +218,23 @@ const toggleAllPresets = (enabled: boolean) => {
       detail: { presetStates: presetStates.value }
     }))
   }
+  
+  // 更新保存的状态
+  savedPresetStates.value = { ...presetStates.value }
+  
+  emit('save', { ...presetStates.value })
+  showNotification('预设网站设置已保存！')
+}
+
+// 重置为默认值，但仅更新界面，真正保存需用户点击「保存设置」
+const handleReset = () => {
+  const defaultStates: Record<string, boolean> = {}
+  Object.keys(presetRules).forEach(siteName => {
+    defaultStates[siteName] = true // 默认全部启用
+  })
+  presetStates.value = { ...defaultStates }
+  emit('reset')
+  showNotification('预设网站设置已重置为默认！')
 }
 
 // 切换展开状态
@@ -216,8 +254,24 @@ const formatRegex = (regex: string | RegExp): string => {
   return regex
 }
 
+// 监听 props.currentPresetStates 变化，同步更新 presetStates
+watch(() => props.currentPresetStates, (newStates) => {
+  if (newStates) {
+    presetStates.value = { ...newStates }
+    savedPresetStates.value = { ...newStates }
+  }
+}, { immediate: true, deep: true })
+
 // 组件挂载时初始化
 onMounted(() => {
   initializePresetStates()
+})
+
+// 暴露给父组件调用的方法
+defineExpose({
+  save: handleSave,
+  reset: handleReset,
+  getFormData: () => ({ ...presetStates.value }),
+  hasChanges
 })
 </script>

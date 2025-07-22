@@ -29,7 +29,10 @@
         </el-tab-pane>
         <el-tab-pane label="预设网站" name="presets" class="h-full">
           <div class="p-6 h-full">
-            <PresetSettingsComponent />
+            <PresetSettingsComponent 
+              :current-preset-states="currentPresetStates"
+              ref="presetSettingsRef"
+            />
           </div>
         </el-tab-pane>
         <el-tab-pane label="批量记录快捷键" name="shortcut" class="h-full">
@@ -77,6 +80,7 @@ interface Props {
   defaultSettings: BatchKeySettings
   currentGeneralSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
+  currentPresetStates: Record<string, boolean>
   isMac: boolean
 }
 
@@ -86,6 +90,8 @@ interface Emits {
   (e: 'reset'): void
   (e: 'generalSave', settings: GeneralSettings): void
   (e: 'generalReset'): void
+  (e: 'presetSave', states: Record<string, boolean>): void
+  (e: 'presetReset'): void
 }
 
 const props = defineProps<Props>()
@@ -99,6 +105,7 @@ const visible = computed({
 const activeTab = ref('general')
 const generalSettingsRef = ref()
 const shortcutSettingsRef = ref()
+const presetSettingsRef = ref()
 
 // 计算是否可以保存
 const canSave = computed(() => {
@@ -106,8 +113,10 @@ const canSave = computed(() => {
     return shortcutSettingsRef.value?.hasNewKeyPress ?? false
   } else if (activeTab.value === 'general') {
     return generalSettingsRef.value?.hasChanges ?? false
+  } else if (activeTab.value === 'presets') {
+    return presetSettingsRef.value?.hasChanges ?? false
   }
-  return false // 预设网站暂时没有保存功能，所以返回false
+  return false
 })
 
 const handleSave = () => {
@@ -120,8 +129,14 @@ const handleSave = () => {
   } else if (activeTab.value === 'shortcut') {
     // 直接调用子组件的 save 方法，该方法会emit事件并重置状态
     shortcutSettingsRef.value?.save()
+  } else if (activeTab.value === 'presets') {
+    // 获取预设设置的当前数据并触发保存事件
+    const presetData = presetSettingsRef.value?.getFormData()
+    if (presetData) {
+      emit('presetSave', presetData)
+      presetSettingsRef.value?.save()
+    }
   }
-  // 预设网站暂时没有保存逻辑
 }
 
 
@@ -132,8 +147,11 @@ const handleReset = () => {
   } else if (activeTab.value === 'shortcut') {
     // 快捷键重置逻辑改为仅重置表单显示，实际保存需用户点击「保存设置」
     shortcutSettingsRef.value?.reset()
+  } else if (activeTab.value === 'presets') {
+    // 预设网站重置逻辑
+    presetSettingsRef.value?.reset()
+    emit('presetReset')
   }
-  // 预设网站暂时没有重置逻辑
 }
 
 const handleClosed = () => {

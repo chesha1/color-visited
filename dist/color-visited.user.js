@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.2.3
+// @version      2.2.4
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -79,7 +79,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-BX-0rrac.js"(exports, module$1) {
+        "main-CMDGvsEU.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20872,7 +20872,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               styleElement.remove();
             }
           }
-          function showSettingsDialog(currentSettings, defaultSettings, currentGeneralSettings, defaultGeneralSettings, isMac2, onSave, onReset, onGeneralSave, onGeneralReset) {
+          function showSettingsDialog(currentSettings, defaultSettings, currentGeneralSettings, defaultGeneralSettings, currentPresetStates, isMac2, onSave, onReset, onGeneralSave, onGeneralReset, onPresetSave, onPresetReset) {
             eventBus.emit("dialog:show-settings", {
               type: "settings",
               payload: {
@@ -20880,17 +20880,23 @@ System.register("./__entry.js", [], (function (exports, module) {
                 defaultSettings,
                 currentGeneralSettings,
                 defaultGeneralSettings,
+                currentPresetStates,
                 isMac: isMac2
               }
             });
             const handleBatchKeySave = (event) => {
-              if (event.type === "batch-key") {
+              if (event.type === "batch-key" && event.settings) {
                 onSave(event.settings);
               }
             };
             const handleGeneralSave = (event) => {
-              if (event.type === "general") {
+              if (event.type === "general" && event.settings) {
                 onGeneralSave(event.settings);
+              }
+            };
+            const handlePresetSave = (event) => {
+              if (event.type === "preset" && event.states) {
+                onPresetSave(event.states);
               }
             };
             const handleBatchKeyReset = (event) => {
@@ -20903,15 +20909,24 @@ System.register("./__entry.js", [], (function (exports, module) {
                 onGeneralReset();
               }
             };
+            const handlePresetReset = (event) => {
+              if (event.type === "preset") {
+                onPresetReset();
+              }
+            };
             eventBus.on("settings:save", handleBatchKeySave);
             eventBus.on("settings:save", handleGeneralSave);
+            eventBus.on("settings:save", handlePresetSave);
             eventBus.on("settings:reset", handleBatchKeyReset);
             eventBus.on("settings:reset", handleGeneralReset);
+            eventBus.on("settings:reset", handlePresetReset);
             const cleanup = () => {
               eventBus.off("settings:save", handleBatchKeySave);
               eventBus.off("settings:save", handleGeneralSave);
+              eventBus.off("settings:save", handlePresetSave);
               eventBus.off("settings:reset", handleBatchKeyReset);
               eventBus.off("settings:reset", handleGeneralReset);
+              eventBus.off("settings:reset", handlePresetReset);
             };
             return cleanup;
           }
@@ -21255,16 +21270,25 @@ System.register("./__entry.js", [], (function (exports, module) {
           const _hoisted_32 = { class: "space-y-2 max-h-32 overflow-y-auto" };
           const _sfc_main$3 = /* @__PURE__ */ defineComponent({
             __name: "PresetSettings",
-            setup(__props) {
+            props: {
+              currentPresetStates: {}
+            },
+            emits: ["save", "reset"],
+            setup(__props, { expose: __expose, emit: __emit }) {
+              const props = __props;
+              const emit2 = __emit;
               const presetRules = PRESET_RULES;
               const expandedSites = ref(/* @__PURE__ */ new Set());
               const presetStates = ref({});
+              const savedPresetStates = ref({});
+              const hasChanges = computed(() => {
+                return JSON.stringify(presetStates.value) !== JSON.stringify(savedPresetStates.value);
+              });
               const initializePresetStates = () => {
                 const states = {};
                 Object.keys(presetRules).forEach((siteName) => {
                   states[siteName] = true;
                 });
-                presetStates.value = states;
                 if (typeof _GM_getValue !== "undefined") {
                   const savedStates = _GM_getValue("preset_states", {});
                   Object.keys(states).forEach((siteName) => {
@@ -21272,25 +21296,27 @@ System.register("./__entry.js", [], (function (exports, module) {
                       states[siteName] = savedStates[siteName];
                     }
                   });
-                  presetStates.value = states;
                 }
+                if (props.currentPresetStates) {
+                  Object.keys(states).forEach((siteName) => {
+                    if (props.currentPresetStates.hasOwnProperty(siteName)) {
+                      states[siteName] = props.currentPresetStates[siteName];
+                    }
+                  });
+                }
+                presetStates.value = { ...states };
+                savedPresetStates.value = { ...states };
               };
               const updatePresetState = (siteName, enabled) => {
                 const isEnabled = Boolean(enabled);
                 presetStates.value[siteName] = isEnabled;
-                if (typeof _GM_setValue !== "undefined") {
-                  _GM_setValue("preset_states", presetStates.value);
-                }
-                if (typeof window !== "undefined" && window.dispatchEvent) {
-                  window.dispatchEvent(new CustomEvent("preset-states-updated", {
-                    detail: { presetStates: presetStates.value }
-                  }));
-                }
               };
               const toggleAllPresets = (enabled) => {
                 Object.keys(presetStates.value).forEach((siteName) => {
                   presetStates.value[siteName] = enabled;
                 });
+              };
+              const handleSave = () => {
                 if (typeof _GM_setValue !== "undefined") {
                   _GM_setValue("preset_states", presetStates.value);
                 }
@@ -21299,6 +21325,18 @@ System.register("./__entry.js", [], (function (exports, module) {
                     detail: { presetStates: presetStates.value }
                   }));
                 }
+                savedPresetStates.value = { ...presetStates.value };
+                emit2("save", { ...presetStates.value });
+                showNotification("预设网站设置已保存！");
+              };
+              const handleReset = () => {
+                const defaultStates = {};
+                Object.keys(presetRules).forEach((siteName) => {
+                  defaultStates[siteName] = true;
+                });
+                presetStates.value = { ...defaultStates };
+                emit2("reset");
+                showNotification("预设网站设置已重置为默认！");
               };
               const toggleExpanded = (siteName) => {
                 if (expandedSites.value.has(siteName)) {
@@ -21313,8 +21351,20 @@ System.register("./__entry.js", [], (function (exports, module) {
                 }
                 return regex;
               };
+              watch(() => props.currentPresetStates, (newStates) => {
+                if (newStates) {
+                  presetStates.value = { ...newStates };
+                  savedPresetStates.value = { ...newStates };
+                }
+              }, { immediate: true, deep: true });
               onMounted(() => {
                 initializePresetStates();
+              });
+              __expose({
+                save: handleSave,
+                reset: handleReset,
+                getFormData: () => ({ ...presetStates.value }),
+                hasChanges
               });
               return (_ctx, _cache) => {
                 const _component_ArrowRight = resolveComponent("ArrowRight");
@@ -21640,9 +21690,10 @@ System.register("./__entry.js", [], (function (exports, module) {
               defaultSettings: {},
               currentGeneralSettings: {},
               defaultGeneralSettings: {},
+              currentPresetStates: {},
               isMac: { type: Boolean }
             },
-            emits: ["update:modelValue", "save", "reset", "generalSave", "generalReset"],
+            emits: ["update:modelValue", "save", "reset", "generalSave", "generalReset", "presetSave", "presetReset"],
             setup(__props, { emit: __emit }) {
               const props = __props;
               const emit2 = __emit;
@@ -21653,11 +21704,14 @@ System.register("./__entry.js", [], (function (exports, module) {
               const activeTab = ref("general");
               const generalSettingsRef = ref();
               const shortcutSettingsRef = ref();
+              const presetSettingsRef = ref();
               const canSave = computed(() => {
                 if (activeTab.value === "shortcut") {
                   return shortcutSettingsRef.value?.hasNewKeyPress ?? false;
                 } else if (activeTab.value === "general") {
                   return generalSettingsRef.value?.hasChanges ?? false;
+                } else if (activeTab.value === "presets") {
+                  return presetSettingsRef.value?.hasChanges ?? false;
                 }
                 return false;
               });
@@ -21669,6 +21723,12 @@ System.register("./__entry.js", [], (function (exports, module) {
                   }
                 } else if (activeTab.value === "shortcut") {
                   shortcutSettingsRef.value?.save();
+                } else if (activeTab.value === "presets") {
+                  const presetData = presetSettingsRef.value?.getFormData();
+                  if (presetData) {
+                    emit2("presetSave", presetData);
+                    presetSettingsRef.value?.save();
+                  }
                 }
               };
               const handleReset = () => {
@@ -21676,6 +21736,9 @@ System.register("./__entry.js", [], (function (exports, module) {
                   generalSettingsRef.value?.reset();
                 } else if (activeTab.value === "shortcut") {
                   shortcutSettingsRef.value?.reset();
+                } else if (activeTab.value === "presets") {
+                  presetSettingsRef.value?.reset();
+                  emit2("presetReset");
                 }
               };
               const handleClosed = () => {
@@ -21759,7 +21822,11 @@ System.register("./__entry.js", [], (function (exports, module) {
                           }, {
                             default: withCtx(() => [
                               createBaseVNode("div", _hoisted_3, [
-                                createVNode(_sfc_main$3)
+                                createVNode(_sfc_main$3, {
+                                  "current-preset-states": _ctx.currentPresetStates,
+                                  ref_key: "presetSettingsRef",
+                                  ref: presetSettingsRef
+                                }, null, 8, ["current-preset-states"])
                               ])
                             ]),
                             _: 1
@@ -21822,6 +21889,17 @@ System.register("./__entry.js", [], (function (exports, module) {
                   type: "general"
                 });
               };
+              const handlePresetSave = (states) => {
+                eventBus.emit("settings:save", {
+                  type: "preset",
+                  states
+                });
+              };
+              const handlePresetReset = () => {
+                eventBus.emit("settings:reset", {
+                  type: "preset"
+                });
+              };
               onMounted(() => {
                 eventBus.on("dialog:show-settings", handleShowDialog);
               });
@@ -21837,12 +21915,15 @@ System.register("./__entry.js", [], (function (exports, module) {
                   "default-settings": dialogData.value.defaultSettings,
                   "current-general-settings": dialogData.value.currentGeneralSettings,
                   "default-general-settings": dialogData.value.defaultGeneralSettings,
+                  "current-preset-states": dialogData.value.currentPresetStates,
                   "is-mac": dialogData.value.isMac,
                   onSave: handleSettingsSave,
                   onReset: handleSettingsReset,
                   onGeneralSave: handleGeneralSave,
-                  onGeneralReset: handleGeneralReset
-                }, null, 8, ["modelValue", "current-settings", "default-settings", "current-general-settings", "default-general-settings", "is-mac"])) : createCommentVNode("", true);
+                  onGeneralReset: handleGeneralReset,
+                  onPresetSave: handlePresetSave,
+                  onPresetReset: handlePresetReset
+                }, null, 8, ["modelValue", "current-settings", "default-settings", "current-general-settings", "default-general-settings", "current-preset-states", "is-mac"])) : createCommentVNode("", true);
               };
             }
           });
@@ -22014,6 +22095,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                   defaultBatchKeySettings,
                   currentGeneralSettings,
                   defaultGeneralSettings,
+                  presetStates,
                   isMac,
                   (newSettings) => {
                     batchKeySettings = newSettings;
@@ -22041,6 +22123,20 @@ System.register("./__entry.js", [], (function (exports, module) {
                     config.color = defaultGeneralSettings.color;
                     config.expirationTime = defaultGeneralSettings.expirationTime;
                     config.debug = defaultGeneralSettings.debug;
+                    setupPage();
+                  },
+                  (newPresetStates) => {
+                    presetStates = newPresetStates;
+                    _GM_setValue("preset_states", presetStates);
+                    setupPage();
+                  },
+                  () => {
+                    const defaultStates = {};
+                    Object.keys(PRESET_RULES).forEach((key) => {
+                      defaultStates[key] = true;
+                    });
+                    presetStates = defaultStates;
+                    _GM_setValue("preset_states", presetStates);
                     setupPage();
                   }
                 );

@@ -67,11 +67,14 @@ export function showSettingsDialog(
   defaultSettings: BatchKeySettings,
   currentGeneralSettings: GeneralSettings,
   defaultGeneralSettings: GeneralSettings,
+  currentPresetStates: Record<string, boolean>,
   isMac: boolean,
   onSave: (settings: BatchKeySettings) => void,
   onReset: () => void,
   onGeneralSave: (settings: GeneralSettings) => void,
-  onGeneralReset: () => void
+  onGeneralReset: () => void,
+  onPresetSave: (states: Record<string, boolean>) => void,
+  onPresetReset: () => void
 ): () => void {
   // 通过事件总线发送显示对话框事件
   eventBus.emit('dialog:show-settings', {
@@ -81,48 +84,65 @@ export function showSettingsDialog(
       defaultSettings,
       currentGeneralSettings,
       defaultGeneralSettings,
+      currentPresetStates,
       isMac
     }
   });
 
   // 监听设置保存事件
-  const handleBatchKeySave = (event: { type: 'batch-key' | 'general'; settings: BatchKeySettings | GeneralSettings }) => {
-    if (event.type === 'batch-key') {
+  const handleBatchKeySave = (event: { type: 'batch-key' | 'general' | 'preset'; settings?: BatchKeySettings | GeneralSettings; states?: Record<string, boolean> }) => {
+    if (event.type === 'batch-key' && event.settings) {
       onSave(event.settings as BatchKeySettings);
     }
   };
 
-  const handleGeneralSave = (event: { type: 'batch-key' | 'general'; settings: BatchKeySettings | GeneralSettings }) => {
-    if (event.type === 'general') {
+  const handleGeneralSave = (event: { type: 'batch-key' | 'general' | 'preset'; settings?: BatchKeySettings | GeneralSettings; states?: Record<string, boolean> }) => {
+    if (event.type === 'general' && event.settings) {
       onGeneralSave(event.settings as GeneralSettings);
     }
   };
 
-  const handleBatchKeyReset = (event: { type: 'batch-key' | 'general' }) => {
+  const handlePresetSave = (event: { type: 'batch-key' | 'general' | 'preset'; settings?: BatchKeySettings | GeneralSettings; states?: Record<string, boolean> }) => {
+    if (event.type === 'preset' && event.states) {
+      onPresetSave(event.states);
+    }
+  };
+
+  const handleBatchKeyReset = (event: { type: 'batch-key' | 'general' | 'preset' }) => {
     if (event.type === 'batch-key') {
       onReset();
     }
   };
 
-  const handleGeneralReset = (event: { type: 'batch-key' | 'general' }) => {
+  const handleGeneralReset = (event: { type: 'batch-key' | 'general' | 'preset' }) => {
     if (event.type === 'general') {
       onGeneralReset();
+    }
+  };
+
+  const handlePresetReset = (event: { type: 'batch-key' | 'general' | 'preset' }) => {
+    if (event.type === 'preset') {
+      onPresetReset();
     }
   };
 
   // 注册事件监听器
   eventBus.on('settings:save', handleBatchKeySave);
   eventBus.on('settings:save', handleGeneralSave);
+  eventBus.on('settings:save', handlePresetSave);
   eventBus.on('settings:reset', handleBatchKeyReset);
   eventBus.on('settings:reset', handleGeneralReset);
+  eventBus.on('settings:reset', handlePresetReset);
 
   // 在对话框关闭时清理事件监听器
   // 这里可以通过一个一次性的事件来实现
   const cleanup = () => {
     eventBus.off('settings:save', handleBatchKeySave);
     eventBus.off('settings:save', handleGeneralSave);
+    eventBus.off('settings:save', handlePresetSave);
     eventBus.off('settings:reset', handleBatchKeyReset);
     eventBus.off('settings:reset', handleGeneralReset);
+    eventBus.off('settings:reset', handlePresetReset);
   };
 
   // 返回清理函数供外部使用

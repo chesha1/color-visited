@@ -10,6 +10,7 @@ const dialogData = ref<{
   defaultSettings: BatchKeySettings
   currentGeneralSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
+  currentPresetStates: Record<string, boolean>
   isMac: boolean
 } | null>(null)
 
@@ -47,6 +48,19 @@ const handleGeneralReset = () => {
   })
 }
 
+const handlePresetSave = (states: Record<string, boolean>) => {
+  eventBus.emit('settings:save', {
+    type: 'preset',
+    states
+  })
+}
+
+const handlePresetReset = () => {
+  eventBus.emit('settings:reset', {
+    type: 'preset'
+  })
+}
+
 onMounted(() => {
   eventBus.on('dialog:show-settings', handleShowDialog)
 })
@@ -64,10 +78,13 @@ onUnmounted(() => {
     :default-settings="dialogData.defaultSettings"
     :current-general-settings="dialogData.currentGeneralSettings"
     :default-general-settings="dialogData.defaultGeneralSettings"
+    :current-preset-states="dialogData.currentPresetStates"
     :is-mac="dialogData.isMac"
     @save="handleSettingsSave"
     @reset="handleSettingsReset"
     @general-save="handleGeneralSave"
     @general-reset="handleGeneralReset"
+    @preset-save="handlePresetSave"
+    @preset-reset="handlePresetReset"
   />
 </template>
