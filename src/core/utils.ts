@@ -70,15 +70,3 @@ export function logStorageInfo(visitedLinks: Record<string, number>): void {
   const itemCount = Object.keys(visitedLinks).length;
   console.log(`visitedLinks storage size: ${itemCount} items, ${sizeText}`);
 }
-
-// ================== 通用工具函数 ==================
-
-// 获取当前域名
-export function getCurrentDomain(): string {
-  return window.location.hostname;
-}
-
-// 生成脚本存储键名
-export function getScriptKey(domain: string): string {
-  return `scriptEnabled_${domain}`;
-}

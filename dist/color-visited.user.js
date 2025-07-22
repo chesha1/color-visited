@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.4.0
+// @version      2.5.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -81,7 +81,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-BvnK70pF.js"(exports, module$1) {
+        "main-C7zDvJqp.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22128,17 +22128,8 @@ System.register("./__entry.js", [], (function (exports, module) {
             const itemCount = Object.keys(visitedLinks).length;
             console.log(`visitedLinks storage size: ${itemCount} items, ${sizeText}`);
           }
-          function getCurrentDomain() {
-            return window.location.hostname;
-          }
-          function getScriptKey(domain) {
-            return `scriptEnabled_${domain}`;
-          }
           function startColorVisitedScript() {
             console.log("Color Visited Script has started!");
-            const domain = getCurrentDomain();
-            const scriptKey = getScriptKey(domain);
-            let isEnabled = _GM_getValue(scriptKey, true);
             let allPatterns = [];
             let batchKeySettings = _GM_getValue("batch_shortcut_settings", defaultBatchKeySettings);
             let presetStates = (() => {
@@ -22192,7 +22183,7 @@ System.register("./__entry.js", [], (function (exports, module) {
             function setupPage() {
               if (config.debug) console.log("color-visited script initialized on", window.location.href);
               removeScript();
-              if (isEnabled && isPageActive()) {
+              if (isPageActive()) {
                 injectCustomStyles();
                 activateLinkFeatures();
                 setupBatchKeyListener();
@@ -22236,12 +22227,9 @@ System.register("./__entry.js", [], (function (exports, module) {
               return allPatterns.some((pattern) => pattern.test(url));
             }
             function updateMenu() {
-              _GM_unregisterMenuCommand("toggleScriptMenuCommand");
               _GM_unregisterMenuCommand("clearLinksMenuCommand");
               _GM_unregisterMenuCommand("batchAddLinksMenuCommand");
               _GM_unregisterMenuCommand("setBatchKeyMenuCommand");
-              const toggleText = isEnabled ? "禁用链接染色脚本" : "启用链接染色脚本";
-              _GM_registerMenuCommand(toggleText, toggleScript);
               _GM_registerMenuCommand("清除所有记住的链接", clearLinks);
               _GM_registerMenuCommand("批量记录当前页面链接", batchAddLinks);
               _GM_registerMenuCommand("设置", () => {
@@ -22307,12 +22295,6 @@ System.register("./__entry.js", [], (function (exports, module) {
                   }
                 );
               });
-            }
-            function toggleScript() {
-              isEnabled = !isEnabled;
-              _GM_setValue(scriptKey, isEnabled);
-              updateMenu();
-              setupPage();
             }
             function removeScript() {
               removeCustomStyles();

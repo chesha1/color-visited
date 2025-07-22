@@ -17,9 +17,7 @@ import {
   isMac,
   defaultBatchKeySettings,
   getBaseUrl,
-  logStorageInfo,
-  getCurrentDomain,
-  getScriptKey
+  logStorageInfo
 } from '@/core/utils';
 import {
   GM_getValue,
@@ -34,9 +32,6 @@ export function startColorVisitedScript() {
   console.log('Color Visited Script has started!');
 
   // ================== 全局变量和初始化配置 ==================
-  const domain = getCurrentDomain();
-  const scriptKey = getScriptKey(domain);
-  let isEnabled = GM_getValue(scriptKey, true);
   let allPatterns: RegExp[] = [];
 
   // 从存储中读取快捷键设置，如果没有则使用默认设置
@@ -127,7 +122,7 @@ export function startColorVisitedScript() {
 
     removeScript(); // 清除之前的脚本效果
 
-    if (isEnabled && isPageActive()) {
+    if (isPageActive()) {
       injectCustomStyles();
       activateLinkFeatures();
       setupBatchKeyListener(); // 设置批量记录快捷键监听
@@ -193,13 +188,10 @@ export function startColorVisitedScript() {
   // ================== 菜单管理模块 ==================
 
   function updateMenu() {
-    GM_unregisterMenuCommand('toggleScriptMenuCommand');
     GM_unregisterMenuCommand('clearLinksMenuCommand');
     GM_unregisterMenuCommand('batchAddLinksMenuCommand');
     GM_unregisterMenuCommand('setBatchKeyMenuCommand');
 
-    const toggleText = isEnabled ? '禁用链接染色脚本' : '启用链接染色脚本';
-    GM_registerMenuCommand(toggleText, toggleScript);
     GM_registerMenuCommand('清除所有记住的链接', clearLinks);
     GM_registerMenuCommand('批量记录当前页面链接', batchAddLinks);
     GM_registerMenuCommand('设置', () => {
@@ -274,13 +266,6 @@ export function startColorVisitedScript() {
         }
       );
     });
-  }
-
-  function toggleScript() {
-    isEnabled = !isEnabled;
-    GM_setValue(scriptKey, isEnabled);
-    updateMenu();
-    setupPage();
   }
 
   // ================== 样式管理模块 ==================
