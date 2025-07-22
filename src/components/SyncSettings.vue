@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <div class="border-b pb-4">
-      <h3 class="text-lg font-medium text-gray-900 mb-2">数据同步设置</h3>
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">数据同步设置</h3>
       <p class="text-sm text-gray-600">通过 GitHub Gist 同步已访问链接数据，实现多设备同步</p>
     </div>
 
