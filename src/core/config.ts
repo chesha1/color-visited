@@ -151,6 +151,16 @@ export const PRESET_RULES: PresetRules = {
       /reddit\.com\/r\/[^\/]+\/comments\/.*/, // 帖子
     ],
   },
+  'Seeking Alpha': {
+    pages: [
+      /https:\/\/seekingalpha\.com\/$/, // 首页
+      /https:\/\/seekingalpha\.com\/symbol\/.*/, // 股票符号页面
+    ],
+    patterns: [
+      /https:\/\/seekingalpha\.com\/article\/.*/, // 文章页面
+      /https:\/\/seekingalpha\.com\/news\/.*/, // 新闻页面
+    ],
+  },
   'south-plus': {
     pages: [
       /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/thread\.php\?fid.*/, // 板块首页

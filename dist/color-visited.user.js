@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.3.0
+// @version      2.4.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -42,6 +42,8 @@
 // @include      /https:\/\/www\.nodeseek\.com\/categories\/.*/
 // @include      /https:\/\/www\.nodeseek\.com\/page-\d+/
 // @include      /https:\/\/www\.reddit\.com\/r\/[^\/]+\/?$/
+// @include      /https:\/\/seekingalpha\.com\/$/
+// @include      /https:\/\/seekingalpha\.com\/symbol\/.*/
 // @include      /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/thread\.php\?fid.*/
 // @include      /https:\/\/bbs\.imoutolove\.me\/thread\.php\?fid.*/
 // @include      /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/u\.php\?action-topic-uid-.*/
@@ -79,7 +81,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-CZrNj8dE.js"(exports, module$1) {
+        "main-BvnK70pF.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20648,6 +20650,20 @@ System.register("./__entry.js", [], (function (exports, module) {
               patterns: [
                 /reddit\.com\/r\/[^\/]+\/comments\/.*/
                 // 帖子
+              ]
+            },
+            "Seeking Alpha": {
+              pages: [
+                /https:\/\/seekingalpha\.com\/$/,
+                // 首页
+                /https:\/\/seekingalpha\.com\/symbol\/.*/
+                // 股票符号页面
+              ],
+              patterns: [
+                /https:\/\/seekingalpha\.com\/article\/.*/,
+                // 文章页面
+                /https:\/\/seekingalpha\.com\/news\/.*/
+                // 新闻页面
               ]
             },
             "south-plus": {
