@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElButton: typeof import('element-plus/es')['ElButton']
+    ElCard: typeof import('element-plus/es')['ElCard']
     ElCollapseTransition: typeof import('element-plus/es')['ElCollapseTransition']
     ElColorPicker: typeof import('element-plus/es')['ElColorPicker']
     ElDialog: typeof import('element-plus/es')['ElDialog']
@@ -25,5 +26,6 @@ declare module 'vue' {
     PresetSettings: typeof import('./components/PresetSettings.vue')['default']
     SettingsDialog: typeof import('./components/SettingsDialog.vue')['default']
     ShortcutSettings: typeof import('./components/ShortcutSettings.vue')['default']
+    SyncSettings: typeof import('./components/SyncSettings.vue')['default']
   }
 }

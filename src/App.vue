@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import SettingsDialog from '@/components/SettingsDialog.vue'
 import { eventBus } from '@/core/eventBus'
-import type { BatchKeySettings, GeneralSettings, SettingsDialogPayload } from '@/types'
+import type { BatchKeySettings, GeneralSettings, SyncSettings, SettingsDialogPayload } from '@/types'
 
 const dialogData = ref<{
   visible: boolean
@@ -11,6 +11,7 @@ const dialogData = ref<{
   currentGeneralSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
   currentPresetStates: Record<string, boolean>
+  currentSyncSettings: SyncSettings
   isMac: boolean
 } | null>(null)
 
@@ -61,6 +62,19 @@ const handlePresetReset = () => {
   })
 }
 
+const handleSyncSave = (settings: SyncSettings) => {
+  eventBus.emit('settings:save', {
+    type: 'sync',
+    settings
+  })
+}
+
+const handleSyncReset = () => {
+  eventBus.emit('settings:reset', {
+    type: 'sync'
+  })
+}
+
 onMounted(() => {
   eventBus.on('dialog:show-settings', handleShowDialog)
 })
@@ -79,6 +93,7 @@ onUnmounted(() => {
     :current-general-settings="dialogData.currentGeneralSettings"
     :default-general-settings="dialogData.defaultGeneralSettings"
     :current-preset-states="dialogData.currentPresetStates"
+    :current-sync-settings="dialogData.currentSyncSettings"
     :is-mac="dialogData.isMac"
     @save="handleSettingsSave"
     @reset="handleSettingsReset"
@@ -86,5 +101,7 @@ onUnmounted(() => {
     @general-reset="handleGeneralReset"
     @preset-save="handlePresetSave"
     @preset-reset="handlePresetReset"
+    @sync-save="handleSyncSave"
+    @sync-reset="handleSyncReset"
   />
 </template>

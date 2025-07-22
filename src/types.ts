@@ -39,6 +39,7 @@ export interface SettingsDialogPayload {
   currentGeneralSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
   currentPresetStates: Record<string, boolean>
+  currentSyncSettings: SyncSettings
   isMac: boolean
 }
 
@@ -80,12 +81,12 @@ export type Events = {
     payload: SyncDialogPayload
   }
   'settings:save': {
-    type: 'batch-key' | 'general' | 'preset'
-    settings?: BatchKeySettings | GeneralSettings
+    type: 'batch-key' | 'general' | 'preset' | 'sync'
+    settings?: BatchKeySettings | GeneralSettings | SyncSettings
     states?: Record<string, boolean>
   }
   'settings:reset': {
-    type: 'batch-key' | 'general' | 'preset'
+    type: 'batch-key' | 'general' | 'preset' | 'sync'
   }
   'menu:update': {
     // 菜单更新事件

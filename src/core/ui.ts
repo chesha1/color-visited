@@ -1,9 +1,8 @@
 // ================== UI 组件模块 ==================
 
 import { config } from '@/core/config';
-import { getSyncSettings, saveSyncSettings, validateGitHubToken } from '@/core/sync';
 import { eventBus } from '@/core/eventBus';
-import type { BatchKeySettings, GeneralSettings } from '@/types';
+import type { BatchKeySettings, GeneralSettings, SyncSettings } from '@/types';
 import { ElMessage } from 'element-plus';
 import type { MessageProps } from 'element-plus';
 import 'element-plus/es/components/message/style/css';
@@ -68,13 +67,16 @@ export function showSettingsDialog(
   currentGeneralSettings: GeneralSettings,
   defaultGeneralSettings: GeneralSettings,
   currentPresetStates: Record<string, boolean>,
+  currentSyncSettings: SyncSettings,
   isMac: boolean,
   onSave: (settings: BatchKeySettings) => void,
   onReset: () => void,
   onGeneralSave: (settings: GeneralSettings) => void,
   onGeneralReset: () => void,
   onPresetSave: (states: Record<string, boolean>) => void,
-  onPresetReset: () => void
+  onPresetReset: () => void,
+  onSyncSave: (settings: SyncSettings) => void,
+  onSyncReset: () => void
 ): () => void {
   // 通过事件总线发送显示对话框事件
   eventBus.emit('dialog:show-settings', {
@@ -85,264 +87,48 @@ export function showSettingsDialog(
       currentGeneralSettings,
       defaultGeneralSettings,
       currentPresetStates,
+      currentSyncSettings,
       isMac
     }
   });
 
   // 监听设置保存事件
-  const handleBatchKeySave = (event: { type: 'batch-key' | 'general' | 'preset'; settings?: BatchKeySettings | GeneralSettings; states?: Record<string, boolean> }) => {
+  const handleSettingsSave = (event: { type: 'batch-key' | 'general' | 'preset' | 'sync'; settings?: BatchKeySettings | GeneralSettings | SyncSettings; states?: Record<string, boolean> }) => {
     if (event.type === 'batch-key' && event.settings) {
       onSave(event.settings as BatchKeySettings);
-    }
-  };
-
-  const handleGeneralSave = (event: { type: 'batch-key' | 'general' | 'preset'; settings?: BatchKeySettings | GeneralSettings; states?: Record<string, boolean> }) => {
-    if (event.type === 'general' && event.settings) {
+    } else if (event.type === 'general' && event.settings) {
       onGeneralSave(event.settings as GeneralSettings);
-    }
-  };
-
-  const handlePresetSave = (event: { type: 'batch-key' | 'general' | 'preset'; settings?: BatchKeySettings | GeneralSettings; states?: Record<string, boolean> }) => {
-    if (event.type === 'preset' && event.states) {
+    } else if (event.type === 'preset' && event.states) {
       onPresetSave(event.states);
+    } else if (event.type === 'sync' && event.settings) {
+      onSyncSave(event.settings as SyncSettings);
     }
   };
 
-  const handleBatchKeyReset = (event: { type: 'batch-key' | 'general' | 'preset' }) => {
+  const handleSettingsReset = (event: { type: 'batch-key' | 'general' | 'preset' | 'sync' }) => {
     if (event.type === 'batch-key') {
       onReset();
-    }
-  };
-
-  const handleGeneralReset = (event: { type: 'batch-key' | 'general' | 'preset' }) => {
-    if (event.type === 'general') {
+    } else if (event.type === 'general') {
       onGeneralReset();
-    }
-  };
-
-  const handlePresetReset = (event: { type: 'batch-key' | 'general' | 'preset' }) => {
-    if (event.type === 'preset') {
+    } else if (event.type === 'preset') {
       onPresetReset();
+    } else if (event.type === 'sync') {
+      onSyncReset();
     }
   };
 
   // 注册事件监听器
-  eventBus.on('settings:save', handleBatchKeySave);
-  eventBus.on('settings:save', handleGeneralSave);
-  eventBus.on('settings:save', handlePresetSave);
-  eventBus.on('settings:reset', handleBatchKeyReset);
-  eventBus.on('settings:reset', handleGeneralReset);
-  eventBus.on('settings:reset', handlePresetReset);
+  eventBus.on('settings:save', handleSettingsSave);
+  eventBus.on('settings:reset', handleSettingsReset);
 
   // 在对话框关闭时清理事件监听器
   // 这里可以通过一个一次性的事件来实现
   const cleanup = () => {
-    eventBus.off('settings:save', handleBatchKeySave);
-    eventBus.off('settings:save', handleGeneralSave);
-    eventBus.off('settings:save', handlePresetSave);
-    eventBus.off('settings:reset', handleBatchKeyReset);
-    eventBus.off('settings:reset', handleGeneralReset);
-    eventBus.off('settings:reset', handlePresetReset);
+    eventBus.off('settings:save', handleSettingsSave);
+    eventBus.off('settings:reset', handleSettingsReset);
   };
 
   // 返回清理函数供外部使用
   return cleanup;
 }
 
-
-// ================== 同步设置对话框 ==================
-
-// 显示同步设置对话框
-export function showSyncSettingsDialog(onMenuUpdate: () => void): () => void {
-  const syncSettings = getSyncSettings();
-
-  // 创建设置弹窗
-  const dialog = document.createElement('div');
-  dialog.style.position = 'fixed';
-  dialog.style.top = '50%';
-  dialog.style.left = '50%';
-  dialog.style.transform = 'translate(-50%, -50%)';
-  dialog.style.backgroundColor = 'white';
-  dialog.style.padding = '20px';
-  dialog.style.borderRadius = '8px';
-  dialog.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-  dialog.style.zIndex = '10000';
-  dialog.style.minWidth = '400px';
-  dialog.style.maxWidth = '500px';
-
-  // 创建标题
-  const title = document.createElement('h2');
-  title.textContent = '同步设置';
-  title.style.marginTop = '0';
-  title.style.marginBottom = '15px';
-  dialog.appendChild(title);
-
-  // 同步开关
-  const enableLabel = document.createElement('label');
-  enableLabel.style.display = 'block';
-  enableLabel.style.marginBottom = '15px';
-  enableLabel.innerHTML = '<input type="checkbox" id="syncEnabled"> 启用数据同步';
-  const enableCheckbox = enableLabel.querySelector('#syncEnabled') as HTMLInputElement;
-  enableCheckbox.checked = syncSettings.enabled;
-  dialog.appendChild(enableLabel);
-
-  // GitHub 令牌输入
-  const tokenLabel = document.createElement('label');
-  tokenLabel.style.display = 'block';
-  tokenLabel.style.marginBottom = '15px';
-  tokenLabel.innerHTML = 'GitHub 个人访问令牌:<br><input type="password" id="githubToken" style="width: 100%; padding: 5px; margin-top: 5px;">';
-  const tokenInput = tokenLabel.querySelector('#githubToken') as HTMLInputElement;
-  tokenInput.value = syncSettings.githubToken;
-  dialog.appendChild(tokenLabel);
-
-  // Gist ID 输入
-  const gistLabel = document.createElement('label');
-  gistLabel.style.display = 'block';
-  gistLabel.style.marginBottom = '15px';
-  gistLabel.innerHTML = 'Gist ID:<br><input type="text" id="gistId" style="width: 100%; padding: 5px; margin-top: 5px;" placeholder="请输入现有 Gist 的 ID">';
-  const gistInput = gistLabel.querySelector('#gistId') as HTMLInputElement;
-  gistInput.value = syncSettings.gistId;
-  dialog.appendChild(gistLabel);
-
-  // 帮助说明
-  const helpText = document.createElement('p');
-  helpText.style.fontSize = '12px';
-  helpText.style.color = '#666';
-  helpText.style.marginBottom = '15px';
-  helpText.innerHTML = `
-    <strong>设置步骤：</strong><br>
-    1. 到 GitHub > Settings > Developer settings > Personal access tokens > Tokens (classic) 创建令牌，权限选择 "gist"<br>
-    2. 手动创建一个 Gist（任意文件名和内容），复制 URL 中的 ID 部分<br>
-    3. 将令牌和 Gist ID 填入上方输入框
-  `;
-  dialog.appendChild(helpText);
-
-  // 同步状态显示
-  const statusDiv = document.createElement('div');
-  statusDiv.style.marginBottom = '15px';
-  statusDiv.style.padding = '10px';
-  statusDiv.style.backgroundColor = '#f5f5f5';
-  statusDiv.style.borderRadius = '4px';
-  const lastSyncTime = syncSettings.lastSyncTime ? new Date(syncSettings.lastSyncTime).toLocaleString() : '从未同步';
-  statusDiv.innerHTML = `
-    <div>当前 Gist ID: ${syncSettings.gistId || '未设置'}</div>
-    <div>最后同步时间: ${lastSyncTime}</div>
-  `;
-  dialog.appendChild(statusDiv);
-
-  // 按钮区域
-  const buttonsDiv = document.createElement('div');
-  buttonsDiv.style.display = 'flex';
-  buttonsDiv.style.justifyContent = 'space-between';
-  dialog.appendChild(buttonsDiv);
-
-  // 测试连接按钮
-  const testButton = document.createElement('button');
-  testButton.textContent = '测试连接';
-  testButton.style.padding = '8px 16px';
-  testButton.style.backgroundColor = '#2196F3';
-  testButton.style.color = 'white';
-  testButton.style.border = 'none';
-  testButton.style.borderRadius = '4px';
-  testButton.style.cursor = 'pointer';
-  buttonsDiv.appendChild(testButton);
-
-  // 保存按钮
-  const saveButton = document.createElement('button');
-  saveButton.textContent = '保存';
-  saveButton.style.padding = '8px 16px';
-  saveButton.style.backgroundColor = '#4CAF50';
-  saveButton.style.color = 'white';
-  saveButton.style.border = 'none';
-  saveButton.style.borderRadius = '4px';
-  saveButton.style.cursor = 'pointer';
-  buttonsDiv.appendChild(saveButton);
-
-  // 取消按钮
-  const cancelButton = document.createElement('button');
-  cancelButton.textContent = '取消';
-  cancelButton.style.padding = '8px 16px';
-  cancelButton.style.backgroundColor = '#f44336';
-  cancelButton.style.color = 'white';
-  cancelButton.style.border = 'none';
-  cancelButton.style.borderRadius = '4px';
-  cancelButton.style.cursor = 'pointer';
-  buttonsDiv.appendChild(cancelButton);
-
-  // 创建遮罩层
-  const overlay = document.createElement('div');
-  overlay.style.position = 'fixed';
-  overlay.style.top = '0';
-  overlay.style.left = '0';
-  overlay.style.width = '100%';
-  overlay.style.height = '100%';
-  overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
-  overlay.style.zIndex = '9999';
-
-  // 添加遮罩和弹窗到页面
-  document.body.appendChild(overlay);
-  document.body.appendChild(dialog);
-
-  // 测试连接按钮事件
-  testButton.addEventListener('click', async function () {
-    const token = tokenInput.value.trim();
-    if (!token) {
-      showNotification('请输入 GitHub 令牌');
-      return;
-    }
-
-    testButton.textContent = '测试中...';
-    testButton.disabled = true;
-
-    try {
-      const isValid = await validateGitHubToken(token);
-      if (isValid) {
-        showNotification('连接成功！');
-      }
-      else {
-        showNotification('连接失败，请检查令牌是否正确');
-      }
-    }
-    catch (error: any) {
-      showNotification('连接失败: ' + error.message);
-    }
-    finally {
-      testButton.textContent = '测试连接';
-      testButton.disabled = false;
-    }
-  });
-
-  // 保存按钮事件
-  saveButton.addEventListener('click', async function () {
-    const newSettings = {
-      ...syncSettings,
-      enabled: enableCheckbox.checked,
-      githubToken: tokenInput.value.trim(),
-      gistId: gistInput.value.trim(),
-    };
-
-    saveSyncSettings(newSettings);
-
-    closeDialog();
-    showNotification('同步设置已保存！');
-
-    // 重新更新菜单以反映状态变化
-    onMenuUpdate();
-  });
-
-  // 取消按钮事件
-  cancelButton.addEventListener('click', closeDialog);
-
-  // 关闭对话框
-  function closeDialog() {
-    document.body.removeChild(dialog);
-    document.body.removeChild(overlay);
-  }
-
-  // 返回清理函数
-  return () => {
-    if (document.body.contains(dialog)) {
-      closeDialog();
-    }
-  };
-}

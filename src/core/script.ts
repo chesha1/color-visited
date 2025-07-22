@@ -2,14 +2,15 @@
 import { config, PRESET_RULES } from '@/core/config';
 import {
   getSyncSettings,
+  saveSyncSettings,
+  defaultSyncSettings,
   syncOnStartup
 } from '@/core/sync';
 import {
   showNotification,
   injectCustomStyles,
   removeCustomStyles,
-  showSettingsDialog,
-  showSyncSettingsDialog
+  showSettingsDialog
 } from '@/core/ui';
 import type { BatchKeySettings, GeneralSettings, VisitedLinks } from '@/types';
 import {
@@ -196,7 +197,6 @@ export function startColorVisitedScript() {
     GM_unregisterMenuCommand('clearLinksMenuCommand');
     GM_unregisterMenuCommand('batchAddLinksMenuCommand');
     GM_unregisterMenuCommand('setBatchKeyMenuCommand');
-    GM_unregisterMenuCommand('showSyncSettingsMenuCommand');
 
     const toggleText = isEnabled ? '禁用链接染色脚本' : '启用链接染色脚本';
     GM_registerMenuCommand(toggleText, toggleScript);
@@ -209,6 +209,7 @@ export function startColorVisitedScript() {
         currentGeneralSettings,
         defaultGeneralSettings,
         presetStates,
+        syncSettings,
         isMac,
         (newSettings) => {
           batchKeySettings = newSettings;
@@ -258,11 +259,20 @@ export function startColorVisitedScript() {
           GM_setValue('preset_states', presetStates);
           // 重新设置页面以应用新设置
           setupPage();
+        },
+        (newSyncSettings) => {
+          // 保存同步设置
+          syncSettings = newSyncSettings;
+          saveSyncSettings(syncSettings);
+          updateMenu();
+        },
+        () => {
+          // 重置同步设置为默认值
+          syncSettings = { ...defaultSyncSettings };
+          saveSyncSettings(syncSettings);
+          updateMenu();
         }
       );
-    });
-    GM_registerMenuCommand('同步设置', () => {
-      showSyncSettingsDialog(updateMenu);
     });
   }
 

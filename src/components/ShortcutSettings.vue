@@ -37,6 +37,7 @@ interface Props {
   defaultSettings: BatchKeySettings
   isMac: boolean
   visible: boolean
+  isActive: boolean
 }
 
 interface Emits {
@@ -179,19 +180,21 @@ watch(() => props.currentSettings, (currentSettings) => {
   isResetMode.value = false
 }, { immediate: true, deep: true })
 
-// 监听对话框显示状态，只在对话框显示时添加键盘监听器
-watch(() => props.visible, (isVisible) => {
-  console.log('对话框状态变化:', { isVisible })
+// 监听对话框显示状态和标签页激活状态，只在快捷键设置标签页激活时添加键盘监听器
+watch([() => props.visible, () => props.isActive], ([isVisible, isActive]) => {
+  console.log('对话框状态变化:', { isVisible, isActive })
   
-  if (isVisible) {
+  if (isVisible && isActive) {
     console.log('添加键盘监听器')
     document.addEventListener('keydown', handleKeyDown, true)
   } else {
     console.log('移除键盘监听器')
     document.removeEventListener('keydown', handleKeyDown, true)
-    // 当对话框关闭时，重置新按键状态
-    hasNewKeyPress.value = false
-    isResetMode.value = false
+    // 当对话框关闭或切换到其他标签页时，重置新按键状态
+    if (!isVisible) {
+      hasNewKeyPress.value = false
+      isResetMode.value = false
+    }
   }
 }, { immediate: true })
 

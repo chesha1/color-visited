@@ -19,7 +19,7 @@
         stretch
       >
         <el-tab-pane label="常规设置" name="general" class="h-full">
-          <div class="p-6 h-full">
+          <div class="p-6 h-full overflow-y-auto">
             <GeneralSettingsComponent
               :current-settings="currentGeneralSettings"
               :default-settings="defaultGeneralSettings"
@@ -28,7 +28,7 @@
           </div>
         </el-tab-pane>
         <el-tab-pane label="预设网站" name="presets" class="h-full">
-          <div class="p-6 h-full">
+          <div class="p-6 h-full overflow-y-auto">
             <PresetSettingsComponent 
               :current-preset-states="currentPresetStates"
               ref="presetSettingsRef"
@@ -36,13 +36,23 @@
           </div>
         </el-tab-pane>
         <el-tab-pane label="批量记录快捷键" name="shortcut" class="h-full">
-          <div class="p-6 h-full">
+          <div class="p-6 h-full overflow-y-auto">
             <ShortcutSettingsComponent
               :current-settings="currentSettings"
               :default-settings="defaultSettings"
               :is-mac="isMac"
               :visible="visible"
+              :is-active="activeTab === 'shortcut'"
               ref="shortcutSettingsRef"
+            />
+          </div>
+        </el-tab-pane>
+        <el-tab-pane label="数据同步" name="sync" class="h-full">
+          <div class="p-6 h-full overflow-y-auto">
+            <SyncSettingsComponent
+              :current-settings="currentSyncSettings"
+              ref="syncSettingsRef"
+              @change="handleSyncChange"
             />
           </div>
         </el-tab-pane>
@@ -69,10 +79,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { BatchKeySettings, GeneralSettings } from '@/types'
+import type { BatchKeySettings, GeneralSettings, SyncSettings } from '@/types'
 import GeneralSettingsComponent from './GeneralSettings.vue'
 import PresetSettingsComponent from './PresetSettings.vue'
 import ShortcutSettingsComponent from './ShortcutSettings.vue'
+import SyncSettingsComponent from './SyncSettings.vue'
 
 interface Props {
   modelValue: boolean
@@ -81,6 +92,7 @@ interface Props {
   currentGeneralSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
   currentPresetStates: Record<string, boolean>
+  currentSyncSettings: SyncSettings
   isMac: boolean
 }
 
@@ -92,6 +104,8 @@ interface Emits {
   (e: 'generalReset'): void
   (e: 'presetSave', states: Record<string, boolean>): void
   (e: 'presetReset'): void
+  (e: 'syncSave', settings: SyncSettings): void
+  (e: 'syncReset'): void
 }
 
 const props = defineProps<Props>()
@@ -106,6 +120,7 @@ const activeTab = ref('general')
 const generalSettingsRef = ref()
 const shortcutSettingsRef = ref()
 const presetSettingsRef = ref()
+const syncSettingsRef = ref()
 
 // 计算是否可以保存
 const canSave = computed(() => {
@@ -115,6 +130,8 @@ const canSave = computed(() => {
     return generalSettingsRef.value?.hasChanges ?? false
   } else if (activeTab.value === 'presets') {
     return presetSettingsRef.value?.hasChanges ?? false
+  } else if (activeTab.value === 'sync') {
+    return syncSettingsRef.value?.hasChanges ?? false
   }
   return false
 })
@@ -136,9 +153,18 @@ const handleSave = () => {
       emit('presetSave', presetData)
       presetSettingsRef.value?.save()
     }
+  } else if (activeTab.value === 'sync') {
+    // 获取同步设置的当前数据并触发保存事件
+    const syncData = syncSettingsRef.value?.getFormData()
+    if (syncData) {
+      emit('syncSave', syncData)
+    }
   }
 }
 
+const handleSyncChange = () => {
+  // 同步设置变更时的处理逻辑（可以在这里添加额外的逻辑）
+}
 
 const handleReset = () => {
   if (activeTab.value === 'general') {
@@ -151,6 +177,10 @@ const handleReset = () => {
     // 预设网站重置逻辑
     presetSettingsRef.value?.reset()
     emit('presetReset')
+  } else if (activeTab.value === 'sync') {
+    // 同步设置重置逻辑
+    syncSettingsRef.value?.reset()
+    emit('syncReset')
   }
 }
 
