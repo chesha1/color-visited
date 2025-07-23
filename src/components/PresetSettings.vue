@@ -1,12 +1,12 @@
 <template>
-  <div class="space-y-6 h-full overflow-y-auto">
+  <div class="space-y-4 h-full overflow-y-auto">
     <!-- 头部区域和统计操作区域 -->
-    <div class="border-b pb-4">
+    <div class="border-b pb-3">
       <div class="flex items-start justify-between">
         <!-- 左侧头部区域 -->
         <div>
           <h3 class="text-lg font-semibold text-gray-900 mb-2">预设网站管理</h3>
-          <p class="text-sm text-gray-600">管理支持的网站和链接匹配规则，控制脚本在哪些网站生效</p>
+          <p class="text-sm text-gray-600">控制脚本在哪些网站生效，点击网站名称展开查看详情</p>
         </div>
         
         <!-- 右侧统计和操作区域 -->
@@ -33,19 +33,14 @@
       </div>
     </div>
     
-    <div class="space-y-4">
+    <div class="space-y-2">
       <div v-for="(rule, siteName) in presetRules" :key="siteName" 
            class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
         <!-- 卡片头部 -->
         <div class="p-5">
           <div class="flex items-center justify-between">
-            <!-- 左侧：图标 + 可点击的网站信息区域 -->
-            <div class="flex items-center space-x-4 flex-1 cursor-pointer" @click="toggleExpanded(siteName)">
-              <!-- 网站图标占位符 -->
-              <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-blue-500 to-purple-600">
-                {{ siteName.charAt(0).toUpperCase() }}
-              </div>
-              
+            <!-- 左侧：可点击的网站信息区域 -->
+            <div class="flex items-center flex-1 cursor-pointer" @click="toggleExpanded(siteName)">
               <!-- 网站信息 -->
               <div class="flex-1">
                 <div class="flex items-center space-x-3">
@@ -56,7 +51,7 @@
                   </el-icon>
                 </div>
                 <p class="text-sm text-gray-500 mt-1">
-                  {{ rule.pages.length }} 个页面规则 · {{ rule.patterns.length }} 个链接模式
+                  {{ rule.pages.length }} 种生效范围 · {{ rule.patterns.length }} 种可染色链接
                 </p>
                 <div v-if="rule.description" class="text-xs text-gray-400 mt-1">
                   {{ rule.description }}
@@ -80,9 +75,9 @@
         <!-- 展开内容区域 -->
         <el-collapse-transition>
           <div v-show="expandedSites.has(siteName)" class="border-t border-gray-100">
-            <div class="px-5 py-4 bg-gray-50/50 rounded-b-xl space-y-4">
-              <!-- 左侧对齐：与网站信息文本对齐，需要考虑图标宽度(40px) + 间距(16px) = 56px -->
-              <div class="ml-14">
+            <div class="px-5 py-3 bg-gray-50/50 rounded-b-xl space-y-3">
+              <!-- 不需要左边距了，因为删除了图标 -->
+              <div>
                 <div v-if="rule.description" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                   <div class="flex items-start space-x-2">
                     <div class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 flex-shrink-0"></div>
@@ -90,10 +85,10 @@
                   </div>
                 </div>
                 
-                <div v-if="rule.pages.length > 0" class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                <div v-if="rule.pages.length > 0" class="bg-white rounded-lg border border-gray-200 p-4 mb-3">
                   <div class="flex items-center space-x-2 mb-3">
                     <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span class="font-medium text-gray-900 text-sm">页面规则</span>
+                    <span class="font-medium text-gray-900 text-sm">在下面这些页面中生效</span>
                     <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                       {{ rule.pages.length }} 个
                     </span>
@@ -109,7 +104,7 @@
                 <div v-if="rule.patterns.length > 0" class="bg-white rounded-lg border border-gray-200 p-4">
                   <div class="flex items-center space-x-2 mb-3">
                     <div class="w-2 h-2 rounded-full bg-purple-500"></div>
-                    <span class="font-medium text-gray-900 text-sm">链接模式</span>
+                    <span class="font-medium text-gray-900 text-sm">对下面这些链接染色</span>
                     <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
                       {{ rule.patterns.length }} 个
                     </span>
