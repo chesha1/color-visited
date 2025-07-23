@@ -95,6 +95,17 @@ export const PRESET_RULES: PresetRules = {
       /hacg\.me\/wp\/\d+\.html/, // 文章页
     ],
   },
+  'Hacker News': {
+    pages: [
+      /https:\/\/news\.ycombinator\.com\/.*/, // 任意内容
+      /https:\/\/news\.ycombinator\.com\/newest.*/, // newest任意内容
+      /https:\/\/news\.ycombinator\.com\/front.*/, // front任意内容
+      /https:\/\/news\.ycombinator\.com\/show.*/, // show任意内容
+    ],
+    patterns: [
+      /.*/, // 任意链接
+    ],
+  },
   'hostloc': {
     pages: [
       /https:\/\/hostloc\.com\/forum-.*/, // 板块首页

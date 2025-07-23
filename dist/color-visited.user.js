@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.5.3
+// @version      2.6.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -30,6 +30,10 @@
 // @include      /https:\/\/exhentai\.org\/popular/
 // @include      /https:\/\/www\.hacg\.me\/wp\/$/
 // @include      /https:\/\/www\.hacg\.me\/wp\/[a-zA-Z].*/
+// @include      /https:\/\/news\.ycombinator\.com\/.*/
+// @include      /https:\/\/news\.ycombinator\.com\/newest.*/
+// @include      /https:\/\/news\.ycombinator\.com\/front.*/
+// @include      /https:\/\/news\.ycombinator\.com\/show.*/
 // @include      /https:\/\/hostloc\.com\/forum-.*/
 // @include      /https:\/\/bbs\.hupu\.com\/[a-zA-Z].*/
 // @include      /https:\/\/linux\.do\/?$/
@@ -81,7 +85,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-j-aQVf7J.js"(exports, module$1) {
+        "main-C6nwD7fS.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20582,6 +20586,22 @@ System.register("./__entry.js", [], (function (exports, module) {
               patterns: [
                 /hacg\.me\/wp\/\d+\.html/
                 // 文章页
+              ]
+            },
+            "Hacker News": {
+              pages: [
+                /https:\/\/news\.ycombinator\.com\/.*/,
+                // 任意内容
+                /https:\/\/news\.ycombinator\.com\/newest.*/,
+                // newest任意内容
+                /https:\/\/news\.ycombinator\.com\/front.*/,
+                // front任意内容
+                /https:\/\/news\.ycombinator\.com\/show.*/
+                // show任意内容
+              ],
+              patterns: [
+                /.*/
+                // 任意链接
               ]
             },
             "hostloc": {

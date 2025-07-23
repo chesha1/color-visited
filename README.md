@@ -60,5 +60,8 @@
 - [ ] 在页面中排除某些链接不染色，比如在 bilibili 稍后再看中，不对标题的视频详情链接染色，其他照染
 - [ ] 正则表达式协议头，考虑速度差别
 - [ ] `visitedLinks` 冗余程度过高，考虑使用字典树存储（之前先做一个 benchmark 确定是否是性能瓶颈），可以[参考](https://stackoverflow.com/questions/16823686/where-does-gm-setvalue-store-data)
-- [ ] 适配 dark mode 网站，暗黑染色
-- [ ] 点击背景处关闭设置面板
+- [ ] 部分pages patterns单独分配颜色（适配默认dark mode的网站，比如hacg）
+
+## 不考虑染色的网站
+- Quora：没有回答独享的链接，因为一个回答染色了某个问题，会影响其他回答的链接
+- Stack Overflow：没有回答独享的链接，因为一个回答染色了某个问题，会影响其他回答的链接
