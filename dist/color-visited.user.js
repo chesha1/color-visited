@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.5.1
+// @version      2.5.2
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -81,7 +81,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-BMBlKcpD.js"(exports, module$1) {
+        "main-CA6vBq3B.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21877,7 +21877,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                   modelValue: visible.value,
                   "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => visible.value = $event),
                   width: "900px",
-                  "close-on-click-modal": false,
+                  "close-on-click-modal": true,
                   "close-on-press-escape": false,
                   "body-style": { padding: "0" },
                   onClosed: handleClosed

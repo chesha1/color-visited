@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     width="900px"
-    :close-on-click-modal="false"
+    :close-on-click-modal="true"
     :close-on-press-escape="false"
     :body-style="{ padding: '0' }"
     @closed="handleClosed"
