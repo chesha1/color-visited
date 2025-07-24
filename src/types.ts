@@ -24,12 +24,19 @@ export interface SyncSettings {
 // ================== 配置类型 ==================
 
 export interface PresetRule {
-  pages: (string | RegExp)[]
-  patterns: (string | RegExp)[]
+  pages: RegExp[]
+  patterns: RegExp[]
   description?: string
 }
 
 export type PresetRules = Record<string, PresetRule>
+
+export interface Config {
+  color: string
+  presets: 'all' | string[]
+  debug: boolean
+  expirationTime: number
+}
 
 // ================== UI 类型 ==================
 

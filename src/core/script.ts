@@ -32,7 +32,6 @@ export function startColorVisitedScript() {
   console.log('Color Visited Script has started!');
 
   // ================== 全局变量和初始化配置 ==================
-  let allPatterns: RegExp[] = [];
 
   // 从存储中读取快捷键设置，如果没有则使用默认设置
   let batchKeySettings: BatchKeySettings = GM_getValue('batch_shortcut_settings', defaultBatchKeySettings);
@@ -73,9 +72,9 @@ export function startColorVisitedScript() {
   // 脚本启动和全局初始化 - 负责整个脚本的启动配置、菜单设置、URL监听
   function startScript() {
     // 从存储中恢复常规设置到config对象
-    (config as any).color = currentGeneralSettings.color;
-    (config as any).expirationTime = currentGeneralSettings.expirationTime;
-    (config as any).debug = currentGeneralSettings.debug;
+    config.color = currentGeneralSettings.color;
+    config.expirationTime = currentGeneralSettings.expirationTime;
+    config.debug = currentGeneralSettings.debug;
 
     updateMenu();
 
@@ -89,19 +88,15 @@ export function startColorVisitedScript() {
 
     // 生成预设
     if (config.presets === 'all') {
-      (config as any).presets = Object.keys(PRESET_RULES);
+      config.presets = Object.keys(PRESET_RULES);
     }
-    loadUrlPatterns();
 
     // 监听预设状态更新事件
-    window.addEventListener('preset-states-updated', (event: any) => {
-      const { presetStates: newPresetStates } = event.detail;
+    window.addEventListener('preset-states-updated', (event: Event) => {
+      const customEvent = event as CustomEvent<{ presetStates: Record<string, boolean> }>;
+      const { presetStates: newPresetStates } = customEvent.detail;
       presetStates = newPresetStates;
       GM_setValue('preset_states', presetStates);
-
-      // 重新加载 URL 模式
-      allPatterns = [];
-      loadUrlPatterns();
 
       // 重新设置页面以应用新的预设配置
       setupPage();
@@ -149,8 +144,8 @@ export function startColorVisitedScript() {
     const currentUrl = window.location.href;
     const enabledPresets = getEnabledPresets();
     return enabledPresets.some((preset: string) => {
-      const pages = (PRESET_RULES as any)[preset]?.pages || [];
-      return pages.some((pattern: RegExp) => pattern.test(currentUrl));
+      const presetRule = PRESET_RULES[preset];
+      return presetRule?.pages.some((pattern) => pattern.test(currentUrl)) ?? false;
     });
   }
 
@@ -171,18 +166,27 @@ export function startColorVisitedScript() {
 
   // ================== 模式匹配和规则管理 ==================
 
-  // 加载URL匹配模式 - 根据预设规则构建匹配模式数组
-  function loadUrlPatterns() {
+  // 获取当前页面对应的预设名称
+  function getCurrentPagePreset(): string | null {
+    const currentUrl = window.location.href;
     const enabledPresets = getEnabledPresets();
-    enabledPresets.forEach((preset: string) => {
-      if ((PRESET_RULES as any)[preset]) {
-        allPatterns = allPatterns.concat((PRESET_RULES as any)[preset].patterns);
+    
+    for (const preset of enabledPresets) {
+      const presetRule = PRESET_RULES[preset];
+      if (presetRule?.pages.some((pattern) => pattern.test(currentUrl))) {
+        return preset;
       }
-    });
+    }
+    return null;
   }
 
-  function shouldColorLink(url: string) {
-    return allPatterns.some(pattern => pattern.test(url));
+  // 检查链接是否应该被染色（只检查当前页面对应预设的patterns）
+  function shouldColorLink(url: string): boolean {
+    const currentPreset = getCurrentPagePreset();
+    if (!currentPreset) return false;
+    
+    const presetRule = PRESET_RULES[currentPreset];
+    return presetRule?.patterns.some((pattern) => pattern.test(url)) ?? false;
   }
 
   // ================== 菜单管理模块 ==================
@@ -208,7 +212,7 @@ export function startColorVisitedScript() {
           GM_setValue('batch_shortcut_settings', batchKeySettings);
         },
         () => {
-          batchKeySettings = Object.assign({}, defaultBatchKeySettings);
+          batchKeySettings = { ...defaultBatchKeySettings };
           GM_setValue('batch_shortcut_settings', defaultBatchKeySettings);
         },
         (newGeneralSettings) => {
@@ -217,9 +221,9 @@ export function startColorVisitedScript() {
           GM_setValue('expiration_time_setting', newGeneralSettings.expirationTime);
           GM_setValue('debug_setting', newGeneralSettings.debug);
           // 更新config对象以便立即生效
-          (config as any).color = newGeneralSettings.color;
-          (config as any).expirationTime = newGeneralSettings.expirationTime;
-          (config as any).debug = newGeneralSettings.debug;
+          config.color = newGeneralSettings.color;
+          config.expirationTime = newGeneralSettings.expirationTime;
+          config.debug = newGeneralSettings.debug;
           // 重新设置页面以应用新设置
           setupPage();
         },
@@ -229,9 +233,9 @@ export function startColorVisitedScript() {
           GM_setValue('expiration_time_setting', defaultGeneralSettings.expirationTime);
           GM_setValue('debug_setting', defaultGeneralSettings.debug);
           // 更新config对象以便立即生效
-          (config as any).color = defaultGeneralSettings.color;
-          (config as any).expirationTime = defaultGeneralSettings.expirationTime;
-          (config as any).debug = defaultGeneralSettings.debug;
+          config.color = defaultGeneralSettings.color;
+          config.expirationTime = defaultGeneralSettings.expirationTime;
+          config.debug = defaultGeneralSettings.debug;
           // 重新设置页面以应用新设置
           setupPage();
         },

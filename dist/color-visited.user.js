@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.6.0
+// @version      2.6.1
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -85,7 +85,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-C6nwD7fS.js"(exports, module$1) {
+        "main-BtTu2llZ.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20460,7 +20460,7 @@ System.register("./__entry.js", [], (function (exports, module) {
           message.closeAll = closeAll;
           message._context = null;
           const ElMessage = withInstallFunction(message, "$message");
-          const config = {
+          let config = {
             color: "#f1f5f9",
             // 链接颜色，默认为 slate-100
             presets: "all",
@@ -22147,7 +22147,6 @@ System.register("./__entry.js", [], (function (exports, module) {
           }
           function startColorVisitedScript() {
             console.log("Color Visited Script has started!");
-            let allPatterns = [];
             let batchKeySettings = _GM_getValue("batch_shortcut_settings", defaultBatchKeySettings);
             let presetStates = (() => {
               const defaultStates = {};
@@ -22183,13 +22182,11 @@ System.register("./__entry.js", [], (function (exports, module) {
               if (config.presets === "all") {
                 config.presets = Object.keys(PRESET_RULES);
               }
-              loadUrlPatterns();
               window.addEventListener("preset-states-updated", (event) => {
-                const { presetStates: newPresetStates } = event.detail;
+                const customEvent = event;
+                const { presetStates: newPresetStates } = customEvent.detail;
                 presetStates = newPresetStates;
                 _GM_setValue("preset_states", presetStates);
-                allPatterns = [];
-                loadUrlPatterns();
                 setupPage();
               });
               setupPage();
@@ -22216,8 +22213,8 @@ System.register("./__entry.js", [], (function (exports, module) {
               const currentUrl = window.location.href;
               const enabledPresets = getEnabledPresets();
               return enabledPresets.some((preset) => {
-                const pages = PRESET_RULES[preset]?.pages || [];
-                return pages.some((pattern) => pattern.test(currentUrl));
+                const presetRule = PRESET_RULES[preset];
+                return presetRule?.pages.some((pattern) => pattern.test(currentUrl)) ?? false;
               });
             }
             function onUrlChange(callback) {
@@ -22232,16 +22229,22 @@ System.register("./__entry.js", [], (function (exports, module) {
               });
               observer.observe(body, { childList: true, subtree: true });
             }
-            function loadUrlPatterns() {
+            function getCurrentPagePreset() {
+              const currentUrl = window.location.href;
               const enabledPresets = getEnabledPresets();
-              enabledPresets.forEach((preset) => {
-                if (PRESET_RULES[preset]) {
-                  allPatterns = allPatterns.concat(PRESET_RULES[preset].patterns);
+              for (const preset of enabledPresets) {
+                const presetRule = PRESET_RULES[preset];
+                if (presetRule?.pages.some((pattern) => pattern.test(currentUrl))) {
+                  return preset;
                 }
-              });
+              }
+              return null;
             }
             function shouldColorLink(url) {
-              return allPatterns.some((pattern) => pattern.test(url));
+              const currentPreset = getCurrentPagePreset();
+              if (!currentPreset) return false;
+              const presetRule = PRESET_RULES[currentPreset];
+              return presetRule?.patterns.some((pattern) => pattern.test(url)) ?? false;
             }
             function updateMenu() {
               _GM_unregisterMenuCommand("clearLinksMenuCommand");
@@ -22263,7 +22266,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                     _GM_setValue("batch_shortcut_settings", batchKeySettings);
                   },
                   () => {
-                    batchKeySettings = Object.assign({}, defaultBatchKeySettings);
+                    batchKeySettings = { ...defaultBatchKeySettings };
                     _GM_setValue("batch_shortcut_settings", defaultBatchKeySettings);
                   },
                   (newGeneralSettings) => {
