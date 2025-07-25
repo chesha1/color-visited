@@ -84,7 +84,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-BJUgW66r.js"(exports, module$1) {
+        "main-ECPPW7Yb.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22145,10 +22145,9 @@ System.register("./__entry.js", [], (function (exports, module) {
             const itemCount = Object.keys(visitedLinks).length;
             console.log(`visitedLinks storage size: ${itemCount} items, ${sizeText}`);
           }
-          function startColorVisitedScript() {
-            console.log("Color Visited Script has started!");
-            let batchKeySettings = _GM_getValue("batch_shortcut_settings", defaultBatchKeySettings);
-            let presetStates = (() => {
+          function initializeScriptState() {
+            const batchKeySettings = _GM_getValue("batch_shortcut_settings", defaultBatchKeySettings);
+            const presetStates = (() => {
               const defaultStates = {};
               Object.keys(PRESET_RULES).forEach((siteName) => {
                 defaultStates[siteName] = true;
@@ -22160,266 +22159,313 @@ System.register("./__entry.js", [], (function (exports, module) {
               expirationTime: _GM_getValue("expiration_time_setting", config.expirationTime),
               debug: _GM_getValue("debug_setting", config.debug)
             });
-            const defaultGeneralSettings = {
-              color: config.color,
-              expirationTime: config.expirationTime,
-              debug: config.debug
+            const currentGeneralSettings = getGeneralSettings();
+            const syncSettings = getSyncSettings();
+            return {
+              batchKeySettings,
+              presetStates,
+              currentGeneralSettings,
+              syncSettings,
+              batchKeyHandler: null
             };
-            let currentGeneralSettings = getGeneralSettings();
-            let batchKeyHandler = null;
-            let syncSettings = getSyncSettings();
-            function startScript() {
-              config.color = currentGeneralSettings.color;
-              config.expirationTime = currentGeneralSettings.expirationTime;
-              config.debug = currentGeneralSettings.debug;
-              updateMenu();
-              if (syncSettings.enabled) {
-                syncOnStartup().catch((error) => {
-                  console.warn("后台同步失败:", error.message);
-                  showNotification(`同步失败: ${error.message}`);
-                });
-              }
-              if (config.presets === "all") {
-                config.presets = Object.keys(PRESET_RULES);
-              }
-              window.addEventListener("preset-states-updated", (event) => {
-                const customEvent = event;
-                const { presetStates: newPresetStates } = customEvent.detail;
-                presetStates = newPresetStates;
-                _GM_setValue("preset_states", presetStates);
-                setupPage();
-              });
-              setupPage();
-              onUrlChange(() => {
-                setupPage();
-              });
+          }
+          const getDefaultGeneralSettings = () => ({
+            color: config.color,
+            expirationTime: config.expirationTime,
+            debug: config.debug
+          });
+          function initializeConfig(state) {
+            config.color = state.currentGeneralSettings.color;
+            config.expirationTime = state.currentGeneralSettings.expirationTime;
+            config.debug = state.currentGeneralSettings.debug;
+            if (config.presets === "all") {
+              config.presets = Object.keys(PRESET_RULES);
             }
-            function setupPage() {
-              if (config.debug) console.log("color-visited script initialized on", window.location.href);
-              removeScript();
-              if (isPageActive()) {
-                injectCustomStyles();
-                activateLinkFeatures();
-                setupBatchKeyListener();
-              } else {
-                if (config.debug) console.log("Script is not active on this page:", window.location.href);
+          }
+          function getEnabledPresets(state) {
+            const allPresets = config.presets === "all" ? Object.keys(PRESET_RULES) : config.presets;
+            return allPresets.filter((preset) => state.presetStates[preset] !== false);
+          }
+          function isPageActive(state) {
+            const currentUrl = window.location.href;
+            const enabledPresets = getEnabledPresets(state);
+            return enabledPresets.some((preset) => {
+              const presetRule = PRESET_RULES[preset];
+              return presetRule?.pages.some((pattern) => pattern.test(currentUrl)) ?? false;
+            });
+          }
+          function getCurrentPagePreset(state) {
+            const currentUrl = window.location.href;
+            const enabledPresets = getEnabledPresets(state);
+            for (const preset of enabledPresets) {
+              const presetRule = PRESET_RULES[preset];
+              if (presetRule?.pages.some((pattern) => pattern.test(currentUrl))) {
+                return preset;
               }
             }
-            function getEnabledPresets() {
-              const allPresets = config.presets === "all" ? Object.keys(PRESET_RULES) : config.presets;
-              return allPresets.filter((preset) => presetStates[preset] !== false);
+            return null;
+          }
+          function shouldColorLink(url, state) {
+            const currentPreset = getCurrentPagePreset(state);
+            if (!currentPreset) return false;
+            const presetRule = PRESET_RULES[currentPreset];
+            return presetRule?.patterns.some((pattern) => pattern.test(url)) ?? false;
+          }
+          function onUrlChange(callback) {
+            let oldHref = location.href;
+            const body = document.querySelector("body");
+            const observer = new MutationObserver(() => {
+              if (oldHref !== location.href) {
+                oldHref = location.href;
+                if (config.debug) console.log("URL changed:", oldHref, "->", location.href);
+                callback();
+              }
+            });
+            observer.observe(body, { childList: true, subtree: true });
+          }
+          class MenuManager {
+            state;
+            setupPageCallback;
+            constructor(state) {
+              this.state = state;
             }
-            function isPageActive() {
-              const currentUrl = window.location.href;
-              const enabledPresets = getEnabledPresets();
-              return enabledPresets.some((preset) => {
-                const presetRule = PRESET_RULES[preset];
-                return presetRule?.pages.some((pattern) => pattern.test(currentUrl)) ?? false;
-              });
+            setCallbacks(setupPageCallback) {
+              this.setupPageCallback = setupPageCallback;
             }
-            function onUrlChange(callback) {
-              let oldHref = location.href;
-              const body = document.querySelector("body");
-              const observer = new MutationObserver(() => {
-                if (oldHref !== location.href) {
-                  oldHref = location.href;
-                  if (config.debug) console.log("URL changed:", oldHref, "->", location.href);
-                  callback();
+            // 创建设置回调函数
+            createSettingsCallbacks() {
+              const defaultGeneralSettings = getDefaultGeneralSettings();
+              return {
+                onBatchKeySave: (newSettings) => {
+                  this.state.batchKeySettings = newSettings;
+                  _GM_setValue("batch_shortcut_settings", this.state.batchKeySettings);
+                },
+                onBatchKeyReset: () => {
+                  this.state.batchKeySettings = { ...defaultBatchKeySettings };
+                  _GM_setValue("batch_shortcut_settings", defaultBatchKeySettings);
+                },
+                onGeneralSave: (newGeneralSettings) => {
+                  this.state.currentGeneralSettings = newGeneralSettings;
+                  _GM_setValue("color_setting", newGeneralSettings.color);
+                  _GM_setValue("expiration_time_setting", newGeneralSettings.expirationTime);
+                  _GM_setValue("debug_setting", newGeneralSettings.debug);
+                  config.color = newGeneralSettings.color;
+                  config.expirationTime = newGeneralSettings.expirationTime;
+                  config.debug = newGeneralSettings.debug;
+                  this.setupPageCallback?.(this.state);
+                },
+                onGeneralReset: () => {
+                  this.state.currentGeneralSettings = { ...defaultGeneralSettings };
+                  _GM_setValue("color_setting", defaultGeneralSettings.color);
+                  _GM_setValue("expiration_time_setting", defaultGeneralSettings.expirationTime);
+                  _GM_setValue("debug_setting", defaultGeneralSettings.debug);
+                  config.color = defaultGeneralSettings.color;
+                  config.expirationTime = defaultGeneralSettings.expirationTime;
+                  config.debug = defaultGeneralSettings.debug;
+                  this.setupPageCallback?.(this.state);
+                },
+                onPresetSave: (newPresetStates) => {
+                  this.state.presetStates = newPresetStates;
+                  _GM_setValue("preset_states", this.state.presetStates);
+                  this.setupPageCallback?.(this.state);
+                },
+                onPresetReset: () => {
+                  const defaultStates = {};
+                  Object.keys(PRESET_RULES).forEach((key) => {
+                    defaultStates[key] = true;
+                  });
+                  this.state.presetStates = defaultStates;
+                  _GM_setValue("preset_states", this.state.presetStates);
+                  this.setupPageCallback?.(this.state);
+                },
+                onSyncSave: (newSyncSettings) => {
+                  this.state.syncSettings = newSyncSettings;
+                  saveSyncSettings(this.state.syncSettings);
+                  this.updateMenu();
+                },
+                onSyncReset: () => {
+                  this.state.syncSettings = { ...defaultSyncSettings };
+                  saveSyncSettings(this.state.syncSettings);
+                  this.updateMenu();
                 }
-              });
-              observer.observe(body, { childList: true, subtree: true });
+              };
             }
-            function getCurrentPagePreset() {
-              const currentUrl = window.location.href;
-              const enabledPresets = getEnabledPresets();
-              for (const preset of enabledPresets) {
-                const presetRule = PRESET_RULES[preset];
-                if (presetRule?.pages.some((pattern) => pattern.test(currentUrl))) {
-                  return preset;
-                }
-              }
-              return null;
-            }
-            function shouldColorLink(url) {
-              const currentPreset = getCurrentPagePreset();
-              if (!currentPreset) return false;
-              const presetRule = PRESET_RULES[currentPreset];
-              return presetRule?.patterns.some((pattern) => pattern.test(url)) ?? false;
-            }
-            function updateMenu() {
+            updateMenu() {
+              const callbacks = this.createSettingsCallbacks();
+              const defaultGeneralSettings = getDefaultGeneralSettings();
               _GM_registerMenuCommand("设置", () => {
                 showSettingsDialog(
-                  batchKeySettings,
+                  this.state.batchKeySettings,
                   defaultBatchKeySettings,
-                  currentGeneralSettings,
+                  this.state.currentGeneralSettings,
                   defaultGeneralSettings,
-                  presetStates,
-                  syncSettings,
+                  this.state.presetStates,
+                  this.state.syncSettings,
                   isMac,
-                  (newSettings) => {
-                    batchKeySettings = newSettings;
-                    _GM_setValue("batch_shortcut_settings", batchKeySettings);
-                  },
-                  () => {
-                    batchKeySettings = { ...defaultBatchKeySettings };
-                    _GM_setValue("batch_shortcut_settings", defaultBatchKeySettings);
-                  },
-                  (newGeneralSettings) => {
-                    currentGeneralSettings = newGeneralSettings;
-                    _GM_setValue("color_setting", newGeneralSettings.color);
-                    _GM_setValue("expiration_time_setting", newGeneralSettings.expirationTime);
-                    _GM_setValue("debug_setting", newGeneralSettings.debug);
-                    config.color = newGeneralSettings.color;
-                    config.expirationTime = newGeneralSettings.expirationTime;
-                    config.debug = newGeneralSettings.debug;
-                    setupPage();
-                  },
-                  () => {
-                    currentGeneralSettings = { ...defaultGeneralSettings };
-                    _GM_setValue("color_setting", defaultGeneralSettings.color);
-                    _GM_setValue("expiration_time_setting", defaultGeneralSettings.expirationTime);
-                    _GM_setValue("debug_setting", defaultGeneralSettings.debug);
-                    config.color = defaultGeneralSettings.color;
-                    config.expirationTime = defaultGeneralSettings.expirationTime;
-                    config.debug = defaultGeneralSettings.debug;
-                    setupPage();
-                  },
-                  (newPresetStates) => {
-                    presetStates = newPresetStates;
-                    _GM_setValue("preset_states", presetStates);
-                    setupPage();
-                  },
-                  () => {
-                    const defaultStates = {};
-                    Object.keys(PRESET_RULES).forEach((key) => {
-                      defaultStates[key] = true;
-                    });
-                    presetStates = defaultStates;
-                    _GM_setValue("preset_states", presetStates);
-                    setupPage();
-                  },
-                  (newSyncSettings) => {
-                    syncSettings = newSyncSettings;
-                    saveSyncSettings(syncSettings);
-                    updateMenu();
-                  },
-                  () => {
-                    syncSettings = { ...defaultSyncSettings };
-                    saveSyncSettings(syncSettings);
-                    updateMenu();
-                  }
+                  callbacks.onBatchKeySave,
+                  callbacks.onBatchKeyReset,
+                  callbacks.onGeneralSave,
+                  callbacks.onGeneralReset,
+                  callbacks.onPresetSave,
+                  callbacks.onPresetReset,
+                  callbacks.onSyncSave,
+                  callbacks.onSyncReset
                 );
               });
             }
-            function removeScript() {
-              removeCustomStyles();
-              document.querySelectorAll("a.visited-link").forEach((link) => {
-                link.classList.remove("visited-link");
-              });
-              if (batchKeyHandler) {
-                document.removeEventListener("keydown", batchKeyHandler);
-                batchKeyHandler = null;
+          }
+          function createMenuManager(state) {
+            return new MenuManager(state);
+          }
+          function deleteExpiredLinks() {
+            const visitedLinks = _GM_getValue("visitedLinks", {});
+            const now2 = (/* @__PURE__ */ new Date()).getTime();
+            Object.keys(visitedLinks).forEach((url) => {
+              if (now2 - visitedLinks[url] > config.expirationTime) {
+                delete visitedLinks[url];
               }
-            }
-            function deleteExpiredLinks() {
-              const visitedLinks = _GM_getValue("visitedLinks", {});
-              const now2 = (/* @__PURE__ */ new Date()).getTime();
-              Object.keys(visitedLinks).forEach((url) => {
-                if (now2 - visitedLinks[url] > config.expirationTime) {
-                  delete visitedLinks[url];
-                }
-              });
-              _GM_setValue("visitedLinks", visitedLinks);
-            }
-            function batchAddLinks() {
-              const visitedLinks = _GM_getValue("visitedLinks", {});
-              const now2 = (/* @__PURE__ */ new Date()).getTime();
-              let addedCount = 0;
-              document.querySelectorAll("a[href]").forEach((link) => {
-                const inputUrl = getBaseUrl(link.href);
-                if (shouldColorLink(inputUrl) && !Object.hasOwn(visitedLinks, inputUrl)) {
-                  visitedLinks[inputUrl] = now2;
-                  link.classList.add("visited-link");
-                  addedCount++;
-                }
-              });
-              if (addedCount > 0) {
-                _GM_setValue("visitedLinks", visitedLinks);
-                showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
-              } else {
-                showNotification("没有找到新的符合规则的链接可添加");
-              }
-            }
-            function setupBatchKeyListener() {
-              if (batchKeyHandler) {
-                document.removeEventListener("keydown", batchKeyHandler);
-              }
-              batchKeyHandler = function(event) {
-                if (event.ctrlKey === batchKeySettings.ctrlKey && event.shiftKey === batchKeySettings.shiftKey && event.altKey === batchKeySettings.altKey && event.metaKey === batchKeySettings.metaKey && event.key.toUpperCase() === batchKeySettings.key) {
-                  event.preventDefault();
-                  batchAddLinks();
-                }
-              };
-              document.addEventListener("keydown", batchKeyHandler);
-            }
-            function updateLinkStatus(link, visitedLinks) {
+            });
+            _GM_setValue("visitedLinks", visitedLinks);
+          }
+          function batchAddLinks(state) {
+            const visitedLinks = _GM_getValue("visitedLinks", {});
+            const now2 = (/* @__PURE__ */ new Date()).getTime();
+            let addedCount = 0;
+            document.querySelectorAll("a[href]").forEach((link) => {
               const inputUrl = getBaseUrl(link.href);
-              if (!shouldColorLink(inputUrl)) return;
-              if (Object.hasOwn(visitedLinks, inputUrl)) {
+              if (shouldColorLink(inputUrl, state) && !Object.hasOwn(visitedLinks, inputUrl)) {
+                visitedLinks[inputUrl] = now2;
+                link.classList.add("visited-link");
+                addedCount++;
+              }
+            });
+            if (addedCount > 0) {
+              _GM_setValue("visitedLinks", visitedLinks);
+              showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
+            } else {
+              showNotification("没有找到新的符合规则的链接可添加");
+            }
+          }
+          function updateLinkStatus(link, visitedLinks, state) {
+            const inputUrl = getBaseUrl(link.href);
+            if (!shouldColorLink(inputUrl, state)) return;
+            if (Object.hasOwn(visitedLinks, inputUrl)) {
+              link.classList.add("visited-link");
+              if (config.debug) console.log(`${inputUrl} class added`);
+            }
+          }
+          function updateAllLinksStatus(visitedLinks, state) {
+            document.querySelectorAll("a[href]").forEach((link) => {
+              updateLinkStatus(link, visitedLinks, state);
+            });
+          }
+          function removeScript(state) {
+            removeCustomStyles();
+            document.querySelectorAll("a.visited-link").forEach((link) => {
+              link.classList.remove("visited-link");
+            });
+            if (state.batchKeyHandler) {
+              document.removeEventListener("keydown", state.batchKeyHandler);
+              state.batchKeyHandler = null;
+            }
+          }
+          function activateLinkFeatures(state, setupDOMObserver2, setupLinkEventListeners2) {
+            deleteExpiredLinks();
+            const visitedLinks = _GM_getValue("visitedLinks", {});
+            logStorageInfo(visitedLinks);
+            updateAllLinksStatus(visitedLinks, state);
+            setupDOMObserver2(visitedLinks, state);
+            setupLinkEventListeners2(visitedLinks, state);
+          }
+          function setupBatchKeyListener(state) {
+            if (state.batchKeyHandler) {
+              document.removeEventListener("keydown", state.batchKeyHandler);
+            }
+            state.batchKeyHandler = function(event) {
+              if (event.ctrlKey === state.batchKeySettings.ctrlKey && event.shiftKey === state.batchKeySettings.shiftKey && event.altKey === state.batchKeySettings.altKey && event.metaKey === state.batchKeySettings.metaKey && event.key.toUpperCase() === state.batchKeySettings.key) {
+                event.preventDefault();
+                batchAddLinks(state);
+              }
+            };
+            document.addEventListener("keydown", state.batchKeyHandler);
+          }
+          function setupDOMObserver(visitedLinks, state) {
+            const observer = new MutationObserver((mutations) => {
+              mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                  if (node.nodeType === Node.ELEMENT_NODE) {
+                    node.querySelectorAll("a[href]").forEach((link) => {
+                      updateLinkStatus(link, visitedLinks, state);
+                    });
+                  }
+                });
+              });
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+            return observer;
+          }
+          function createLinkClickHandler(visitedLinks, state) {
+            return function handleLinkClick(event) {
+              const link = event.target.closest("a[href]");
+              if (!link) return;
+              const inputUrl = getBaseUrl(link.href);
+              if (!shouldColorLink(inputUrl, state)) return;
+              if (!Object.hasOwn(visitedLinks, inputUrl)) {
+                visitedLinks[inputUrl] = (/* @__PURE__ */ new Date()).getTime();
+                _GM_setValue("visitedLinks", visitedLinks);
+                if (config.debug) console.log(`${inputUrl} saved`);
                 link.classList.add("visited-link");
                 if (config.debug) console.log(`${inputUrl} class added`);
               }
-            }
-            function updateAllLinksStatus(visitedLinks) {
-              document.querySelectorAll("a[href]").forEach((link) => {
-                updateLinkStatus(link, visitedLinks);
+            };
+          }
+          function setupLinkEventListeners(visitedLinks, state) {
+            const handleLinkClick = createLinkClickHandler(visitedLinks, state);
+            document.addEventListener("click", handleLinkClick, true);
+            document.addEventListener("auxclick", handleLinkClick, true);
+            return handleLinkClick;
+          }
+          function initializeSync(state) {
+            if (state.syncSettings.enabled) {
+              syncOnStartup().catch((error) => {
+                console.warn("后台同步失败:", error.message);
+                showNotification(`同步失败: ${error.message}`);
               });
             }
-            function setupDOMObserver(visitedLinks) {
-              const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                  mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                      node.querySelectorAll("a[href]").forEach((link) => {
-                        updateLinkStatus(link, visitedLinks);
-                      });
-                    }
-                  });
-                });
-              });
-              observer.observe(document.body, { childList: true, subtree: true });
-              return observer;
+          }
+          function setupGlobalEventListeners(state) {
+            window.addEventListener("preset-states-updated", (event) => {
+              const customEvent = event;
+              const { presetStates: newPresetStates } = customEvent.detail;
+              state.presetStates = newPresetStates;
+              _GM_setValue("preset_states", state.presetStates);
+              setupPage(state);
+            });
+            onUrlChange(() => {
+              setupPage(state);
+            });
+          }
+          function setupPage(state) {
+            removeScript(state);
+            if (isPageActive(state)) {
+              injectCustomStyles();
+              activateLinkFeatures(state, setupDOMObserver, setupLinkEventListeners);
+              setupBatchKeyListener(state);
             }
-            function createLinkClickHandler(visitedLinks) {
-              return function handleLinkClick(event) {
-                const link = event.target.closest("a[href]");
-                if (!link) return;
-                const inputUrl = getBaseUrl(link.href);
-                if (!shouldColorLink(inputUrl)) return;
-                if (!Object.hasOwn(visitedLinks, inputUrl)) {
-                  visitedLinks[inputUrl] = (/* @__PURE__ */ new Date()).getTime();
-                  _GM_setValue("visitedLinks", visitedLinks);
-                  if (config.debug) console.log(`${inputUrl} saved`);
-                  link.classList.add("visited-link");
-                  if (config.debug) console.log(`${inputUrl} class added`);
-                }
-              };
-            }
-            function setupLinkEventListeners(visitedLinks) {
-              const handleLinkClick = createLinkClickHandler(visitedLinks);
-              document.addEventListener("click", handleLinkClick, true);
-              document.addEventListener("auxclick", handleLinkClick, true);
-              return handleLinkClick;
-            }
-            function activateLinkFeatures() {
-              deleteExpiredLinks();
-              const visitedLinks = _GM_getValue("visitedLinks", {});
-              logStorageInfo(visitedLinks);
-              updateAllLinksStatus(visitedLinks);
-              setupDOMObserver(visitedLinks);
-              setupLinkEventListeners(visitedLinks);
-            }
-            startScript();
+          }
+          function startScript(state) {
+            initializeConfig(state);
+            const menuManager = createMenuManager(state);
+            menuManager.setCallbacks(setupPage);
+            menuManager.updateMenu();
+            initializeSync(state);
+            setupGlobalEventListeners(state);
+            setupPage(state);
+          }
+          function startColorVisitedScript() {
+            console.log("Color Visited Script has started!");
+            const state = initializeScriptState();
+            startScript(state);
           }
           startColorVisitedScript();
           const createIsolatedApp = () => {
