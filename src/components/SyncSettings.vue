@@ -172,8 +172,9 @@ const testConnection = async () => {
     } else {
       showNotification('连接失败，请检查令牌是否正确', 'error')
     }
-  } catch (error: any) {
-    showNotification('连接失败: ' + error.message, 'error')
+  } catch (error: unknown) {
+    const err = error as Error;
+    showNotification('连接失败: ' + err.message, 'error')
   } finally {
     testingConnection.value = false
   }

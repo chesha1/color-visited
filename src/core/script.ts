@@ -67,7 +67,7 @@ function startScript(state: ScriptState): void {
   setupPage(state);
 }
 
-export function startColorVisitedScript() {
+export function startColorVisitedScript(): void {
   'use strict';
 
   console.log('Color Visited Script has started!');

@@ -1,6 +1,7 @@
 // ================== 同步模块 ==================
 
-import type { SyncSettings } from '@/types';
+import type { SyncSettings, SyncData, VisitedLinksData } from '@/types';
+import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
 
 // 简化的同步配置 - 代码中的默认值
 export const defaultSyncSettings: SyncSettings = {
@@ -12,7 +13,7 @@ export const defaultSyncSettings: SyncSettings = {
 
 // 获取同步设置
 export function getSyncSettings(): SyncSettings {
-  const storedSettings = GM_getValue('sync_settings', {});
+  const storedSettings = GM_getValue('sync_settings', {}) as Partial<SyncSettings>;
   return {
     ...defaultSyncSettings,
     ...storedSettings,
@@ -47,7 +48,7 @@ export async function validateGitHubToken(token: string): Promise<boolean> {
 }
 
 // 更新现有的 Gist
-export async function updateGist(token: string, gistId: string, data: any): Promise<void> {
+export async function updateGist(token: string, gistId: string, data: SyncData | VisitedLinksData): Promise<void> {
   try {
     // 先获取现有 Gist 以确定文件名
     const gistInfo = await fetch(`https://api.github.com/gists/${gistId}`, {
@@ -91,7 +92,7 @@ export async function updateGist(token: string, gistId: string, data: any): Prom
 }
 
 // 获取 Gist 内容
-export async function getGist(token: string, gistId: string): Promise<any> {
+export async function getGist(token: string, gistId: string): Promise<SyncData | VisitedLinksData> {
   try {
     const response = await fetch(`https://api.github.com/gists/${gistId}`, {
       headers: {
@@ -141,7 +142,7 @@ export async function getGist(token: string, gistId: string): Promise<any> {
 // ================== 云端数据操作 ==================
 
 // 上传数据到云端
-export async function uploadToCloud(data: any): Promise<void> {
+export async function uploadToCloud(data: SyncData | VisitedLinksData): Promise<void> {
   const syncSettings = getSyncSettings();
   const { githubToken, gistId } = syncSettings;
 
@@ -157,7 +158,7 @@ export async function uploadToCloud(data: any): Promise<void> {
 }
 
 // 从云端下载数据
-export async function downloadFromCloud(): Promise<any> {
+export async function downloadFromCloud(): Promise<SyncData | VisitedLinksData> {
   const syncSettings = getSyncSettings();
   const { githubToken, gistId } = syncSettings;
 
@@ -170,8 +171,18 @@ export async function downloadFromCloud(): Promise<any> {
 
 // ================== 数据合并和同步逻辑 ==================
 
+// 提取访问链接数据
+function extractVisitedLinks(data: SyncData | VisitedLinksData): VisitedLinksData {
+  if (data && typeof data === 'object' && 'visitedLinks' in data && 'lastSyncTime' in data) {
+    // 这是 SyncData 格式
+    return (data as SyncData).visitedLinks;
+  }
+  // 这是直接的 VisitedLinksData 格式
+  return data as VisitedLinksData;
+}
+
 // 合并本地和云端数据
-export function mergeVisitedLinks(localLinks: Record<string, number>, cloudLinks: Record<string, number>): Record<string, number> {
+export function mergeVisitedLinks(localLinks: VisitedLinksData, cloudLinks: VisitedLinksData): VisitedLinksData {
   const merged = { ...localLinks };
 
   // 以最新时间戳为准合并数据
@@ -185,7 +196,7 @@ export function mergeVisitedLinks(localLinks: Record<string, number>, cloudLinks
 }
 
 // 检查数据是否有变化
-export function hasDataChanged(oldData: any, newData: any): boolean {
+export function hasDataChanged(oldData: VisitedLinksData | SyncData, newData: VisitedLinksData | SyncData): boolean {
   return JSON.stringify(oldData) !== JSON.stringify(newData);
 }
 
@@ -195,10 +206,11 @@ export async function syncOnStartup(): Promise<void> {
     console.log('开始同步数据...');
 
     // 1. 获取本地数据
-    const localLinks = GM_getValue('visitedLinks', {});
+    const localLinks = GM_getValue('visitedLinks', {}) as VisitedLinksData;
 
     // 2. 从云端获取数据
-    const cloudLinks = await downloadFromCloud();
+    const cloudData = await downloadFromCloud();
+    const cloudLinks = extractVisitedLinks(cloudData);
 
     // 3. 合并数据（以最新时间戳为准）
     const mergedLinks = mergeVisitedLinks(localLinks, cloudLinks);
@@ -223,8 +235,9 @@ export async function syncOnStartup(): Promise<void> {
     syncSettings.lastSyncTime = Date.now();
     saveSyncSettings(syncSettings);
   }
-  catch (error: any) {
-    console.warn('同步失败，使用本地数据:', error.message);
+  catch (error: unknown) {
+    const syncError = error as Error;
+    console.warn('同步失败，使用本地数据:', syncError.message);
     throw error; // 重新抛出错误，让调用者处理
   }
 }

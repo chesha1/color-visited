@@ -26,7 +26,7 @@ export function showNotification(message: string, type?: MessageProps['type']): 
     grouping: true,
     offset: 20,
     // 将 Message 组件挂载到 Shadow DOM 中
-    appendTo: appendTarget as any,
+    appendTo: appendTarget as HTMLElement,
   });
 }
 

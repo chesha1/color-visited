@@ -18,7 +18,7 @@ export function setupBatchKeyListener(state: ScriptState): void {
   }
 
   // 创建新的监听器
-  state.batchKeyHandler = function (event: KeyboardEvent) {
+  state.batchKeyHandler = function (event: KeyboardEvent): void {
     // 检测是否按下设置的快捷键组合
     if (
       event.ctrlKey === state.batchKeySettings.ctrlKey
@@ -43,11 +43,12 @@ export function setupBatchKeyListener(state: ScriptState): void {
 
 // 设置DOM变化监听器
 export function setupDOMObserver(visitedLinks: VisitedLinks, state: ScriptState): MutationObserver {
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
+  const observer = new MutationObserver((mutations: MutationRecord[]): void => {
+    mutations.forEach((mutation: MutationRecord): void => {
+      mutation.addedNodes.forEach((node: Node): void => {
         if (node.nodeType === Node.ELEMENT_NODE) {
-          (node as Element).querySelectorAll('a[href]').forEach((link) => {
+          const element = node as Element;
+          element.querySelectorAll('a[href]').forEach((link: Element): void => {
             updateLinkStatus(link, visitedLinks, state);
           });
         }
@@ -62,10 +63,13 @@ export function setupDOMObserver(visitedLinks: VisitedLinks, state: ScriptState)
 // ================== 链接点击事件 ==================
 
 // 处理链接点击事件
-export function createLinkClickHandler(visitedLinks: VisitedLinks, state: ScriptState) {
-  return function handleLinkClick(event: Event) {
+export function createLinkClickHandler(visitedLinks: VisitedLinks, state: ScriptState): (event: Event) => void {
+  return function handleLinkClick(event: Event): void {
     // 使用 event.target.closest 来获取被点击的链接元素
-    const link = (event.target as Element).closest('a[href]') as HTMLAnchorElement;
+    const target = event.target as Element | null;
+    if (!target) return;
+    
+    const link = target.closest('a[href]') as HTMLAnchorElement | null;
     if (!link) return; // 如果点击的不是链接，直接返回
 
     const inputUrl = getBaseUrl(link.href);
