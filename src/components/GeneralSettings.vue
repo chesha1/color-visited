@@ -80,6 +80,7 @@ const hasChanges = computed(() => {
 })
 
 const colorPresets = [
+  'rgba(0,0,0,0)', // 透明色，适配暗色模式
   '#f1f5f9', // slate-100
   '#e2e8f0', // slate-200
   '#cbd5e1', // slate-300

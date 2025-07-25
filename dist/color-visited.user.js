@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.6.1
+// @version      2.6.2
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -85,7 +85,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-BtTu2llZ.js"(exports, module$1) {
+        "main-Dwo9Cynl.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20461,8 +20461,8 @@ System.register("./__entry.js", [], (function (exports, module) {
           message._context = null;
           const ElMessage = withInstallFunction(message, "$message");
           let config = {
-            color: "#f1f5f9",
-            // 链接颜色，默认为 slate-100
+            color: "rgba(0,0,0,0)",
+            // 链接颜色，默认为透明色以适配暗色模式
             presets: "all",
             // 使用的预设规则
             debug: false,
@@ -20874,6 +20874,8 @@ System.register("./__entry.js", [], (function (exports, module) {
                 return JSON.stringify(formData.value) !== JSON.stringify(props.currentSettings);
               });
               const colorPresets = [
+                "rgba(0,0,0,0)",
+                // 透明色，适配暗色模式
                 "#f1f5f9",
                 // slate-100
                 "#e2e8f0",

@@ -2,7 +2,7 @@ import type { PresetRules, Config } from '@/types';
 
 // 配置参数（可变对象，运行时会被修改）
 export let config: Config = {
-  color: '#f1f5f9', // 链接颜色，默认为 slate-100
+  color: 'rgba(0,0,0,0)', // 链接颜色，默认为透明色以适配暗色模式
   presets: 'all', // 使用的预设规则
   debug: false, // 是否开启调试模式
   expirationTime: 1000 * 60 * 60 * 24 * 365, // 链接染色的过期时间，毫秒为单位，默认为一年
