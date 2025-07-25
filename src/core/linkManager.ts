@@ -28,7 +28,7 @@ export function batchAddLinks(state: ScriptState): void {
   const startTime = performance.now();
 
   const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
-  const now = new Date().getTime();
+  const now = Date.now();
   let addedCount = 0;
 
   // 查找所有未标记的链接（排除已有 visited-link 类的链接）

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.7.2
+// @version      2.7.3
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -84,7 +84,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-DqLFQViA.js"(exports, module$1) {
+        "main-B_waj_Ql.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22339,7 +22339,7 @@ System.register("./__entry.js", [], (function (exports, module) {
           function batchAddLinks(state) {
             const startTime = performance.now();
             const visitedLinks = _GM_getValue("visitedLinks", {});
-            const now2 = (/* @__PURE__ */ new Date()).getTime();
+            const now2 = Date.now();
             let addedCount = 0;
             const links = document.querySelectorAll("a[href]:not(.visited-link)");
             const linksToUpdate = [];
