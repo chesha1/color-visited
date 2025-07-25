@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-6">
     <div class="border-b pb-4">
-      <h3 class="text-lg font-semibold text-gray-900 mb-2">批量记录快捷键设置</h3>
-      <p class="text-sm text-gray-600">自定义批量标记链接的快捷键组合</p>
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">批量染色快捷键设置</h3>
+      <p class="text-sm text-gray-600">按下快捷键，对当前页面上所有符合规则的链接进行染色</p>
     </div>
     <el-form :model="formData" label-width="120px" class="space-y-6">
       <el-form-item label="当前快捷键">
@@ -146,11 +146,11 @@ const handleSave = () => {
     if (isResetMode.value) {
       // 如果是重置模式，发送重置事件
       emit('reset')
-      showNotification('批量记录快捷键已重置为默认！')
+      showNotification('批量染色快捷键已重置为默认！')
     } else {
       // 否则正常保存
       emit('save', newSettings.value)
-      showNotification('批量记录快捷键设置已保存！')
+      showNotification('批量染色快捷键设置已保存！')
     }
     
     // 保存后重置状态

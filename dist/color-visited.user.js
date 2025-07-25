@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.6.2
+// @version      2.7.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -67,7 +67,6 @@
 // @grant        GM_getValue
 // @grant        GM_registerMenuCommand
 // @grant        GM_setValue
-// @grant        GM_unregisterMenuCommand
 // @run-at       document-end
 // @noframes
 // ==/UserScript==
@@ -85,7 +84,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-Dwo9Cynl.js"(exports, module$1) {
+        "main-BJUgW66r.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21001,7 +21000,6 @@ System.register("./__entry.js", [], (function (exports, module) {
           var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
           var _GM_registerMenuCommand = /* @__PURE__ */ (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
           var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
-          var _GM_unregisterMenuCommand = /* @__PURE__ */ (() => typeof GM_unregisterMenuCommand != "undefined" ? GM_unregisterMenuCommand : void 0)();
           const _hoisted_1$3 = { class: "space-y-4 h-full overflow-y-auto" };
           const _hoisted_2$2 = { class: "border-b pb-3" };
           const _hoisted_3$2 = { class: "flex items-start justify-between" };
@@ -21363,10 +21361,10 @@ System.register("./__entry.js", [], (function (exports, module) {
                 if (hasNewKeyPress.value) {
                   if (isResetMode.value) {
                     emit2("reset");
-                    showNotification("批量记录快捷键已重置为默认！");
+                    showNotification("批量染色快捷键已重置为默认！");
                   } else {
                     emit2("save", newSettings.value);
-                    showNotification("批量记录快捷键设置已保存！");
+                    showNotification("批量染色快捷键设置已保存！");
                   }
                   formData.value = { ...newSettings.value };
                   hasNewKeyPress.value = false;
@@ -21416,8 +21414,8 @@ System.register("./__entry.js", [], (function (exports, module) {
                 const _component_el_form = ElForm;
                 return openBlock(), createElementBlock("div", _hoisted_1$2, [
                   _cache[1] || (_cache[1] = createBaseVNode("div", { class: "border-b pb-4" }, [
-                    createBaseVNode("h3", { class: "text-lg font-semibold text-gray-900 mb-2" }, "批量记录快捷键设置"),
-                    createBaseVNode("p", { class: "text-sm text-gray-600" }, "自定义批量标记链接的快捷键组合")
+                    createBaseVNode("h3", { class: "text-lg font-semibold text-gray-900 mb-2" }, "批量染色快捷键设置"),
+                    createBaseVNode("p", { class: "text-sm text-gray-600" }, "按下快捷键，对当前页面上所有符合规则的链接进行染色")
                   ], -1)),
                   createVNode(_component_el_form, {
                     model: formData.value,
@@ -21975,7 +21973,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                             _: 1
                           }),
                           createVNode(_component_el_tab_pane, {
-                            label: "批量记录快捷键",
+                            label: "批量染色快捷键",
                             name: "shortcut",
                             class: "h-full"
                           }, {
@@ -22249,11 +22247,6 @@ System.register("./__entry.js", [], (function (exports, module) {
               return presetRule?.patterns.some((pattern) => pattern.test(url)) ?? false;
             }
             function updateMenu() {
-              _GM_unregisterMenuCommand("clearLinksMenuCommand");
-              _GM_unregisterMenuCommand("batchAddLinksMenuCommand");
-              _GM_unregisterMenuCommand("setBatchKeyMenuCommand");
-              _GM_registerMenuCommand("清除所有记住的链接", clearLinks);
-              _GM_registerMenuCommand("批量记录当前页面链接", batchAddLinks);
               _GM_registerMenuCommand("设置", () => {
                 showSettingsDialog(
                   batchKeySettings,
@@ -22337,10 +22330,6 @@ System.register("./__entry.js", [], (function (exports, module) {
                 }
               });
               _GM_setValue("visitedLinks", visitedLinks);
-            }
-            function clearLinks() {
-              _GM_setValue("visitedLinks", {});
-              removeScript();
             }
             function batchAddLinks() {
               const visitedLinks = _GM_getValue("visitedLinks", {});

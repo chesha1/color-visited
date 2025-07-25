@@ -61,7 +61,7 @@ export function startColorVisitedScript() {
 
   let currentGeneralSettings = getGeneralSettings();
 
-  // 批量记录快捷键处理器
+  // 批量染色快捷键处理器
   let batchKeyHandler: ((event: KeyboardEvent) => void) | null = null;
 
   // ================== 同步配置 ==================
@@ -120,7 +120,7 @@ export function startColorVisitedScript() {
     if (isPageActive()) {
       injectCustomStyles();
       activateLinkFeatures();
-      setupBatchKeyListener(); // 设置批量记录快捷键监听
+      setupBatchKeyListener(); // 设置批量染色快捷键监听
     }
     else {
       if (config.debug) console.log('Script is not active on this page:', window.location.href);
@@ -192,12 +192,6 @@ export function startColorVisitedScript() {
   // ================== 菜单管理模块 ==================
 
   function updateMenu() {
-    GM_unregisterMenuCommand('clearLinksMenuCommand');
-    GM_unregisterMenuCommand('batchAddLinksMenuCommand');
-    GM_unregisterMenuCommand('setBatchKeyMenuCommand');
-
-    GM_registerMenuCommand('清除所有记住的链接', clearLinks);
-    GM_registerMenuCommand('批量记录当前页面链接', batchAddLinks);
     GM_registerMenuCommand('设置', () => {
       showSettingsDialog(
         batchKeySettings,
@@ -303,12 +297,8 @@ export function startColorVisitedScript() {
     GM_setValue('visitedLinks', visitedLinks);
   }
 
-  function clearLinks() {
-    GM_setValue('visitedLinks', {});
-    removeScript();
-  }
 
-  // 批量记录当前页面上的所有符合规则的链接
+  // 批量染色当前页面上的所有符合规则的链接（仅供快捷键调用）
   function batchAddLinks() {
     const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
     const now = new Date().getTime();
@@ -338,7 +328,7 @@ export function startColorVisitedScript() {
 
 
 
-  // 设置批量记录快捷键监听器
+  // 设置批量染色快捷键监听器
   function setupBatchKeyListener() {
     // 移除之前的监听器
     if (batchKeyHandler) {
@@ -358,7 +348,7 @@ export function startColorVisitedScript() {
         // 阻止浏览器默认行为
         event.preventDefault();
 
-        // 执行批量记录功能
+        // 执行批量染色功能
         batchAddLinks();
       }
     };

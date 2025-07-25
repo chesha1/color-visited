@@ -35,7 +35,7 @@
             />
           </div>
         </el-tab-pane>
-        <el-tab-pane label="批量记录快捷键" name="shortcut" class="h-full">
+        <el-tab-pane label="批量染色快捷键" name="shortcut" class="h-full">
           <div class="p-6 h-full overflow-y-auto">
             <ShortcutSettingsComponent
               :current-settings="currentSettings"
