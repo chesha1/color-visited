@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.7.0
+// @version      2.7.1
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -84,7 +84,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-DLK1M8Vl.js"(exports, module$1) {
+        "main-Do_ACfQg.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22344,7 +22344,7 @@ System.register("./__entry.js", [], (function (exports, module) {
             const visitedLinks = _GM_getValue("visitedLinks", {});
             const now2 = (/* @__PURE__ */ new Date()).getTime();
             let addedCount = 0;
-            document.querySelectorAll("a[href]").forEach((link) => {
+            document.querySelectorAll("a[href]:not(.visited-link)").forEach((link) => {
               const inputUrl = getBaseUrl(link.href);
               if (shouldColorLink(inputUrl, state) && !Object.hasOwn(visitedLinks, inputUrl)) {
                 visitedLinks[inputUrl] = now2;
@@ -22360,6 +22360,7 @@ System.register("./__entry.js", [], (function (exports, module) {
             }
           }
           function updateLinkStatus(link, visitedLinks, state) {
+            if (link.classList.contains("visited-link")) return;
             const inputUrl = getBaseUrl(link.href);
             if (!shouldColorLink(inputUrl, state)) return;
             if (Object.hasOwn(visitedLinks, inputUrl)) {
@@ -22368,7 +22369,7 @@ System.register("./__entry.js", [], (function (exports, module) {
             }
           }
           function updateAllLinksStatus(visitedLinks, state) {
-            document.querySelectorAll("a[href]").forEach((link) => {
+            document.querySelectorAll("a[href]:not(.visited-link)").forEach((link) => {
               updateLinkStatus(link, visitedLinks, state);
             });
           }
@@ -22408,7 +22409,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 mutation.addedNodes.forEach((node) => {
                   if (node.nodeType === Node.ELEMENT_NODE) {
                     const element = node;
-                    element.querySelectorAll("a[href]").forEach((link) => {
+                    element.querySelectorAll("a[href]:not(.visited-link)").forEach((link) => {
                       updateLinkStatus(link, visitedLinks, state);
                     });
                   }

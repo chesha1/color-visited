@@ -48,7 +48,9 @@ export function setupDOMObserver(visitedLinks: VisitedLinks, state: ScriptState)
       mutation.addedNodes.forEach((node: Node): void => {
         if (node.nodeType === Node.ELEMENT_NODE) {
           const element = node as Element;
-          element.querySelectorAll('a[href]').forEach((link: Element): void => {
+          // 只查找新添加的未标记链接，避免重复处理
+          // 使用 :not(.visited-link) 选择器在动态内容加载时提高性能
+          element.querySelectorAll('a[href]:not(.visited-link)').forEach((link: Element): void => {
             updateLinkStatus(link, visitedLinks, state);
           });
         }
