@@ -1,11 +1,13 @@
 # color-visited
 
+[🇨🇳 中文版](README.md)
+
 > Color visited links to help you quickly filter read content while browsing
 
-[![Install Script](https://img.shields.io/badge/Install-GreasyFork-blue?style=flat-square)](https://greasyfork.org/zh-CN/scripts/523600-color-visited-%E5%AF%B9%E5%B7%B2%E8%AE%BF%E9%97%AE%E8%BF%87%E7%9A%84%E9%93%BE%E6%8E%A5%E6%9F%93%E8%89%B2)
-[![GitHub](https://img.shields.io/badge/Source-GitHub-green?style=flat-square)](https://github.com/chesha1/color-visited)
+[![Install Script](https://img.shields.io/badge/Install-GreasyFork-blue)](https://greasyfork.org/zh-CN/scripts/523600-color-visited-%E5%AF%B9%E5%B7%B2%E8%AE%BF%E9%97%AE%E8%BF%87%E7%9A%84%E9%93%BE%E6%8E%A5%E6%9F%93%E8%89%B2)
+[![GitHub](https://img.shields.io/badge/Source-GitHub-green)](https://github.com/chesha1/color-visited)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/chesha1/color-visited)
 
-[🇨🇳 中文版](README.md)
 
 ## ✨ Features
 
