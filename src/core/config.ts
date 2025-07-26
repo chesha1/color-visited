@@ -103,7 +103,7 @@ export const PRESET_RULES: PresetRules = {
       /https:\/\/news\.ycombinator\.com\/show.*/, // show任意内容
     ],
     patterns: [
-      /.*/, // 任意链接
+      /^(?!https:\/\/news\.ycombinator\.com).*/, // 任意链接，除了 news.ycombinator.com 域名
     ],
   },
   'hostloc': {
