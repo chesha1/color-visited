@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.7.3
+// @version      2.7.4
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -84,7 +84,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-B_waj_Ql.js"(exports, module$1) {
+        "main-g7WTZb8X.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22191,6 +22191,8 @@ System.register("./__entry.js", [], (function (exports, module) {
               config.presets = Object.keys(PRESET_RULES);
             }
           }
+          let cachedCurrentPreset = null;
+          let cachedUrl = null;
           function getEnabledPresets(state) {
             const allPresets = config.presets === "all" ? Object.keys(PRESET_RULES) : config.presets;
             return allPresets.filter((preset) => state.presetStates[preset] !== false);
@@ -22205,13 +22207,20 @@ System.register("./__entry.js", [], (function (exports, module) {
           }
           function getCurrentPagePreset(state) {
             const currentUrl = window.location.href;
+            if (currentUrl === cachedUrl && cachedCurrentPreset !== null) {
+              return cachedCurrentPreset;
+            }
             const enabledPresets = getEnabledPresets(state);
             for (const preset of enabledPresets) {
               const presetRule = PRESET_RULES[preset];
               if (presetRule?.pages.some((pattern) => pattern.test(currentUrl))) {
+                cachedUrl = currentUrl;
+                cachedCurrentPreset = preset;
                 return preset;
               }
             }
+            cachedUrl = currentUrl;
+            cachedCurrentPreset = null;
             return null;
           }
           function shouldColorLink(url, state) {
@@ -22226,6 +22235,8 @@ System.register("./__entry.js", [], (function (exports, module) {
             const observer = new MutationObserver(() => {
               if (oldHref !== location.href) {
                 oldHref = location.href;
+                cachedCurrentPreset = null;
+                cachedUrl = null;
                 if (config.debug) console.log("URL changed:", oldHref, "->", location.href);
                 callback();
               }

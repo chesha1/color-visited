@@ -3,6 +3,10 @@
 import { config, PRESET_RULES } from '@/core/config';
 import type { ScriptState } from '@/core/state';
 
+// 新增: 缓存当前页面预设，避免在每个链接判断时重复遍历
+let cachedCurrentPreset: string | null = null;
+let cachedUrl: string | null = null;
+
 // 获取启用的预设列表
 export function getEnabledPresets(state: ScriptState): string[] {
   const allPresets = config.presets === 'all' ? Object.keys(PRESET_RULES) : config.presets;
@@ -26,14 +30,26 @@ export function isPageActive(state: ScriptState): boolean {
 // 获取当前页面对应的预设名称
 export function getCurrentPagePreset(state: ScriptState): string | null {
   const currentUrl = window.location.href;
+
+  // 若 URL 未变且已有缓存，直接返回
+  if (currentUrl === cachedUrl && cachedCurrentPreset !== null) {
+    return cachedCurrentPreset;
+  }
+
+  // 重新计算并缓存结果
   const enabledPresets = getEnabledPresets(state);
-  
   for (const preset of enabledPresets) {
     const presetRule = PRESET_RULES[preset];
     if (presetRule?.pages.some((pattern) => pattern.test(currentUrl))) {
+      cachedUrl = currentUrl;
+      cachedCurrentPreset = preset;
       return preset;
     }
   }
+
+  // 未匹配到预设时也要更新缓存，避免重复计算
+  cachedUrl = currentUrl;
+  cachedCurrentPreset = null;
   return null;
 }
 
@@ -41,7 +57,7 @@ export function getCurrentPagePreset(state: ScriptState): string | null {
 export function shouldColorLink(url: string, state: ScriptState): boolean {
   const currentPreset = getCurrentPagePreset(state);
   if (!currentPreset) return false;
-  
+
   const presetRule = PRESET_RULES[currentPreset];
   return presetRule?.patterns.some((pattern) => pattern.test(url)) ?? false;
 }
@@ -53,6 +69,11 @@ export function onUrlChange(callback: () => void): void {
   const observer = new MutationObserver(() => {
     if (oldHref !== location.href) {
       oldHref = location.href;
+
+      // URL 已变化，重置缓存
+      cachedCurrentPreset = null;
+      cachedUrl = null;
+
       if (config.debug) console.log('URL changed:', oldHref, '->', location.href);
       callback();
     }
