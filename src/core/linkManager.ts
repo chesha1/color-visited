@@ -183,8 +183,8 @@ export function activateLinkFeatures(
   logStorageInfo(visitedLinks); // 显示存储信息
   updateAllLinksStatus(visitedLinks, state); // 更新链接状态
 
-  // 设置 DOM 观察器并保存引用，便于后续清理
-  state.domObserver = setupDOMObserver(visitedLinks, state);
+  // 设置全局 DOM 观察器（仅首次创建）
+  setupDOMObserver(visitedLinks, state);
 
   // 设置点击事件监听器并保存引用，便于后续清理
   state.linkClickHandler = setupLinkEventListeners(visitedLinks, state);

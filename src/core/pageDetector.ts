@@ -2,6 +2,7 @@
 
 import { config, PRESET_RULES } from '@/core/config';
 import type { ScriptState } from '@/core/state';
+import { registerUrlChangeCallback, ensureDOMObserver } from '@/core/domObserver';
 
 // 新增: 缓存当前页面预设，避免在每个链接判断时重复遍历
 let cachedCurrentPreset: string | null = null;
@@ -62,21 +63,17 @@ export function shouldColorLink(url: string, state: ScriptState): boolean {
   return presetRule?.patterns.some((pattern) => pattern.test(url)) ?? false;
 }
 
-// 检测 URL 变化的函数
+// 检测 URL 变化 - 复用全局 MutationObserver
 export function onUrlChange(callback: () => void): void {
-  let oldHref = location.href;
-  const body = document.querySelector('body');
-  const observer = new MutationObserver(() => {
-    if (oldHref !== location.href) {
-      oldHref = location.href;
+  registerUrlChangeCallback(() => {
+    // URL 已变化，重置缓存
+    cachedCurrentPreset = null;
+    cachedUrl = null;
 
-      // URL 已变化，重置缓存
-      cachedCurrentPreset = null;
-      cachedUrl = null;
-
-      if (config.debug) console.log('URL changed:', oldHref, '->', location.href);
-      callback();
-    }
+    if (config.debug) console.log('URL changed:', location.href);
+    callback();
   });
-  observer.observe(body!, { childList: true, subtree: true });
+
+  // 确保全局 Observer 已创建
+  ensureDOMObserver();
 }

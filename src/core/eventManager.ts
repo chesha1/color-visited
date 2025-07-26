@@ -2,7 +2,8 @@
 
 import { config } from '@/core/config';
 import { shouldColorLink } from '@/core/pageDetector';
-import { batchAddLinks, updateLinkStatus } from '@/core/linkManager';
+import { batchAddLinks } from '@/core/linkManager';
+import { provideLinkContext, ensureDOMObserver } from '@/core/domObserver';
 import { getBaseUrl } from '@/core/utils';
 import type { ScriptState } from '@/core/state';
 import type { VisitedLinks } from '@/types';
@@ -43,23 +44,10 @@ export function setupBatchKeyListener(state: ScriptState): void {
 
 // 设置DOM变化监听器
 export function setupDOMObserver(visitedLinks: VisitedLinks, state: ScriptState): MutationObserver {
-  const observer = new MutationObserver((mutations: MutationRecord[]): void => {
-    mutations.forEach((mutation: MutationRecord): void => {
-      mutation.addedNodes.forEach((node: Node): void => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          const element = node as Element;
-          // 只查找新添加的未标记链接，避免重复处理
-          // 使用 :not(.visited-link) 选择器在动态内容加载时提高性能
-          element.querySelectorAll('a[href]:not(.visited-link)').forEach((link: Element): void => {
-            updateLinkStatus(link, visitedLinks, state);
-          });
-        }
-      });
-    });
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
-  return observer;
+  // 注入上下文供全局 Observer 使用
+  provideLinkContext(visitedLinks, state);
+  // 确保全局 Observer 已创建
+  return ensureDOMObserver();
 }
 
 // ================== 链接点击事件 ==================
@@ -70,7 +58,7 @@ export function createLinkClickHandler(visitedLinks: VisitedLinks, state: Script
     // 使用 event.target.closest 来获取被点击的链接元素
     const target = event.target as Element | null;
     if (!target) return;
-    
+
     const link = target.closest('a[href]') as HTMLAnchorElement | null;
     if (!link) return; // 如果点击的不是链接，直接返回
 
