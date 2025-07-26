@@ -153,6 +153,19 @@ export function removeScript(state: ScriptState): void {
     document.removeEventListener('keydown', state.batchKeyHandler);
     state.batchKeyHandler = null;
   }
+
+  // 断开 DOM 观察器
+  if (state.domObserver) {
+    state.domObserver.disconnect();
+    state.domObserver = null;
+  }
+
+  // 移除全局链接点击 / 中键点击事件监听器
+  if (state.linkClickHandler) {
+    document.removeEventListener('click', state.linkClickHandler, true);
+    document.removeEventListener('auxclick', state.linkClickHandler, true);
+    state.linkClickHandler = null;
+  }
 }
 
 // ================== 核心链接功能 ==================
@@ -169,6 +182,10 @@ export function activateLinkFeatures(
 
   logStorageInfo(visitedLinks); // 显示存储信息
   updateAllLinksStatus(visitedLinks, state); // 更新链接状态
-  setupDOMObserver(visitedLinks, state); // 设置DOM监听
-  setupLinkEventListeners(visitedLinks, state); // 设置事件监听
+
+  // 设置 DOM 观察器并保存引用，便于后续清理
+  state.domObserver = setupDOMObserver(visitedLinks, state);
+
+  // 设置点击事件监听器并保存引用，便于后续清理
+  state.linkClickHandler = setupLinkEventListeners(visitedLinks, state);
 }

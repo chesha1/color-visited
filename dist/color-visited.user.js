@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.7.5
+// @version      2.7.6
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -84,7 +84,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-g7WTZb8X.js"(exports, module$1) {
+        "main-B2eTB_ZZ.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22175,7 +22175,9 @@ System.register("./__entry.js", [], (function (exports, module) {
               presetStates,
               currentGeneralSettings,
               syncSettings,
-              batchKeyHandler: null
+              batchKeyHandler: null,
+              domObserver: null,
+              linkClickHandler: null
             };
           }
           const getDefaultGeneralSettings = () => ({
@@ -22423,14 +22425,23 @@ System.register("./__entry.js", [], (function (exports, module) {
               document.removeEventListener("keydown", state.batchKeyHandler);
               state.batchKeyHandler = null;
             }
+            if (state.domObserver) {
+              state.domObserver.disconnect();
+              state.domObserver = null;
+            }
+            if (state.linkClickHandler) {
+              document.removeEventListener("click", state.linkClickHandler, true);
+              document.removeEventListener("auxclick", state.linkClickHandler, true);
+              state.linkClickHandler = null;
+            }
           }
           function activateLinkFeatures(state, setupDOMObserver2, setupLinkEventListeners2) {
             deleteExpiredLinks();
             const visitedLinks = _GM_getValue("visitedLinks", {});
             logStorageInfo(visitedLinks);
             updateAllLinksStatus(visitedLinks, state);
-            setupDOMObserver2(visitedLinks, state);
-            setupLinkEventListeners2(visitedLinks, state);
+            state.domObserver = setupDOMObserver2(visitedLinks, state);
+            state.linkClickHandler = setupLinkEventListeners2(visitedLinks, state);
           }
           function setupBatchKeyListener(state) {
             if (state.batchKeyHandler) {
