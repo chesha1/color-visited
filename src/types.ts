@@ -64,18 +64,6 @@ export interface NotificationOptions {
 
 export type VisitedLinks = Record<string, number>
 
-export interface SyncData {
-  visitedLinks: Record<string, number>
-  config: {
-    presets: Record<string, boolean>
-    generalSettings: GeneralSettings
-    syncSettings: SyncSettings
-    batchKeySettings: BatchKeySettings
-  }
-  lastModified: number
-  version: string
-}
-
 // ================== 事件类型 ==================
 
 export type Events = {

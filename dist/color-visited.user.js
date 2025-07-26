@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.7.4
+// @version      2.7.5
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
