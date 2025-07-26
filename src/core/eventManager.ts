@@ -67,7 +67,7 @@ export function createLinkClickHandler(visitedLinks: VisitedLinks, state: Script
 
     if (!Object.hasOwn(visitedLinks, inputUrl)) {
       // 如果是第一次点击该链接，记录到 visitedLinks 并更新存储
-      visitedLinks[inputUrl] = new Date().getTime();
+      visitedLinks[inputUrl] = Date.now();
       GM_setValue('visitedLinks', visitedLinks);
       if (config.debug) console.log(`${inputUrl} saved`);
       link.classList.add('visited-link');

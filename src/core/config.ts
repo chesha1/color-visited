@@ -154,6 +154,24 @@ export const PRESET_RULES: PresetRules = {
       /https:\/\/www\.nodeseek\.com\/post-.*/, // 帖子
     ],
   },
+  'pixiv': {
+    pages: [
+      /https:\/\/www\.pixiv\.net\/$/, // 首页
+      /https:\/\/www\.pixiv\.net\/illustration.*/, // 插画页面
+      /https:\/\/www\.pixiv\.net\/manga.*/, // 漫画页面
+      /https:\/\/www\.pixiv\.net\/novel.*/, // 小说页面
+      /https:\/\/www\.pixiv\.net\/novel\/ranking\.php.*/, // 排行榜
+      /https:\/\/www\.pixiv\.net\/tags\/.*/, // 标签页面
+      /https:\/\/www\.pixiv\.net\/new_illust(_r18)?\.php.*/, // 新作品页面（包括R18版本）
+      /https:\/\/www\.pixiv\.net\/bookmark_new_illust(_r18)?\.php.*/, // 已关注用户的作品（包括R18版本）
+      /https:\/\/www\.pixiv\.net\/following\/watchlist\/.*/, // 追更列表中的作品
+      /https:\/\/www\.pixiv\.net\/mypixiv_new_illust\.php.*/, // 好P友的作品
+    ],
+    patterns: [
+      /pixiv\.net\/artworks\/\d+/, // 作品详情页
+      /pixiv\.net\/novel\/show\.php\?id=\d+/, // 小说详情页
+    ],
+  },
   'reddit': {
     pages: [
       /https:\/\/www\.reddit\.com\/r\/[^\/]+\/?$/, // 板块首页
