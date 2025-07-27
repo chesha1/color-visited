@@ -1,7 +1,7 @@
 // ================== 导入配置 ==================
 import { syncOnStartup } from '@/core/sync';
 import { showNotification, injectCustomStyles } from '@/core/ui';
-import { initializeScriptState, initializeConfig, type ScriptState } from '@/core/state';
+import { initializeScriptState, type ScriptState } from '@/core/state';
 import { isPageActive, onUrlChange } from '@/core/pageDetector';
 import { createMenuManager } from '@/core/menuManager';
 import { activateLinkFeatures, removeScript } from '@/core/linkManager';
@@ -25,10 +25,10 @@ function initializeSync(state: ScriptState): void {
 function setupGlobalEventListeners(state: ScriptState): void {
   // 监听预设状态更新事件
   window.addEventListener('preset-states-updated', (event: Event) => {
-    const customEvent = event as CustomEvent<{ presetStates: Record<string, boolean> }>;
-    const { presetStates: newPresetStates } = customEvent.detail;
-    state.presetStates = newPresetStates;
-    GM_setValue('preset_states', state.presetStates);
+    const customEvent = event as CustomEvent<{ presetSettings: Record<string, boolean> }>;
+    const { presetSettings: newPresetSettings } = customEvent.detail;
+    state.presetSettings = newPresetSettings;
+    GM_setValue('preset_settings', state.presetSettings);
 
     // 重新设置页面以应用新的预设配置
     setupPage(state);
@@ -45,7 +45,7 @@ function setupPage(state: ScriptState): void {
   removeScript(state); // 清除之前的脚本效果
 
   if (isPageActive(state)) {
-    injectCustomStyles();
+    injectCustomStyles(state.generalSettings.color);
     activateLinkFeatures(state, setupDOMObserver, setupLinkEventListeners);
     setupBatchKeyListener(state); // 设置批量染色快捷键监听
   }
@@ -53,13 +53,11 @@ function setupPage(state: ScriptState): void {
 
 // 脚本启动和全局初始化
 function startScript(state: ScriptState): void {
-  initializeConfig(state);
-  
   // 创建菜单管理器并设置回调
   const menuManager = createMenuManager(state);
   menuManager.setCallbacks(setupPage);
   menuManager.updateMenu();
-  
+
   initializeSync(state);
   setupGlobalEventListeners(state);
 

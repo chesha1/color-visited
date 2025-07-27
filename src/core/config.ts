@@ -1,12 +1,32 @@
-import type { PresetRules, Config } from '@/types';
+import type { PresetRules, BatchKeySettings } from '@/types';
 
-// 配置参数（可变对象，运行时会被修改）
-export let config: Config = {
-  color: 'rgba(0,0,0,0)', // 链接颜色，默认为透明色以适配暗色模式
-  presets: 'all', // 使用的预设规则
-  debug: false, // 是否开启调试模式
-  expirationTime: 1000 * 60 * 60 * 24 * 365, // 链接染色的过期时间，毫秒为单位，默认为一年
-};
+// ================== 默认设置集合 ==================
+
+export const DEFAULT_SETTINGS = {
+  general: {
+    color: 'rgba(0,0,0,0)', // 链接颜色，默认为透明色以适配暗色模式
+    expirationTime: 1000 * 60 * 60 * 24 * 365, // 链接染色的过期时间，毫秒为单位，默认为一年
+    debug: false // 是否开启调试模式
+  },
+  
+  getBatchKey(): BatchKeySettings {
+    const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+    return {
+      ctrlKey: !isMac, // macOS 下为 false，Windows 下为 true
+      shiftKey: true,
+      altKey: false,
+      metaKey: isMac, // macOS 下为 true，Windows 下为 false
+      key: 'V'
+    };
+  },
+  
+  sync: {
+    enabled: false,
+    githubToken: '',
+    gistId: '',
+    lastSyncTime: 0
+  }
+} as const;
 
 // 预设规则集合
 export const PRESET_RULES: PresetRules = {
@@ -247,3 +267,13 @@ export const PRESET_RULES: PresetRules = {
   // TODO: 优化一下多次获取 patterns 的逻辑
   // TODO: 让 o1 优化一下
 };
+
+// ================== 辅助函数 ==================
+
+// 获取预设网站的默认状态（全部启用）
+export function getDefaultPresetStates(): Record<string, boolean> {
+  return Object.keys(PRESET_RULES).reduce((acc, key) => {
+    acc[key] = true;
+    return acc;
+  }, {} as Record<string, boolean>);
+}

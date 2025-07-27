@@ -1,15 +1,14 @@
 // ================== 状态管理模块 ==================
 
-import { config, PRESET_RULES } from '@/core/config';
+import { DEFAULT_SETTINGS, getDefaultPresetStates } from '@/core/config';
 import { getSyncSettings } from '@/core/sync';
 import type { BatchKeySettings, GeneralSettings, SyncSettings } from '@/types';
-import { defaultBatchKeySettings } from '@/core/utils';
 import { GM_getValue } from 'vite-plugin-monkey/dist/client';
 
 export interface ScriptState {
   batchKeySettings: BatchKeySettings;
-  presetStates: Record<string, boolean>;
-  currentGeneralSettings: GeneralSettings;
+  presetSettings: Record<string, boolean>;
+  generalSettings: GeneralSettings;
   syncSettings: SyncSettings;
   batchKeyHandler: ((event: KeyboardEvent) => void) | null;
   /** DOM 变化观察器 */
@@ -18,34 +17,33 @@ export interface ScriptState {
   linkClickHandler: ((event: Event) => void) | null;
 }
 
+// ================== 辅助函数 ==================
+
+// 获取当前启用的预设列表
+export function getActivePresets(state: ScriptState): string[] {
+  return Object.keys(state.presetSettings).filter(preset => state.presetSettings[preset]);
+}
+
 // 初始化全局状态
 export function initializeScriptState(): ScriptState {
   // 从存储中读取快捷键设置，如果没有则使用默认设置
-  const batchKeySettings: BatchKeySettings = GM_getValue('batch_shortcut_settings', defaultBatchKeySettings);
+  const batchKeySettings: BatchKeySettings = GM_getValue('batch_shortcut_settings', DEFAULT_SETTINGS.getBatchKey());
 
   // 从存储中读取预设状态，如果没有则默认全部启用
-  const presetStates: Record<string, boolean> = (() => {
-    const defaultStates: Record<string, boolean> = {};
-    Object.keys(PRESET_RULES).forEach(siteName => {
-      defaultStates[siteName] = true;
-    });
-    return GM_getValue('preset_states', defaultStates);
-  })();
+  const presetSettings: Record<string, boolean> = GM_getValue('preset_settings', getDefaultPresetStates());
 
   // 从配置中获取常规设置
-  const getGeneralSettings = (): GeneralSettings => ({
-    color: GM_getValue('color_setting', config.color),
-    expirationTime: GM_getValue('expiration_time_setting', config.expirationTime),
-    debug: GM_getValue('debug_setting', config.debug)
-  });
-
-  const currentGeneralSettings = getGeneralSettings();
+  const generalSettings: GeneralSettings = {
+    color: GM_getValue('color_setting', DEFAULT_SETTINGS.general.color),
+    expirationTime: GM_getValue('expiration_time_setting', DEFAULT_SETTINGS.general.expirationTime),
+    debug: GM_getValue('debug_setting', DEFAULT_SETTINGS.general.debug)
+  };
   const syncSettings = getSyncSettings();
 
   return {
     batchKeySettings,
-    presetStates,
-    currentGeneralSettings,
+    presetSettings,
+    generalSettings,
     syncSettings,
     batchKeyHandler: null,
     domObserver: null,
@@ -55,20 +53,7 @@ export function initializeScriptState(): ScriptState {
 
 // 获取默认常规设置
 export const getDefaultGeneralSettings = (): GeneralSettings => ({
-  color: config.color,
-  expirationTime: config.expirationTime,
-  debug: config.debug
+  color: DEFAULT_SETTINGS.general.color,
+  expirationTime: DEFAULT_SETTINGS.general.expirationTime,
+  debug: DEFAULT_SETTINGS.general.debug
 });
-
-// 初始化配置设置
-export function initializeConfig(state: ScriptState): void {
-  // 从存储中恢复常规设置到config对象
-  config.color = state.currentGeneralSettings.color;
-  config.expirationTime = state.currentGeneralSettings.expirationTime;
-  config.debug = state.currentGeneralSettings.debug;
-
-  // 生成预设
-  if (config.presets === 'all') {
-    config.presets = Object.keys(PRESET_RULES);
-  }
-}

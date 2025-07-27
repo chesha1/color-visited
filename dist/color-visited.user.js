@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.8.1
+// @version      2.8.2
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -94,7 +94,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-CGBwB-Qy.js"(exports, module$1) {
+        "main-C9t01E9Y.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -9654,17 +9654,17 @@ System.register("./__entry.js", [], (function (exports, module) {
             }
           });
           const useEmptyValues = (props, defaultValue) => {
-            const config2 = getCurrentInstance() ? inject(emptyValuesContextKey, ref({})) : ref({});
-            const emptyValues = computed(() => props.emptyValues || config2.value.emptyValues || DEFAULT_EMPTY_VALUES);
+            const config = getCurrentInstance() ? inject(emptyValuesContextKey, ref({})) : ref({});
+            const emptyValues = computed(() => props.emptyValues || config.value.emptyValues || DEFAULT_EMPTY_VALUES);
             const valueOnClear = computed(() => {
               if (isFunction$1(props.valueOnClear)) {
                 return props.valueOnClear();
               } else if (props.valueOnClear !== void 0) {
                 return props.valueOnClear;
-              } else if (isFunction$1(config2.value.valueOnClear)) {
-                return config2.value.valueOnClear();
-              } else if (config2.value.valueOnClear !== void 0) {
-                return config2.value.valueOnClear;
+              } else if (isFunction$1(config.value.valueOnClear)) {
+                return config.value.valueOnClear();
+              } else if (config.value.valueOnClear !== void 0) {
+                return config.value.valueOnClear;
               }
               return defaultValue;
             });
@@ -9691,35 +9691,35 @@ System.register("./__entry.js", [], (function (exports, module) {
           };
           const globalConfig = ref();
           function useGlobalConfig(key, defaultValue = void 0) {
-            const config2 = getCurrentInstance() ? inject(configProviderContextKey, globalConfig) : globalConfig;
+            const config = getCurrentInstance() ? inject(configProviderContextKey, globalConfig) : globalConfig;
             if (key) {
               return computed(() => {
                 var _a2, _b;
-                return (_b = (_a2 = config2.value) == null ? void 0 : _a2[key]) != null ? _b : defaultValue;
+                return (_b = (_a2 = config.value) == null ? void 0 : _a2[key]) != null ? _b : defaultValue;
               });
             } else {
-              return config2;
+              return config;
             }
           }
           function useGlobalComponentSettings(block, sizeFallback) {
-            const config2 = useGlobalConfig();
+            const config = useGlobalConfig();
             const ns = useNamespace(block, computed(() => {
               var _a2;
-              return ((_a2 = config2.value) == null ? void 0 : _a2.namespace) || defaultNamespace;
+              return ((_a2 = config.value) == null ? void 0 : _a2.namespace) || defaultNamespace;
             }));
             const locale = useLocale(computed(() => {
               var _a2;
-              return (_a2 = config2.value) == null ? void 0 : _a2.locale;
+              return (_a2 = config.value) == null ? void 0 : _a2.locale;
             }));
             const zIndex2 = useZIndex(computed(() => {
               var _a2;
-              return ((_a2 = config2.value) == null ? void 0 : _a2.zIndex) || defaultInitialZIndex;
+              return ((_a2 = config.value) == null ? void 0 : _a2.zIndex) || defaultInitialZIndex;
             }));
             const size = computed(() => {
               var _a2;
-              return unref(sizeFallback) || ((_a2 = config2.value) == null ? void 0 : _a2.size) || "";
+              return unref(sizeFallback) || ((_a2 = config.value) == null ? void 0 : _a2.size) || "";
             });
-            provideGlobalConfig(computed(() => unref(config2) || {}));
+            provideGlobalConfig(computed(() => unref(config) || {}));
             return {
               ns,
               locale,
@@ -9727,7 +9727,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               size
             };
           }
-          const provideGlobalConfig = (config2, app, global2 = false) => {
+          const provideGlobalConfig = (config, app, global2 = false) => {
             var _a2;
             const inSetup = !!getCurrentInstance();
             const oldConfig = inSetup ? useGlobalConfig() : void 0;
@@ -9736,7 +9736,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               return;
             }
             const context = computed(() => {
-              const cfg = unref(config2);
+              const cfg = unref(config);
               if (!(oldConfig == null ? void 0 : oldConfig.value))
                 return cfg;
               return mergeConfig(oldConfig.value, cfg);
@@ -20473,15 +20473,274 @@ System.register("./__entry.js", [], (function (exports, module) {
           message.closeAll = closeAll;
           message._context = null;
           const ElMessage = withInstallFunction(message, "$message");
-          let config = {
-            color: "rgba(0,0,0,0)",
-            // 链接颜色，默认为透明色以适配暗色模式
-            presets: "all",
-            // 使用的预设规则
-            debug: false,
-            // 是否开启调试模式
-            expirationTime: 1e3 * 60 * 60 * 24 * 365
-            // 链接染色的过期时间，毫秒为单位，默认为一年
+          function mitt(n) {
+            return { all: n = n || /* @__PURE__ */ new Map(), on: function(t, e) {
+              var i = n.get(t);
+              i ? i.push(e) : n.set(t, [e]);
+            }, off: function(t, e) {
+              var i = n.get(t);
+              i && (e ? i.splice(i.indexOf(e) >>> 0, 1) : n.set(t, []));
+            }, emit: function(t, e) {
+              var i = n.get(t);
+              i && i.slice().map(function(n2) {
+                n2(e);
+              }), (i = n.get("*")) && i.slice().map(function(n2) {
+                n2(t, e);
+              });
+            } };
+          }
+          const emitter = mitt();
+          const eventBus = emitter;
+          function showNotification(message2, type) {
+            const messageType = type || (/失败|错误|error/i.test(message2) ? "error" : "success");
+            const container = document.querySelector("#color-visited-root");
+            const appendTarget = container && container.shadowRoot || document.body;
+            ElMessage({
+              message: message2,
+              type: messageType,
+              duration: 2e3,
+              showClose: true,
+              grouping: true,
+              offset: 20,
+              // 将 Message 组件挂载到 Shadow DOM 中
+              appendTo: appendTarget
+            });
+          }
+          function injectCustomStyles(color) {
+            if (document.querySelector("#color-visited-style")) return;
+            const linkColor = color || "rgba(0,0,0,0)";
+            const style = document.createElement("style");
+            style.id = "color-visited-style";
+            style.innerHTML = `
+    a.visited-link,
+    a.visited-link *,
+    a.visited-link *::before,
+    a.visited-link *::after {
+      color: ${linkColor} !important;
+    }
+  `;
+            document.head.appendChild(style);
+          }
+          function removeCustomStyles() {
+            const styleElement = document.querySelector("#color-visited-style");
+            if (styleElement) {
+              styleElement.remove();
+            }
+          }
+          function showSettingsDialog(currentSettings, defaultSettings, generalSettings, defaultGeneralSettings, currentPresetSettings, currentSyncSettings, isMac2, onSave, onReset, onGeneralSave, onGeneralReset, onPresetSave, onPresetReset, onSyncSave, onSyncReset) {
+            eventBus.emit("dialog:show-settings", {
+              type: "settings",
+              payload: {
+                currentSettings,
+                defaultSettings,
+                generalSettings,
+                defaultGeneralSettings,
+                currentPresetSettings,
+                currentSyncSettings,
+                isMac: isMac2
+              }
+            });
+            const handleSettingsSave = (event) => {
+              if (event.type === "batch-key" && event.settings) {
+                onSave(event.settings);
+              } else if (event.type === "general" && event.settings) {
+                onGeneralSave(event.settings);
+              } else if (event.type === "preset" && event.states) {
+                onPresetSave(event.states);
+              } else if (event.type === "sync" && event.settings) {
+                onSyncSave(event.settings);
+              }
+            };
+            const handleSettingsReset = (event) => {
+              if (event.type === "batch-key") {
+                onReset();
+              } else if (event.type === "general") {
+                onGeneralReset();
+              } else if (event.type === "preset") {
+                onPresetReset();
+              } else if (event.type === "sync") {
+                onSyncReset();
+              }
+            };
+            eventBus.on("settings:save", handleSettingsSave);
+            eventBus.on("settings:reset", handleSettingsReset);
+            const cleanup = () => {
+              eventBus.off("settings:save", handleSettingsSave);
+              eventBus.off("settings:reset", handleSettingsReset);
+            };
+            return cleanup;
+          }
+          const _hoisted_1$4 = { class: "space-y-6" };
+          const _hoisted_2$3 = { class: "flex items-center gap-3" };
+          const _hoisted_3$3 = { class: "space-y-2" };
+          const _hoisted_4$3 = { class: "flex items-center gap-2" };
+          const _hoisted_5$3 = { class: "space-y-2" };
+          const _sfc_main$5 = /* @__PURE__ */ defineComponent({
+            __name: "GeneralSettings",
+            props: {
+              currentSettings: {},
+              defaultSettings: {}
+            },
+            emits: ["save", "reset"],
+            setup(__props, { expose: __expose, emit: __emit }) {
+              const props = __props;
+              const emit2 = __emit;
+              const formData = ref({ ...props.currentSettings });
+              const hasChanges = computed(() => {
+                return JSON.stringify(formData.value) !== JSON.stringify(props.currentSettings);
+              });
+              const colorPresets = [
+                "rgba(0,0,0,0)",
+                // 透明色，适配暗色模式
+                "#f1f5f9",
+                // slate-100
+                "#e2e8f0",
+                // slate-200
+                "#cbd5e1",
+                // slate-300
+                "#94a3b8",
+                // slate-400
+                "#64748b",
+                // slate-500
+                "#475569",
+                // slate-600
+                "#334155",
+                // slate-700
+                "#1e293b",
+                // slate-800
+                "#0f172a"
+                // slate-900
+              ];
+              const expirationDays = computed({
+                get: () => Math.round(formData.value.expirationTime / (1e3 * 60 * 60 * 24)),
+                set: (days) => {
+                  formData.value.expirationTime = days * 1e3 * 60 * 60 * 24;
+                }
+              });
+              const handleSave = () => {
+                emit2("save", { ...formData.value });
+                showNotification("常规设置已保存！");
+              };
+              const handleReset = () => {
+                formData.value = { ...props.defaultSettings };
+                showNotification("常规设置已重置为默认！");
+              };
+              watch(() => props.currentSettings, (newSettings) => {
+                formData.value = { ...newSettings };
+              }, { immediate: true, deep: true });
+              __expose({
+                save: handleSave,
+                reset: handleReset,
+                getFormData: () => ({ ...formData.value }),
+                hasChanges
+              });
+              return (_ctx, _cache) => {
+                const _component_el_color_picker = ElColorPicker;
+                const _component_el_input = ElInput;
+                const _component_el_form_item = ElFormItem;
+                const _component_el_input_number = ElInputNumber;
+                const _component_el_switch = ElSwitch;
+                const _component_el_form = ElForm;
+                return openBlock(), createElementBlock("div", _hoisted_1$4, [
+                  _cache[7] || (_cache[7] = createBaseVNode("div", { class: "border-b pb-4" }, [
+                    createBaseVNode("h3", { class: "text-lg font-semibold text-gray-900 mb-2" }, "常规设置"),
+                    createBaseVNode("p", { class: "text-sm text-gray-600" }, "自定义链接颜色和行为设置")
+                  ], -1)),
+                  createVNode(_component_el_form, {
+                    model: formData.value,
+                    "label-width": "120px",
+                    class: "space-y-6"
+                  }, {
+                    default: withCtx(() => [
+                      createVNode(_component_el_form_item, { label: "链接颜色" }, {
+                        default: withCtx(() => [
+                          createBaseVNode("div", _hoisted_2$3, [
+                            createVNode(_component_el_color_picker, {
+                              modelValue: formData.value.color,
+                              "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => formData.value.color = $event),
+                              "show-alpha": "",
+                              predefine: colorPresets,
+                              size: "large"
+                            }, null, 8, ["modelValue"]),
+                            createVNode(_component_el_input, {
+                              modelValue: formData.value.color,
+                              "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => formData.value.color = $event),
+                              class: "flex-1",
+                              placeholder: "请输入颜色值",
+                              clearable: ""
+                            }, null, 8, ["modelValue"])
+                          ])
+                        ]),
+                        _: 1
+                      }),
+                      createVNode(_component_el_form_item, { label: "过期时间" }, {
+                        default: withCtx(() => [
+                          createBaseVNode("div", _hoisted_3$3, [
+                            createBaseVNode("div", _hoisted_4$3, [
+                              createVNode(_component_el_input_number, {
+                                modelValue: expirationDays.value,
+                                "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => expirationDays.value = $event),
+                                min: 1,
+                                max: 3650,
+                                "controls-position": "right",
+                                size: "large",
+                                class: "w-32"
+                              }, null, 8, ["modelValue"]),
+                              _cache[4] || (_cache[4] = createBaseVNode("span", { class: "text-sm text-gray-600" }, "天", -1))
+                            ]),
+                            _cache[5] || (_cache[5] = createBaseVNode("div", { class: "text-xs text-gray-500" }, "设置已访问链接的记录保留时间", -1))
+                          ])
+                        ]),
+                        _: 1
+                      }),
+                      createVNode(_component_el_form_item, { label: "调试模式" }, {
+                        default: withCtx(() => [
+                          createBaseVNode("div", _hoisted_5$3, [
+                            createVNode(_component_el_switch, {
+                              modelValue: formData.value.debug,
+                              "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => formData.value.debug = $event),
+                              size: "large",
+                              "inline-prompt": ""
+                            }, null, 8, ["modelValue"]),
+                            _cache[6] || (_cache[6] = createBaseVNode("div", { class: "text-xs text-gray-500" }, "开启后将在控制台显示详细调试信息", -1))
+                          ])
+                        ]),
+                        _: 1
+                      })
+                    ]),
+                    _: 1
+                  }, 8, ["model"])
+                ]);
+              };
+            }
+          });
+          const DEFAULT_SETTINGS = {
+            general: {
+              color: "rgba(0,0,0,0)",
+              // 链接颜色，默认为透明色以适配暗色模式
+              expirationTime: 1e3 * 60 * 60 * 24 * 365,
+              // 链接染色的过期时间，毫秒为单位，默认为一年
+              debug: false
+              // 是否开启调试模式
+            },
+            getBatchKey() {
+              const isMac2 = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+              return {
+                ctrlKey: !isMac2,
+                // macOS 下为 false，Windows 下为 true
+                shiftKey: true,
+                altKey: false,
+                metaKey: isMac2,
+                // macOS 下为 true，Windows 下为 false
+                key: "V"
+              };
+            },
+            sync: {
+              enabled: false,
+              githubToken: "",
+              gistId: "",
+              lastSyncTime: 0
+            }
           };
           const PRESET_RULES = {
             "36kr": {
@@ -20801,246 +21060,12 @@ System.register("./__entry.js", [], (function (exports, module) {
             // TODO: 优化一下多次获取 patterns 的逻辑
             // TODO: 让 o1 优化一下
           };
-          function mitt(n) {
-            return { all: n = n || /* @__PURE__ */ new Map(), on: function(t, e) {
-              var i = n.get(t);
-              i ? i.push(e) : n.set(t, [e]);
-            }, off: function(t, e) {
-              var i = n.get(t);
-              i && (e ? i.splice(i.indexOf(e) >>> 0, 1) : n.set(t, []));
-            }, emit: function(t, e) {
-              var i = n.get(t);
-              i && i.slice().map(function(n2) {
-                n2(e);
-              }), (i = n.get("*")) && i.slice().map(function(n2) {
-                n2(t, e);
-              });
-            } };
+          function getDefaultPresetStates() {
+            return Object.keys(PRESET_RULES).reduce((acc, key) => {
+              acc[key] = true;
+              return acc;
+            }, {});
           }
-          const emitter = mitt();
-          const eventBus = emitter;
-          function showNotification(message2, type) {
-            const messageType = type || (/失败|错误|error/i.test(message2) ? "error" : "success");
-            const container = document.querySelector("#color-visited-root");
-            const appendTarget = container && container.shadowRoot || document.body;
-            ElMessage({
-              message: message2,
-              type: messageType,
-              duration: 2e3,
-              showClose: true,
-              grouping: true,
-              offset: 20,
-              // 将 Message 组件挂载到 Shadow DOM 中
-              appendTo: appendTarget
-            });
-          }
-          function injectCustomStyles() {
-            if (document.querySelector("#color-visited-style")) return;
-            const style = document.createElement("style");
-            style.id = "color-visited-style";
-            style.innerHTML = `
-    a.visited-link,
-    a.visited-link *,
-    a.visited-link *::before,
-    a.visited-link *::after {
-      color: ${config.color} !important;
-    }
-  `;
-            document.head.appendChild(style);
-          }
-          function removeCustomStyles() {
-            const styleElement = document.querySelector("#color-visited-style");
-            if (styleElement) {
-              styleElement.remove();
-            }
-          }
-          function showSettingsDialog(currentSettings, defaultSettings, currentGeneralSettings, defaultGeneralSettings, currentPresetStates, currentSyncSettings, isMac2, onSave, onReset, onGeneralSave, onGeneralReset, onPresetSave, onPresetReset, onSyncSave, onSyncReset) {
-            eventBus.emit("dialog:show-settings", {
-              type: "settings",
-              payload: {
-                currentSettings,
-                defaultSettings,
-                currentGeneralSettings,
-                defaultGeneralSettings,
-                currentPresetStates,
-                currentSyncSettings,
-                isMac: isMac2
-              }
-            });
-            const handleSettingsSave = (event) => {
-              if (event.type === "batch-key" && event.settings) {
-                onSave(event.settings);
-              } else if (event.type === "general" && event.settings) {
-                onGeneralSave(event.settings);
-              } else if (event.type === "preset" && event.states) {
-                onPresetSave(event.states);
-              } else if (event.type === "sync" && event.settings) {
-                onSyncSave(event.settings);
-              }
-            };
-            const handleSettingsReset = (event) => {
-              if (event.type === "batch-key") {
-                onReset();
-              } else if (event.type === "general") {
-                onGeneralReset();
-              } else if (event.type === "preset") {
-                onPresetReset();
-              } else if (event.type === "sync") {
-                onSyncReset();
-              }
-            };
-            eventBus.on("settings:save", handleSettingsSave);
-            eventBus.on("settings:reset", handleSettingsReset);
-            const cleanup = () => {
-              eventBus.off("settings:save", handleSettingsSave);
-              eventBus.off("settings:reset", handleSettingsReset);
-            };
-            return cleanup;
-          }
-          const _hoisted_1$4 = { class: "space-y-6" };
-          const _hoisted_2$3 = { class: "flex items-center gap-3" };
-          const _hoisted_3$3 = { class: "space-y-2" };
-          const _hoisted_4$3 = { class: "flex items-center gap-2" };
-          const _hoisted_5$3 = { class: "space-y-2" };
-          const _sfc_main$5 = /* @__PURE__ */ defineComponent({
-            __name: "GeneralSettings",
-            props: {
-              currentSettings: {},
-              defaultSettings: {}
-            },
-            emits: ["save", "reset"],
-            setup(__props, { expose: __expose, emit: __emit }) {
-              const props = __props;
-              const emit2 = __emit;
-              const formData = ref({ ...props.currentSettings });
-              const hasChanges = computed(() => {
-                return JSON.stringify(formData.value) !== JSON.stringify(props.currentSettings);
-              });
-              const colorPresets = [
-                "rgba(0,0,0,0)",
-                // 透明色，适配暗色模式
-                "#f1f5f9",
-                // slate-100
-                "#e2e8f0",
-                // slate-200
-                "#cbd5e1",
-                // slate-300
-                "#94a3b8",
-                // slate-400
-                "#64748b",
-                // slate-500
-                "#475569",
-                // slate-600
-                "#334155",
-                // slate-700
-                "#1e293b",
-                // slate-800
-                "#0f172a"
-                // slate-900
-              ];
-              const expirationDays = computed({
-                get: () => Math.round(formData.value.expirationTime / (1e3 * 60 * 60 * 24)),
-                set: (days) => {
-                  formData.value.expirationTime = days * 1e3 * 60 * 60 * 24;
-                }
-              });
-              const handleSave = () => {
-                emit2("save", { ...formData.value });
-                showNotification("常规设置已保存！");
-              };
-              const handleReset = () => {
-                formData.value = { ...props.defaultSettings };
-                showNotification("常规设置已重置为默认！");
-              };
-              watch(() => props.currentSettings, (newSettings) => {
-                formData.value = { ...newSettings };
-              }, { immediate: true, deep: true });
-              __expose({
-                save: handleSave,
-                reset: handleReset,
-                getFormData: () => ({ ...formData.value }),
-                hasChanges
-              });
-              return (_ctx, _cache) => {
-                const _component_el_color_picker = ElColorPicker;
-                const _component_el_input = ElInput;
-                const _component_el_form_item = ElFormItem;
-                const _component_el_input_number = ElInputNumber;
-                const _component_el_switch = ElSwitch;
-                const _component_el_form = ElForm;
-                return openBlock(), createElementBlock("div", _hoisted_1$4, [
-                  _cache[7] || (_cache[7] = createBaseVNode("div", { class: "border-b pb-4" }, [
-                    createBaseVNode("h3", { class: "text-lg font-semibold text-gray-900 mb-2" }, "常规设置"),
-                    createBaseVNode("p", { class: "text-sm text-gray-600" }, "自定义链接颜色和行为设置")
-                  ], -1)),
-                  createVNode(_component_el_form, {
-                    model: formData.value,
-                    "label-width": "120px",
-                    class: "space-y-6"
-                  }, {
-                    default: withCtx(() => [
-                      createVNode(_component_el_form_item, { label: "链接颜色" }, {
-                        default: withCtx(() => [
-                          createBaseVNode("div", _hoisted_2$3, [
-                            createVNode(_component_el_color_picker, {
-                              modelValue: formData.value.color,
-                              "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => formData.value.color = $event),
-                              "show-alpha": "",
-                              predefine: colorPresets,
-                              size: "large"
-                            }, null, 8, ["modelValue"]),
-                            createVNode(_component_el_input, {
-                              modelValue: formData.value.color,
-                              "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => formData.value.color = $event),
-                              class: "flex-1",
-                              placeholder: "请输入颜色值",
-                              clearable: ""
-                            }, null, 8, ["modelValue"])
-                          ])
-                        ]),
-                        _: 1
-                      }),
-                      createVNode(_component_el_form_item, { label: "过期时间" }, {
-                        default: withCtx(() => [
-                          createBaseVNode("div", _hoisted_3$3, [
-                            createBaseVNode("div", _hoisted_4$3, [
-                              createVNode(_component_el_input_number, {
-                                modelValue: expirationDays.value,
-                                "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => expirationDays.value = $event),
-                                min: 1,
-                                max: 3650,
-                                "controls-position": "right",
-                                size: "large",
-                                class: "w-32"
-                              }, null, 8, ["modelValue"]),
-                              _cache[4] || (_cache[4] = createBaseVNode("span", { class: "text-sm text-gray-600" }, "天", -1))
-                            ]),
-                            _cache[5] || (_cache[5] = createBaseVNode("div", { class: "text-xs text-gray-500" }, "设置已访问链接的记录保留时间", -1))
-                          ])
-                        ]),
-                        _: 1
-                      }),
-                      createVNode(_component_el_form_item, { label: "调试模式" }, {
-                        default: withCtx(() => [
-                          createBaseVNode("div", _hoisted_5$3, [
-                            createVNode(_component_el_switch, {
-                              modelValue: formData.value.debug,
-                              "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => formData.value.debug = $event),
-                              size: "large",
-                              "inline-prompt": ""
-                            }, null, 8, ["modelValue"]),
-                            _cache[6] || (_cache[6] = createBaseVNode("div", { class: "text-xs text-gray-500" }, "开启后将在控制台显示详细调试信息", -1))
-                          ])
-                        ]),
-                        _: 1
-                      })
-                    ]),
-                    _: 1
-                  }, 8, ["model"])
-                ]);
-              };
-            }
-          });
           var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
           var _GM_registerMenuCommand = /* @__PURE__ */ (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
           var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
@@ -21089,7 +21114,7 @@ System.register("./__entry.js", [], (function (exports, module) {
           const _sfc_main$4 = /* @__PURE__ */ defineComponent({
             __name: "PresetSettings",
             props: {
-              currentPresetStates: {}
+              currentPresetSettings: {}
             },
             emits: ["save", "reset"],
             setup(__props, { expose: __expose, emit: __emit }) {
@@ -21097,54 +21122,54 @@ System.register("./__entry.js", [], (function (exports, module) {
               const emit2 = __emit;
               const presetRules = PRESET_RULES;
               const expandedSites = ref(/* @__PURE__ */ new Set());
-              const presetStates = ref({});
-              const savedPresetStates = ref({});
+              const presetSettings = ref({});
+              const savedPresetSettings = ref({});
               const hasChanges = computed(() => {
-                return JSON.stringify(presetStates.value) !== JSON.stringify(savedPresetStates.value);
+                return JSON.stringify(presetSettings.value) !== JSON.stringify(savedPresetSettings.value);
               });
-              const initializePresetStates = () => {
+              const initializePresetSettings = () => {
                 const states = {};
                 Object.keys(presetRules).forEach((siteName) => {
                   states[siteName] = true;
                 });
                 if (typeof _GM_getValue !== "undefined") {
-                  const savedStates = _GM_getValue("preset_states", {});
+                  const savedStates = _GM_getValue("preset_settings", {});
                   Object.keys(states).forEach((siteName) => {
                     if (savedStates.hasOwnProperty(siteName)) {
                       states[siteName] = savedStates[siteName];
                     }
                   });
                 }
-                if (props.currentPresetStates) {
+                if (props.currentPresetSettings) {
                   Object.keys(states).forEach((siteName) => {
-                    if (props.currentPresetStates.hasOwnProperty(siteName)) {
-                      states[siteName] = props.currentPresetStates[siteName];
+                    if (props.currentPresetSettings.hasOwnProperty(siteName)) {
+                      states[siteName] = props.currentPresetSettings[siteName];
                     }
                   });
                 }
-                presetStates.value = { ...states };
-                savedPresetStates.value = { ...states };
+                presetSettings.value = { ...states };
+                savedPresetSettings.value = { ...states };
               };
               const updatePresetState = (siteName, enabled) => {
                 const isEnabled = Boolean(enabled);
-                presetStates.value[siteName] = isEnabled;
+                presetSettings.value[siteName] = isEnabled;
               };
               const toggleAllPresets = (enabled) => {
-                Object.keys(presetStates.value).forEach((siteName) => {
-                  presetStates.value[siteName] = enabled;
+                Object.keys(presetSettings.value).forEach((siteName) => {
+                  presetSettings.value[siteName] = enabled;
                 });
               };
               const handleSave = () => {
                 if (typeof _GM_setValue !== "undefined") {
-                  _GM_setValue("preset_states", presetStates.value);
+                  _GM_setValue("preset_settings", presetSettings.value);
                 }
                 if (typeof window !== "undefined" && window.dispatchEvent) {
                   window.dispatchEvent(new CustomEvent("preset-states-updated", {
-                    detail: { presetStates: presetStates.value }
+                    detail: { presetSettings: presetSettings.value }
                   }));
                 }
-                savedPresetStates.value = { ...presetStates.value };
-                emit2("save", { ...presetStates.value });
+                savedPresetSettings.value = { ...presetSettings.value };
+                emit2("save", { ...presetSettings.value });
                 showNotification("预设网站设置已保存！");
               };
               const handleReset = () => {
@@ -21152,7 +21177,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 Object.keys(presetRules).forEach((siteName) => {
                   defaultStates[siteName] = true;
                 });
-                presetStates.value = { ...defaultStates };
+                presetSettings.value = { ...defaultStates };
                 emit2("reset");
                 showNotification("预设网站设置已重置为默认！");
               };
@@ -21169,19 +21194,19 @@ System.register("./__entry.js", [], (function (exports, module) {
                 }
                 return regex;
               };
-              watch(() => props.currentPresetStates, (newStates) => {
+              watch(() => props.currentPresetSettings, (newStates) => {
                 if (newStates) {
-                  presetStates.value = { ...newStates };
-                  savedPresetStates.value = { ...newStates };
+                  presetSettings.value = { ...newStates };
+                  savedPresetSettings.value = { ...newStates };
                 }
               }, { immediate: true, deep: true });
               onMounted(() => {
-                initializePresetStates();
+                initializePresetSettings();
               });
               __expose({
                 save: handleSave,
                 reset: handleReset,
-                getFormData: () => ({ ...presetStates.value }),
+                getFormData: () => ({ ...presetSettings.value }),
                 hasChanges
               });
               return (_ctx, _cache) => {
@@ -21200,7 +21225,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                         createBaseVNode("div", _hoisted_5$2, [
                           createBaseVNode("div", _hoisted_6$2, [
                             _cache[3] || (_cache[3] = createBaseVNode("div", { class: "text-sm text-gray-500" }, "已启用", -1)),
-                            createBaseVNode("div", _hoisted_7$1, toDisplayString(Object.values(presetStates.value).filter(Boolean).length) + " / " + toDisplayString(Object.keys(presetStates.value).length), 1)
+                            createBaseVNode("div", _hoisted_7$1, toDisplayString(Object.values(presetSettings.value).filter(Boolean).length) + " / " + toDisplayString(Object.keys(presetSettings.value).length), 1)
                           ]),
                           createBaseVNode("div", _hoisted_8$1, [
                             createBaseVNode("button", {
@@ -21250,8 +21275,8 @@ System.register("./__entry.js", [], (function (exports, module) {
                               }, ["stop"]))
                             }, [
                               createVNode(_component_el_switch, {
-                                modelValue: presetStates.value[siteName],
-                                "onUpdate:modelValue": ($event) => presetStates.value[siteName] = $event,
+                                modelValue: presetSettings.value[siteName],
+                                "onUpdate:modelValue": ($event) => presetSettings.value[siteName] = $event,
                                 onChange: ($event) => updatePresetState(siteName, $event),
                                 size: "default",
                                 "active-color": "#10b981",
@@ -21868,9 +21893,9 @@ System.register("./__entry.js", [], (function (exports, module) {
               modelValue: { type: Boolean },
               currentSettings: {},
               defaultSettings: {},
-              currentGeneralSettings: {},
+              generalSettings: {},
               defaultGeneralSettings: {},
-              currentPresetStates: {},
+              currentPresetSettings: {},
               currentSyncSettings: {},
               isMac: { type: Boolean }
             },
@@ -22000,7 +22025,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                             default: withCtx(() => [
                               createBaseVNode("div", _hoisted_2, [
                                 createVNode(_sfc_main$5, {
-                                  "current-settings": _ctx.currentGeneralSettings,
+                                  "current-settings": _ctx.generalSettings,
                                   "default-settings": _ctx.defaultGeneralSettings,
                                   ref_key: "generalSettingsRef",
                                   ref: generalSettingsRef
@@ -22017,10 +22042,10 @@ System.register("./__entry.js", [], (function (exports, module) {
                             default: withCtx(() => [
                               createBaseVNode("div", _hoisted_3, [
                                 createVNode(_sfc_main$4, {
-                                  "current-preset-states": _ctx.currentPresetStates,
+                                  "current-preset-settings": _ctx.currentPresetSettings,
                                   ref_key: "presetSettingsRef",
                                   ref: presetSettingsRef
-                                }, null, 8, ["current-preset-states"])
+                                }, null, 8, ["current-preset-settings"])
                               ])
                             ]),
                             _: 1
@@ -22136,9 +22161,9 @@ System.register("./__entry.js", [], (function (exports, module) {
                   "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => dialogData.value.visible = $event),
                   "current-settings": dialogData.value.currentSettings,
                   "default-settings": dialogData.value.defaultSettings,
-                  "current-general-settings": dialogData.value.currentGeneralSettings,
+                  "general-settings": dialogData.value.generalSettings,
                   "default-general-settings": dialogData.value.defaultGeneralSettings,
-                  "current-preset-states": dialogData.value.currentPresetStates,
+                  "current-preset-settings": dialogData.value.currentPresetSettings,
                   "current-sync-settings": dialogData.value.currentSyncSettings,
                   "is-mac": dialogData.value.isMac,
                   onSave: handleSettingsSave,
@@ -22149,20 +22174,38 @@ System.register("./__entry.js", [], (function (exports, module) {
                   onPresetReset: handlePresetReset,
                   onSyncSave: handleSyncSave,
                   onSyncReset: handleSyncReset
-                }, null, 8, ["modelValue", "current-settings", "default-settings", "current-general-settings", "default-general-settings", "current-preset-states", "current-sync-settings", "is-mac"])) : createCommentVNode("", true);
+                }, null, 8, ["modelValue", "current-settings", "default-settings", "general-settings", "default-general-settings", "current-preset-settings", "current-sync-settings", "is-mac"])) : createCommentVNode("", true);
               };
             }
           });
+          function getActivePresets(state) {
+            return Object.keys(state.presetSettings).filter((preset) => state.presetSettings[preset]);
+          }
+          function initializeScriptState() {
+            const batchKeySettings = _GM_getValue("batch_shortcut_settings", DEFAULT_SETTINGS.getBatchKey());
+            const presetSettings = _GM_getValue("preset_settings", getDefaultPresetStates());
+            const generalSettings = {
+              color: _GM_getValue("color_setting", DEFAULT_SETTINGS.general.color),
+              expirationTime: _GM_getValue("expiration_time_setting", DEFAULT_SETTINGS.general.expirationTime),
+              debug: _GM_getValue("debug_setting", DEFAULT_SETTINGS.general.debug)
+            };
+            const syncSettings = getSyncSettings();
+            return {
+              batchKeySettings,
+              presetSettings,
+              generalSettings,
+              syncSettings,
+              batchKeyHandler: null,
+              domObserver: null,
+              linkClickHandler: null
+            };
+          }
+          const getDefaultGeneralSettings = () => ({
+            color: DEFAULT_SETTINGS.general.color,
+            expirationTime: DEFAULT_SETTINGS.general.expirationTime,
+            debug: DEFAULT_SETTINGS.general.debug
+          });
           const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-          const defaultBatchKeySettings = {
-            ctrlKey: !isMac,
-            // macOS 下为 false，Windows 下为 true
-            shiftKey: true,
-            altKey: false,
-            metaKey: isMac,
-            // macOS 下为 true，Windows 下为 false
-            key: "V"
-          };
           function getBaseUrl(url) {
             const domain = new URL(url).hostname;
             if (domain === "www.v2ex.com") return url.split("?")[0].split("#")[0];
@@ -22198,50 +22241,11 @@ System.register("./__entry.js", [], (function (exports, module) {
             const itemCount = Object.keys(visitedLinks).length;
             console.log(`visitedLinks storage size: ${itemCount} items, ${sizeText}`);
           }
-          function initializeScriptState() {
-            const batchKeySettings = _GM_getValue("batch_shortcut_settings", defaultBatchKeySettings);
-            const presetStates = (() => {
-              const defaultStates = {};
-              Object.keys(PRESET_RULES).forEach((siteName) => {
-                defaultStates[siteName] = true;
-              });
-              return _GM_getValue("preset_states", defaultStates);
-            })();
-            const getGeneralSettings = () => ({
-              color: _GM_getValue("color_setting", config.color),
-              expirationTime: _GM_getValue("expiration_time_setting", config.expirationTime),
-              debug: _GM_getValue("debug_setting", config.debug)
-            });
-            const currentGeneralSettings = getGeneralSettings();
-            const syncSettings = getSyncSettings();
-            return {
-              batchKeySettings,
-              presetStates,
-              currentGeneralSettings,
-              syncSettings,
-              batchKeyHandler: null,
-              domObserver: null,
-              linkClickHandler: null
-            };
-          }
-          const getDefaultGeneralSettings = () => ({
-            color: config.color,
-            expirationTime: config.expirationTime,
-            debug: config.debug
-          });
-          function initializeConfig(state) {
-            config.color = state.currentGeneralSettings.color;
-            config.expirationTime = state.currentGeneralSettings.expirationTime;
-            config.debug = state.currentGeneralSettings.debug;
-            if (config.presets === "all") {
-              config.presets = Object.keys(PRESET_RULES);
-            }
-          }
-          function deleteExpiredLinks() {
+          function deleteExpiredLinks(expirationTime) {
             const visitedLinks = _GM_getValue("visitedLinks", {});
             const now2 = Date.now();
             Object.keys(visitedLinks).forEach((url) => {
-              if (now2 - visitedLinks[url] > config.expirationTime) {
+              if (now2 - visitedLinks[url] > expirationTime) {
                 delete visitedLinks[url];
               }
             });
@@ -22273,7 +22277,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               _GM_setValue("visitedLinks", visitedLinks);
               const endTime = performance.now();
               const processingTime = endTime - startTime;
-              if (config.debug) {
+              if (state.generalSettings.debug) {
                 console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
               }
               showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
@@ -22306,7 +22310,7 @@ System.register("./__entry.js", [], (function (exports, module) {
             if (!shouldColorLink(inputUrl, state)) return;
             if (Object.hasOwn(visitedLinks, inputUrl)) {
               link.classList.add("visited-link");
-              if (config.debug) console.log(`${inputUrl} class added`);
+              if (state.generalSettings.debug) console.log(`${inputUrl} class added`);
             }
           }
           function updateAllLinksStatus(visitedLinks, state) {
@@ -22334,7 +22338,7 @@ System.register("./__entry.js", [], (function (exports, module) {
             }
           }
           function activateLinkFeatures(state, setupDOMObserver2, setupLinkEventListeners2) {
-            deleteExpiredLinks();
+            deleteExpiredLinks(state.generalSettings.expirationTime);
             const visitedLinks = _GM_getValue("visitedLinks", {});
             logStorageInfo(visitedLinks);
             updateAllLinksStatus(visitedLinks, state);
@@ -22376,8 +22380,8 @@ System.register("./__entry.js", [], (function (exports, module) {
           let cachedCurrentPreset = null;
           let cachedUrl = null;
           function getEnabledPresets(state) {
-            const allPresets = config.presets === "all" ? Object.keys(PRESET_RULES) : config.presets;
-            return allPresets.filter((preset) => state.presetStates[preset] !== false);
+            const allPresets = getActivePresets(state);
+            return allPresets.filter((preset) => state.presetSettings[preset] !== false);
           }
           function isPageActive(state) {
             const currentUrl = window.location.href;
@@ -22415,7 +22419,6 @@ System.register("./__entry.js", [], (function (exports, module) {
             registerUrlChangeCallback(() => {
               cachedCurrentPreset = null;
               cachedUrl = null;
-              if (config.debug) console.log("URL changed:", location.href);
               callback();
             });
             ensureDOMObserver();
@@ -22438,32 +22441,27 @@ System.register("./__entry.js", [], (function (exports, module) {
                   _GM_setValue("batch_shortcut_settings", this.state.batchKeySettings);
                 },
                 onBatchKeyReset: () => {
-                  this.state.batchKeySettings = { ...defaultBatchKeySettings };
-                  _GM_setValue("batch_shortcut_settings", defaultBatchKeySettings);
+                  const defaultBatchKey = DEFAULT_SETTINGS.getBatchKey();
+                  this.state.batchKeySettings = { ...defaultBatchKey };
+                  _GM_setValue("batch_shortcut_settings", defaultBatchKey);
                 },
                 onGeneralSave: (newGeneralSettings) => {
-                  this.state.currentGeneralSettings = newGeneralSettings;
+                  this.state.generalSettings = newGeneralSettings;
                   _GM_setValue("color_setting", newGeneralSettings.color);
                   _GM_setValue("expiration_time_setting", newGeneralSettings.expirationTime);
                   _GM_setValue("debug_setting", newGeneralSettings.debug);
-                  config.color = newGeneralSettings.color;
-                  config.expirationTime = newGeneralSettings.expirationTime;
-                  config.debug = newGeneralSettings.debug;
                   this.setupPageCallback?.(this.state);
                 },
                 onGeneralReset: () => {
-                  this.state.currentGeneralSettings = { ...defaultGeneralSettings };
+                  this.state.generalSettings = { ...defaultGeneralSettings };
                   _GM_setValue("color_setting", defaultGeneralSettings.color);
                   _GM_setValue("expiration_time_setting", defaultGeneralSettings.expirationTime);
                   _GM_setValue("debug_setting", defaultGeneralSettings.debug);
-                  config.color = defaultGeneralSettings.color;
-                  config.expirationTime = defaultGeneralSettings.expirationTime;
-                  config.debug = defaultGeneralSettings.debug;
                   this.setupPageCallback?.(this.state);
                 },
-                onPresetSave: (newPresetStates) => {
-                  this.state.presetStates = newPresetStates;
-                  _GM_setValue("preset_states", this.state.presetStates);
+                onPresetSave: (newPresetSettings) => {
+                  this.state.presetSettings = newPresetSettings;
+                  _GM_setValue("preset_settings", this.state.presetSettings);
                   this.setupPageCallback?.(this.state);
                 },
                 onPresetReset: () => {
@@ -22471,8 +22469,8 @@ System.register("./__entry.js", [], (function (exports, module) {
                   Object.keys(PRESET_RULES).forEach((key) => {
                     defaultStates[key] = true;
                   });
-                  this.state.presetStates = defaultStates;
-                  _GM_setValue("preset_states", this.state.presetStates);
+                  this.state.presetSettings = defaultStates;
+                  _GM_setValue("preset_settings", this.state.presetSettings);
                   this.setupPageCallback?.(this.state);
                 },
                 onSyncSave: (newSyncSettings) => {
@@ -22490,13 +22488,14 @@ System.register("./__entry.js", [], (function (exports, module) {
             updateMenu() {
               const callbacks = this.createSettingsCallbacks();
               const defaultGeneralSettings = getDefaultGeneralSettings();
+              const defaultBatchKey = DEFAULT_SETTINGS.getBatchKey();
               _GM_registerMenuCommand("设置", () => {
                 showSettingsDialog(
                   this.state.batchKeySettings,
-                  defaultBatchKeySettings,
-                  this.state.currentGeneralSettings,
+                  defaultBatchKey,
+                  this.state.generalSettings,
                   defaultGeneralSettings,
-                  this.state.presetStates,
+                  this.state.presetSettings,
                   this.state.syncSettings,
                   isMac,
                   callbacks.onBatchKeySave,
@@ -22541,9 +22540,9 @@ System.register("./__entry.js", [], (function (exports, module) {
               if (!Object.hasOwn(visitedLinks, inputUrl)) {
                 visitedLinks[inputUrl] = Date.now();
                 _GM_setValue("visitedLinks", visitedLinks);
-                if (config.debug) console.log(`${inputUrl} saved`);
+                if (state.generalSettings.debug) console.log(`${inputUrl} saved`);
                 link.classList.add("visited-link");
-                if (config.debug) console.log(`${inputUrl} class added`);
+                if (state.generalSettings.debug) console.log(`${inputUrl} class added`);
               }
             };
           }
@@ -22564,9 +22563,9 @@ System.register("./__entry.js", [], (function (exports, module) {
           function setupGlobalEventListeners(state) {
             window.addEventListener("preset-states-updated", (event) => {
               const customEvent = event;
-              const { presetStates: newPresetStates } = customEvent.detail;
-              state.presetStates = newPresetStates;
-              _GM_setValue("preset_states", state.presetStates);
+              const { presetSettings: newPresetSettings } = customEvent.detail;
+              state.presetSettings = newPresetSettings;
+              _GM_setValue("preset_settings", state.presetSettings);
               setupPage(state);
             });
             onUrlChange(() => {
@@ -22576,13 +22575,12 @@ System.register("./__entry.js", [], (function (exports, module) {
           function setupPage(state) {
             removeScript(state);
             if (isPageActive(state)) {
-              injectCustomStyles();
+              injectCustomStyles(state.generalSettings.color);
               activateLinkFeatures(state, setupDOMObserver, setupLinkEventListeners);
               setupBatchKeyListener(state);
             }
           }
           function startScript(state) {
-            initializeConfig(state);
             const menuManager = createMenuManager(state);
             menuManager.setCallbacks(setupPage);
             menuManager.updateMenu();

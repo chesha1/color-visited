@@ -1,6 +1,5 @@
 // ================== 事件管理模块 ==================
 
-import { config } from '@/core/config';
 import { shouldColorLink } from '@/core/pageDetector';
 import { batchAddLinks } from '@/core/linkManager';
 import { provideLinkContext, ensureDOMObserver } from '@/core/domObserver';
@@ -69,9 +68,9 @@ export function createLinkClickHandler(visitedLinks: VisitedLinks, state: Script
       // 如果是第一次点击该链接，记录到 visitedLinks 并更新存储
       visitedLinks[inputUrl] = Date.now();
       GM_setValue('visitedLinks', visitedLinks);
-      if (config.debug) console.log(`${inputUrl} saved`);
+      if (state.generalSettings.debug) console.log(`${inputUrl} saved`);
       link.classList.add('visited-link');
-      if (config.debug) console.log(`${inputUrl} class added`);
+      if (state.generalSettings.debug) console.log(`${inputUrl} class added`);
     }
   };
 }

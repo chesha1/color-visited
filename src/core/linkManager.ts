@@ -1,6 +1,5 @@
 // ================== 链接管理模块 ==================
 
-import { config } from '@/core/config';
 import { shouldColorLink } from '@/core/pageDetector';
 import { showNotification, removeCustomStyles } from '@/core/ui';
 import { getBaseUrl, logStorageInfo } from '@/core/utils';
@@ -11,11 +10,11 @@ import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
 // ================== 链接存储管理 ==================
 
 // 删除过期链接
-export function deleteExpiredLinks(): void {
+export function deleteExpiredLinks(expirationTime: number): void {
   const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
   const now = Date.now();
   Object.keys(visitedLinks).forEach((url) => {
-    if (now - visitedLinks[url] > config.expirationTime) {
+    if (now - visitedLinks[url] > expirationTime) {
       delete visitedLinks[url];
     }
   });
@@ -68,7 +67,7 @@ export function batchAddLinks(state: ScriptState): void {
     const endTime = performance.now();
     const processingTime = endTime - startTime;
 
-    if (config.debug) {
+    if (state.generalSettings.debug) {
       console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
     }
 
@@ -123,7 +122,7 @@ export function updateLinkStatus(link: Element, visitedLinks: VisitedLinks, stat
   // 添加 visited-link 类名
   if (Object.hasOwn(visitedLinks, inputUrl)) {
     link.classList.add('visited-link');
-    if (config.debug) console.log(`${inputUrl} class added`);
+    if (state.generalSettings.debug) console.log(`${inputUrl} class added`);
   }
 }
 
@@ -176,7 +175,7 @@ export function activateLinkFeatures(
   setupDOMObserver: (visitedLinks: VisitedLinks, state: ScriptState) => MutationObserver,
   setupLinkEventListeners: (visitedLinks: VisitedLinks, state: ScriptState) => ((event: Event) => void)
 ): void {
-  deleteExpiredLinks(); // 删除过期的链接
+  deleteExpiredLinks(state.generalSettings.expirationTime); // 删除过期的链接
 
   const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
 

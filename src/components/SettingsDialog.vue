@@ -21,7 +21,7 @@
         <el-tab-pane label="常规设置" name="general" class="h-full">
           <div class="p-6 h-full overflow-y-auto">
             <GeneralSettingsComponent
-              :current-settings="currentGeneralSettings"
+              :current-settings="generalSettings"
               :default-settings="defaultGeneralSettings"
               ref="generalSettingsRef"
             />
@@ -30,7 +30,7 @@
         <el-tab-pane label="预设网站" name="presets" class="h-full">
           <div class="p-6 h-full overflow-y-auto">
             <PresetSettingsComponent 
-              :current-preset-states="currentPresetStates"
+              :current-preset-settings="currentPresetSettings"
               ref="presetSettingsRef"
             />
           </div>
@@ -89,9 +89,9 @@ interface Props {
   modelValue: boolean
   currentSettings: BatchKeySettings
   defaultSettings: BatchKeySettings
-  currentGeneralSettings: GeneralSettings
+  generalSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
-  currentPresetStates: Record<string, boolean>
+  currentPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
   isMac: boolean
 }

@@ -31,21 +31,14 @@ export interface PresetRule {
 
 export type PresetRules = Record<string, PresetRule>
 
-export interface Config {
-  color: string
-  presets: 'all' | string[]
-  debug: boolean
-  expirationTime: number
-}
-
 // ================== UI 类型 ==================
 
 export interface SettingsDialogPayload {
   currentSettings: BatchKeySettings
   defaultSettings: BatchKeySettings
-  currentGeneralSettings: GeneralSettings
+  generalSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
-  currentPresetStates: Record<string, boolean>
+  currentPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
   isMac: boolean
 }

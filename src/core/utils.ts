@@ -1,22 +1,9 @@
 // ================== 工具函数模块 ==================
 
-import type { BatchKeySettings } from '@/types';
-
 // ================== 操作系统检测 ==================
 
 // 检测当前操作系统
 export const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-
-// ================== 快捷键默认设置 ==================
-
-// 根据操作系统设置不同的默认快捷键
-export const defaultBatchKeySettings: BatchKeySettings = {
-  ctrlKey: !isMac, // macOS 下为 false，Windows 下为 true
-  shiftKey: true,
-  altKey: false,
-  metaKey: isMac, // macOS 下为 true，Windows 下为 false
-  key: 'V',
-};
 
 // ================== URL 处理工具 ==================
 

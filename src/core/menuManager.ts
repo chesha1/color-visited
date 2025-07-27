@@ -1,9 +1,9 @@
 // ================== 菜单管理模块 ==================
 
-import { config, PRESET_RULES } from '@/core/config';
+import { PRESET_RULES, DEFAULT_SETTINGS } from '@/core/config';
 import { saveSyncSettings, defaultSyncSettings } from '@/core/sync';
 import { showSettingsDialog } from '@/core/ui';
-import { isMac, defaultBatchKeySettings } from '@/core/utils';
+import { isMac } from '@/core/utils';
 import { getDefaultGeneralSettings, type ScriptState } from '@/core/state';
 import type { BatchKeySettings, GeneralSettings, SyncSettings } from '@/types';
 import { GM_setValue, GM_registerMenuCommand } from 'vite-plugin-monkey/dist/client';
@@ -24,43 +24,36 @@ class MenuManager {
   // 创建设置回调函数
   private createSettingsCallbacks() {
     const defaultGeneralSettings = getDefaultGeneralSettings();
-    
+
     return {
       onBatchKeySave: (newSettings: BatchKeySettings) => {
         this.state.batchKeySettings = newSettings;
         GM_setValue('batch_shortcut_settings', this.state.batchKeySettings);
       },
       onBatchKeyReset: () => {
-        this.state.batchKeySettings = { ...defaultBatchKeySettings };
-        GM_setValue('batch_shortcut_settings', defaultBatchKeySettings);
+        const defaultBatchKey = DEFAULT_SETTINGS.getBatchKey();
+        this.state.batchKeySettings = { ...defaultBatchKey };
+        GM_setValue('batch_shortcut_settings', defaultBatchKey);
       },
       onGeneralSave: (newGeneralSettings: GeneralSettings) => {
-        this.state.currentGeneralSettings = newGeneralSettings;
+        this.state.generalSettings = newGeneralSettings;
         GM_setValue('color_setting', newGeneralSettings.color);
         GM_setValue('expiration_time_setting', newGeneralSettings.expirationTime);
         GM_setValue('debug_setting', newGeneralSettings.debug);
-        // 更新config对象以便立即生效
-        config.color = newGeneralSettings.color;
-        config.expirationTime = newGeneralSettings.expirationTime;
-        config.debug = newGeneralSettings.debug;
         // 重新设置页面以应用新设置
         this.setupPageCallback?.(this.state);
       },
       onGeneralReset: () => {
-        this.state.currentGeneralSettings = { ...defaultGeneralSettings };
+        this.state.generalSettings = { ...defaultGeneralSettings };
         GM_setValue('color_setting', defaultGeneralSettings.color);
         GM_setValue('expiration_time_setting', defaultGeneralSettings.expirationTime);
         GM_setValue('debug_setting', defaultGeneralSettings.debug);
-        // 更新config对象以便立即生效
-        config.color = defaultGeneralSettings.color;
-        config.expirationTime = defaultGeneralSettings.expirationTime;
-        config.debug = defaultGeneralSettings.debug;
         // 重新设置页面以应用新设置
         this.setupPageCallback?.(this.state);
       },
-      onPresetSave: (newPresetStates: Record<string, boolean>) => {
-        this.state.presetStates = newPresetStates;
-        GM_setValue('preset_states', this.state.presetStates);
+      onPresetSave: (newPresetSettings: Record<string, boolean>) => {
+        this.state.presetSettings = newPresetSettings;
+        GM_setValue('preset_settings', this.state.presetSettings);
         // 重新设置页面以应用新设置
         this.setupPageCallback?.(this.state);
       },
@@ -70,8 +63,8 @@ class MenuManager {
         Object.keys(PRESET_RULES).forEach(key => {
           defaultStates[key] = true;
         });
-        this.state.presetStates = defaultStates;
-        GM_setValue('preset_states', this.state.presetStates);
+        this.state.presetSettings = defaultStates;
+        GM_setValue('preset_settings', this.state.presetSettings);
         // 重新设置页面以应用新设置
         this.setupPageCallback?.(this.state);
       },
@@ -93,14 +86,15 @@ class MenuManager {
   updateMenu(): void {
     const callbacks = this.createSettingsCallbacks();
     const defaultGeneralSettings = getDefaultGeneralSettings();
-    
+    const defaultBatchKey = DEFAULT_SETTINGS.getBatchKey();
+
     GM_registerMenuCommand('设置', () => {
       showSettingsDialog(
         this.state.batchKeySettings,
-        defaultBatchKeySettings,
-        this.state.currentGeneralSettings,
+        defaultBatchKey,
+        this.state.generalSettings,
         defaultGeneralSettings,
-        this.state.presetStates,
+        this.state.presetSettings,
         this.state.syncSettings,
         isMac,
         callbacks.onBatchKeySave,

@@ -1,6 +1,5 @@
-// ================== UI 组件模块 ==================
+// ================== UI 管理模块 ==================
 
-import { config } from '@/core/config';
 import { eventBus } from '@/core/eventBus';
 import type { BatchKeySettings, GeneralSettings, SyncSettings } from '@/types';
 import { ElMessage } from 'element-plus';
@@ -34,9 +33,10 @@ export function showNotification(message: string, type?: MessageProps['type']): 
 
 // 在文档中注入一段自定义的 CSS 样式，针对这个类名的元素及其所有子元素，设置颜色样式，使用更高的选择器优先级和 !important
 // 直接使用 link.style.color 会被后续的样式覆盖，所以这么做
-export function injectCustomStyles(): void {
+export function injectCustomStyles(color?: string): void {
   if (document.querySelector('#color-visited-style')) return;
 
+  const linkColor = color || 'rgba(0,0,0,0)';
   const style = document.createElement('style');
   style.id = 'color-visited-style';
   style.innerHTML = `
@@ -44,7 +44,7 @@ export function injectCustomStyles(): void {
     a.visited-link *,
     a.visited-link *::before,
     a.visited-link *::after {
-      color: ${config.color} !important;
+      color: ${linkColor} !important;
     }
   `;
   document.head.appendChild(style);
@@ -64,9 +64,9 @@ export function removeCustomStyles(): void {
 export function showSettingsDialog(
   currentSettings: BatchKeySettings,
   defaultSettings: BatchKeySettings,
-  currentGeneralSettings: GeneralSettings,
+  generalSettings: GeneralSettings,
   defaultGeneralSettings: GeneralSettings,
-  currentPresetStates: Record<string, boolean>,
+  currentPresetSettings: Record<string, boolean>,
   currentSyncSettings: SyncSettings,
   isMac: boolean,
   onSave: (settings: BatchKeySettings) => void,
@@ -84,9 +84,9 @@ export function showSettingsDialog(
     payload: {
       currentSettings,
       defaultSettings,
-      currentGeneralSettings,
+      generalSettings,
       defaultGeneralSettings,
-      currentPresetStates,
+      currentPresetSettings,
       currentSyncSettings,
       isMac
     }

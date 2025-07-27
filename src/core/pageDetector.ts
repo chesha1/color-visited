@@ -1,7 +1,8 @@
 // ================== 页面检测模块 ==================
 
-import { config, PRESET_RULES } from '@/core/config';
+import { PRESET_RULES } from '@/core/config';
 import type { ScriptState } from '@/core/state';
+import { getActivePresets } from '@/core/state';
 import { registerUrlChangeCallback, ensureDOMObserver } from '@/core/domObserver';
 
 // 新增: 缓存当前页面预设，避免在每个链接判断时重复遍历
@@ -10,8 +11,8 @@ let cachedUrl: string | null = null;
 
 // 获取启用的预设列表
 export function getEnabledPresets(state: ScriptState): string[] {
-  const allPresets = config.presets === 'all' ? Object.keys(PRESET_RULES) : config.presets;
-  return allPresets.filter(preset => state.presetStates[preset] !== false);
+  const allPresets = getActivePresets(state);
+  return allPresets.filter(preset => state.presetSettings[preset] !== false);
 }
 
 // 判断当前页面是否符合运行条件
@@ -70,7 +71,6 @@ export function onUrlChange(callback: () => void): void {
     cachedCurrentPreset = null;
     cachedUrl = null;
 
-    if (config.debug) console.log('URL changed:', location.href);
     callback();
   });
 

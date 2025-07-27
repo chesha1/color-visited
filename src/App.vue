@@ -8,9 +8,9 @@ const dialogData = ref<{
   visible: boolean
   currentSettings: BatchKeySettings
   defaultSettings: BatchKeySettings
-  currentGeneralSettings: GeneralSettings
+  generalSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
-  currentPresetStates: Record<string, boolean>
+  currentPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
   isMac: boolean
 } | null>(null)
@@ -90,9 +90,9 @@ onUnmounted(() => {
     v-model="dialogData.visible"
     :current-settings="dialogData.currentSettings"
     :default-settings="dialogData.defaultSettings"
-    :current-general-settings="dialogData.currentGeneralSettings"
+    :general-settings="dialogData.generalSettings"
     :default-general-settings="dialogData.defaultGeneralSettings"
-    :current-preset-states="dialogData.currentPresetStates"
+    :current-preset-settings="dialogData.currentPresetSettings"
     :current-sync-settings="dialogData.currentSyncSettings"
     :is-mac="dialogData.isMac"
     @save="handleSettingsSave"
