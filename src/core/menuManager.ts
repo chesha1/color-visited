@@ -1,11 +1,10 @@
 // ================== 菜单管理模块 ==================
 
 import { PRESET_RULES, DEFAULT_SETTINGS } from '@/core/config';
-import { saveSyncSettings, defaultSyncSettings } from '@/core/sync';
+import { saveSyncSettings } from '@/core/sync';
 import { showSettingsDialog } from '@/core/ui';
 import { isMac } from '@/core/utils';
-import { getDefaultGeneralSettings, type ScriptState } from '@/core/state';
-import type { BatchKeySettings, GeneralSettings, SyncSettings } from '@/types';
+import type { BatchKeySettings, GeneralSettings, ScriptState, SyncSettings } from '@/types';
 import { GM_setValue, GM_registerMenuCommand } from 'vite-plugin-monkey/dist/client';
 
 // 菜单管理器类 - 解决循环依赖问题
@@ -23,7 +22,7 @@ class MenuManager {
 
   // 创建设置回调函数
   private createSettingsCallbacks() {
-    const defaultGeneralSettings = getDefaultGeneralSettings();
+    const defaultGeneralSettings = DEFAULT_SETTINGS.general;
 
     return {
       onBatchKeySave: (newSettings: BatchKeySettings) => {
@@ -31,7 +30,7 @@ class MenuManager {
         GM_setValue('batch_shortcut_settings', this.state.batchKeySettings);
       },
       onBatchKeyReset: () => {
-        const defaultBatchKey = DEFAULT_SETTINGS.getBatchKey();
+        const defaultBatchKey = DEFAULT_SETTINGS.batchKey;
         this.state.batchKeySettings = { ...defaultBatchKey };
         GM_setValue('batch_shortcut_settings', defaultBatchKey);
       },
@@ -76,7 +75,7 @@ class MenuManager {
       },
       onSyncReset: () => {
         // 重置同步设置为默认值
-        this.state.syncSettings = { ...defaultSyncSettings };
+        this.state.syncSettings = { ...DEFAULT_SETTINGS.sync };
         saveSyncSettings(this.state.syncSettings);
         this.updateMenu();
       }
@@ -85,8 +84,8 @@ class MenuManager {
 
   updateMenu(): void {
     const callbacks = this.createSettingsCallbacks();
-    const defaultGeneralSettings = getDefaultGeneralSettings();
-    const defaultBatchKey = DEFAULT_SETTINGS.getBatchKey();
+    const defaultGeneralSettings = DEFAULT_SETTINGS.general;
+    const defaultBatchKey = DEFAULT_SETTINGS.batchKey;
 
     GM_registerMenuCommand('设置', () => {
       showSettingsDialog(

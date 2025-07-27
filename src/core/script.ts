@@ -1,7 +1,8 @@
 // ================== 导入配置 ==================
 import { syncOnStartup } from '@/core/sync';
 import { showNotification, injectCustomStyles } from '@/core/ui';
-import { initializeScriptState, type ScriptState } from '@/core/state';
+import { initializeScriptState } from '@/core/state';
+import type { ScriptState } from '@/types';
 import { isPageActive, onUrlChange } from '@/core/pageDetector';
 import { createMenuManager } from '@/core/menuManager';
 import { activateLinkFeatures, removeScript } from '@/core/linkManager';

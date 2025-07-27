@@ -1,31 +1,26 @@
 // ================== 同步模块 ==================
 
 import type { SyncSettings, SyncData, VisitedLinksData } from '@/types';
+import { DEFAULT_SETTINGS } from '@/core/config';
 import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
 
-// 简化的同步配置 - 代码中的默认值
-export const defaultSyncSettings: SyncSettings = {
-  enabled: false,
-  githubToken: '',
-  gistId: '',
-  lastSyncTime: 0,
-};
 
 // 获取同步设置
 export function getSyncSettings(): SyncSettings {
-  const storedSettings = GM_getValue('sync_settings', {}) as Partial<SyncSettings>;
   return {
-    ...defaultSyncSettings,
-    ...storedSettings,
-    // 确保关键参数不为空，如果存储中为空则使用默认值
-    githubToken: storedSettings.githubToken || defaultSyncSettings.githubToken,
-    gistId: storedSettings.gistId || defaultSyncSettings.gistId,
+    enabled: GM_getValue('sync_enabled', DEFAULT_SETTINGS.sync.enabled),
+    githubToken: GM_getValue('sync_github_token', DEFAULT_SETTINGS.sync.githubToken),
+    gistId: GM_getValue('sync_gist_id', DEFAULT_SETTINGS.sync.gistId),
+    lastSyncTime: GM_getValue('sync_last_sync_time', DEFAULT_SETTINGS.sync.lastSyncTime)
   };
 }
 
 // 保存同步设置
 export function saveSyncSettings(settings: SyncSettings): void {
-  GM_setValue('sync_settings', settings);
+  GM_setValue('sync_enabled', settings.enabled);
+  GM_setValue('sync_github_token', settings.githubToken);
+  GM_setValue('sync_gist_id', settings.gistId);
+  GM_setValue('sync_last_sync_time', settings.lastSyncTime);
 }
 
 // ================== GitHub API 模块 ==================

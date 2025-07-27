@@ -8,8 +8,8 @@ export const DEFAULT_SETTINGS = {
     expirationTime: 1000 * 60 * 60 * 24 * 365, // 链接染色的过期时间，毫秒为单位，默认为一年
     debug: false // 是否开启调试模式
   },
-  
-  getBatchKey(): BatchKeySettings {
+
+  get batchKey(): BatchKeySettings {
     const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
     return {
       ctrlKey: !isMac, // macOS 下为 false，Windows 下为 true
@@ -19,7 +19,15 @@ export const DEFAULT_SETTINGS = {
       key: 'V'
     };
   },
-  
+
+  get presetStates(): Record<string, boolean> {
+    return Object.keys(PRESET_RULES).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+  },
+
+
   sync: {
     enabled: false,
     githubToken: '',
@@ -268,12 +276,3 @@ export const PRESET_RULES: PresetRules = {
   // TODO: 让 o1 优化一下
 };
 
-// ================== 辅助函数 ==================
-
-// 获取预设网站的默认状态（全部启用）
-export function getDefaultPresetStates(): Record<string, boolean> {
-  return Object.keys(PRESET_RULES).reduce((acc, key) => {
-    acc[key] = true;
-    return acc;
-  }, {} as Record<string, boolean>);
-}
