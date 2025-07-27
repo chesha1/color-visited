@@ -60,60 +60,72 @@ export function removeCustomStyles(): void {
 
 // ================== 快捷键设置对话框 ==================
 
+// 设置对话框配置接口
+interface SettingsDialogConfig {
+  // 设置数据
+  batchKeySettings: {
+    current: BatchKeySettings;
+    default: BatchKeySettings;
+  };
+  generalSettings: {
+    current: GeneralSettings;
+    default: GeneralSettings;
+  };
+  presetSettings: Record<string, boolean>;
+  syncSettings: SyncSettings;
+  // 系统信息
+  isMac: boolean;
+  // 回调函数
+  callbacks: {
+    onBatchKeySave: (settings: BatchKeySettings) => void;
+    onBatchKeyReset: () => void;
+    onGeneralSave: (settings: GeneralSettings) => void;
+    onGeneralReset: () => void;
+    onPresetSave: (states: Record<string, boolean>) => void;
+    onPresetReset: () => void;
+    onSyncSave: (settings: SyncSettings) => void;
+    onSyncReset: () => void;
+  };
+}
+
 // 显示设置弹窗（包含快捷键和常规设置）
-export function showSettingsDialog(
-  currentSettings: BatchKeySettings,
-  defaultSettings: BatchKeySettings,
-  generalSettings: GeneralSettings,
-  defaultGeneralSettings: GeneralSettings,
-  currentPresetSettings: Record<string, boolean>,
-  currentSyncSettings: SyncSettings,
-  isMac: boolean,
-  onSave: (settings: BatchKeySettings) => void,
-  onReset: () => void,
-  onGeneralSave: (settings: GeneralSettings) => void,
-  onGeneralReset: () => void,
-  onPresetSave: (states: Record<string, boolean>) => void,
-  onPresetReset: () => void,
-  onSyncSave: (settings: SyncSettings) => void,
-  onSyncReset: () => void
-): () => void {
+export function showSettingsDialog(config: SettingsDialogConfig): () => void {
   // 通过事件总线发送显示对话框事件
   eventBus.emit('dialog:show-settings', {
     type: 'settings',
     payload: {
-      currentSettings,
-      defaultSettings,
-      generalSettings,
-      defaultGeneralSettings,
-      currentPresetSettings,
-      currentSyncSettings,
-      isMac
+      currentBatchKeySettings: config.batchKeySettings.current,
+      defaultBatchKeySettings: config.batchKeySettings.default,
+      currentGeneralSettings: config.generalSettings.current,
+      defaultGeneralSettings: config.generalSettings.default,
+      currentPresetSettings: config.presetSettings,
+      currentSyncSettings: config.syncSettings,
+      isMac: config.isMac
     }
   });
 
   // 监听设置保存事件
   const handleSettingsSave = (event: { type: 'batch-key' | 'general' | 'preset' | 'sync'; settings?: BatchKeySettings | GeneralSettings | SyncSettings; states?: Record<string, boolean> }) => {
     if (event.type === 'batch-key' && event.settings) {
-      onSave(event.settings as BatchKeySettings);
+      config.callbacks.onBatchKeySave(event.settings as BatchKeySettings);
     } else if (event.type === 'general' && event.settings) {
-      onGeneralSave(event.settings as GeneralSettings);
+      config.callbacks.onGeneralSave(event.settings as GeneralSettings);
     } else if (event.type === 'preset' && event.states) {
-      onPresetSave(event.states);
+      config.callbacks.onPresetSave(event.states);
     } else if (event.type === 'sync' && event.settings) {
-      onSyncSave(event.settings as SyncSettings);
+      config.callbacks.onSyncSave(event.settings as SyncSettings);
     }
   };
 
   const handleSettingsReset = (event: { type: 'batch-key' | 'general' | 'preset' | 'sync' }) => {
     if (event.type === 'batch-key') {
-      onReset();
+      config.callbacks.onBatchKeyReset();
     } else if (event.type === 'general') {
-      onGeneralReset();
+      config.callbacks.onGeneralReset();
     } else if (event.type === 'preset') {
-      onPresetReset();
+      config.callbacks.onPresetReset();
     } else if (event.type === 'sync') {
-      onSyncReset();
+      config.callbacks.onSyncReset();
     }
   };
 

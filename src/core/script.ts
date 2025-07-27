@@ -54,10 +54,10 @@ function setupPage(state: ScriptState): void {
 
 // 脚本启动和全局初始化
 function startScript(state: ScriptState): void {
-  // 创建菜单管理器并设置回调
+  // 创建菜单管理器并设置脚本重初始化回调
   const menuManager = createMenuManager(state);
   menuManager.setCallbacks(setupPage);
-  menuManager.updateMenu();
+  menuManager.registerMenuCommand();
 
   initializeSync(state);
   setupGlobalEventListeners(state);

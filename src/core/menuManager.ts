@@ -7,20 +7,21 @@ import { isMac } from '@/core/utils';
 import type { BatchKeySettings, GeneralSettings, ScriptState, SyncSettings } from '@/types';
 import { GM_setValue, GM_registerMenuCommand } from 'vite-plugin-monkey/dist/client';
 
-// 菜单管理器类 - 解决循环依赖问题
+// 菜单管理器类 - 管理油猴脚本右键菜单和设置对话框
 class MenuManager {
   private state: ScriptState;
-  private setupPageCallback?: (state: ScriptState) => void;
+  private reinitializeScript?: (state: ScriptState) => void;
 
   constructor(state: ScriptState) {
     this.state = state;
   }
 
-  setCallbacks(setupPageCallback: (state: ScriptState) => void): void {
-    this.setupPageCallback = setupPageCallback;
+  // 设置脚本重新初始化回调函数（用于设置变更后立即生效）
+  setCallbacks(reinitializeScript: (state: ScriptState) => void): void {
+    this.reinitializeScript = reinitializeScript;
   }
 
-  // 创建设置回调函数
+  // 创建设置保存/重置回调函数集合
   private createSettingsCallbacks() {
     const defaultGeneralSettings = DEFAULT_SETTINGS.general;
 
@@ -39,22 +40,22 @@ class MenuManager {
         GM_setValue('color_setting', newGeneralSettings.color);
         GM_setValue('expiration_time_setting', newGeneralSettings.expirationTime);
         GM_setValue('debug_setting', newGeneralSettings.debug);
-        // 重新设置页面以应用新设置
-        this.setupPageCallback?.(this.state);
+        // 重新初始化脚本以应用新设置
+        this.reinitializeScript?.(this.state);
       },
       onGeneralReset: () => {
         this.state.generalSettings = { ...defaultGeneralSettings };
         GM_setValue('color_setting', defaultGeneralSettings.color);
         GM_setValue('expiration_time_setting', defaultGeneralSettings.expirationTime);
         GM_setValue('debug_setting', defaultGeneralSettings.debug);
-        // 重新设置页面以应用新设置
-        this.setupPageCallback?.(this.state);
+        // 重新初始化脚本以应用新设置
+        this.reinitializeScript?.(this.state);
       },
       onPresetSave: (newPresetSettings: Record<string, boolean>) => {
         this.state.presetSettings = newPresetSettings;
         GM_setValue('preset_settings', this.state.presetSettings);
-        // 重新设置页面以应用新设置
-        this.setupPageCallback?.(this.state);
+        // 重新初始化脚本以应用新设置
+        this.reinitializeScript?.(this.state);
       },
       onPresetReset: () => {
         // 重置预设状态为默认值（全部启用）
@@ -64,47 +65,47 @@ class MenuManager {
         });
         this.state.presetSettings = defaultStates;
         GM_setValue('preset_settings', this.state.presetSettings);
-        // 重新设置页面以应用新设置
-        this.setupPageCallback?.(this.state);
+        // 重新初始化脚本以应用新设置
+        this.reinitializeScript?.(this.state);
       },
       onSyncSave: (newSyncSettings: SyncSettings) => {
         // 保存同步设置
         this.state.syncSettings = newSyncSettings;
         saveSyncSettings(this.state.syncSettings);
-        this.updateMenu();
+        // 重新注册菜单以更新状态
+        this.registerMenuCommand();
       },
       onSyncReset: () => {
         // 重置同步设置为默认值
         this.state.syncSettings = { ...DEFAULT_SETTINGS.sync };
         saveSyncSettings(this.state.syncSettings);
-        this.updateMenu();
+        // 重新注册菜单以更新状态
+        this.registerMenuCommand();
       }
     };
   }
 
-  updateMenu(): void {
+  // 注册油猴脚本右键菜单项
+  registerMenuCommand(): void {
     const callbacks = this.createSettingsCallbacks();
     const defaultGeneralSettings = DEFAULT_SETTINGS.general;
     const defaultBatchKey = DEFAULT_SETTINGS.batchKey;
 
     GM_registerMenuCommand('设置', () => {
-      showSettingsDialog(
-        this.state.batchKeySettings,
-        defaultBatchKey,
-        this.state.generalSettings,
-        defaultGeneralSettings,
-        this.state.presetSettings,
-        this.state.syncSettings,
+      showSettingsDialog({
+        batchKeySettings: {
+          current: this.state.batchKeySettings,
+          default: defaultBatchKey
+        },
+        generalSettings: {
+          current: this.state.generalSettings,
+          default: defaultGeneralSettings
+        },
+        presetSettings: this.state.presetSettings,
+        syncSettings: this.state.syncSettings,
         isMac,
-        callbacks.onBatchKeySave,
-        callbacks.onBatchKeyReset,
-        callbacks.onGeneralSave,
-        callbacks.onGeneralReset,
-        callbacks.onPresetSave,
-        callbacks.onPresetReset,
-        callbacks.onSyncSave,
-        callbacks.onSyncReset
-      );
+        callbacks
+      });
     });
   }
 }

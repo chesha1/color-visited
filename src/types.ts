@@ -46,9 +46,9 @@ export type PresetRules = Record<string, PresetRule>
 // ================== UI 类型 ==================
 
 export interface SettingsDialogPayload {
-  currentSettings: BatchKeySettings
-  defaultSettings: BatchKeySettings
-  generalSettings: GeneralSettings
+  currentBatchKeySettings: BatchKeySettings
+  defaultBatchKeySettings: BatchKeySettings
+  currentGeneralSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
   currentPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
