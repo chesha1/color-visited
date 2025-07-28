@@ -165,8 +165,6 @@ const handleReset = () => {
   newSettings.value = { ...props.defaultSettings }
   hasNewKeyPress.value = true // 标记为有新的按键设置，需要保存
   isResetMode.value = true // 标记为重置模式
-  
-  showNotification('已重置为默认快捷键，点击保存应用设置！')
 }
 
 // 监听 props.currentSettings 变化，同步更新 formData

@@ -228,8 +228,6 @@ const handleReset = () => {
     defaultStates[siteName] = true // 默认全部启用
   })
   presetSettings.value = { ...defaultStates }
-  emit('reset')
-  showNotification('预设网站设置已重置为默认！')
 }
 
 // 切换展开状态

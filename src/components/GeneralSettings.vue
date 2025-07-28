@@ -73,10 +73,12 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const formData = ref<GeneralSettings>({ ...props.currentSettings })
+// 保存的状态 - 用于比较是否有变更
+const savedSettings = ref<GeneralSettings>({ ...props.currentSettings })
 
 // 检测是否有改动
 const hasChanges = computed(() => {
-  return JSON.stringify(formData.value) !== JSON.stringify(props.currentSettings)
+  return JSON.stringify(formData.value) !== JSON.stringify(savedSettings.value)
 })
 
 const colorPresets = [
@@ -102,18 +104,20 @@ const expirationDays = computed({
 
 const handleSave = () => {
   emit('save', { ...formData.value })
+  // 更新已保存状态
+  savedSettings.value = { ...formData.value }
   showNotification('常规设置已保存！')
 }
 
 // 重置为默认值，但仅更新界面，真正保存需用户点击「保存设置」
 const handleReset = () => {
   formData.value = { ...props.defaultSettings }
-  showNotification('常规设置已重置为默认！')
 }
 
-// 监听 props.currentSettings 变化，同步更新 formData
+// 监听 props.currentSettings 变化，同步更新 formData 和 savedSettings
 watch(() => props.currentSettings, (newSettings) => {
   formData.value = { ...newSettings }
+  savedSettings.value = { ...newSettings }
 }, { immediate: true, deep: true })
 
 // 暴露给父组件调用的方法

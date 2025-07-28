@@ -142,6 +142,8 @@ const handleSave = () => {
     const generalData = generalSettingsRef.value?.getFormData()
     if (generalData) {
       emit('generalSave', generalData)
+      // 调用子组件的 save 方法更新内部状态
+      generalSettingsRef.value?.save()
     }
   } else if (activeTab.value === 'shortcut') {
     // 直接调用子组件的 save 方法，该方法会emit事件并重置状态
@@ -151,6 +153,7 @@ const handleSave = () => {
     const presetData = presetSettingsRef.value?.getFormData()
     if (presetData) {
       emit('presetSave', presetData)
+      // 调用子组件的 save 方法更新内部状态
       presetSettingsRef.value?.save()
     }
   } else if (activeTab.value === 'sync') {
@@ -158,6 +161,8 @@ const handleSave = () => {
     const syncData = syncSettingsRef.value?.getFormData()
     if (syncData) {
       emit('syncSave', syncData)
+      // 调用子组件的 save 方法更新内部状态
+      syncSettingsRef.value?.save()
     }
   }
 }
@@ -176,11 +181,9 @@ const handleReset = () => {
   } else if (activeTab.value === 'presets') {
     // 预设网站重置逻辑
     presetSettingsRef.value?.reset()
-    emit('presetReset')
   } else if (activeTab.value === 'sync') {
     // 同步设置重置逻辑
     syncSettingsRef.value?.reset()
-    emit('syncReset')
   }
 }
 

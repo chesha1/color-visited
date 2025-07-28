@@ -101,6 +101,7 @@ import { ref, computed, watch } from 'vue'
 import type { SyncSettings } from '@/types'
 import { getSyncSettings, validateGitHubToken } from '@/core/sync'
 import { showNotification } from '@/core/ui'
+import { DEFAULT_SETTINGS } from '@/core/config'
 
 interface Props {
   currentSettings: SyncSettings
@@ -120,6 +121,8 @@ const formData = ref<SyncSettings>({
   gistId: props.currentSettings.gistId,
   lastSyncTime: props.currentSettings.lastSyncTime
 })
+// 保存的状态 - 用于比较是否有变更
+const savedSettings = ref<SyncSettings>({ ...props.currentSettings })
 
 // 测试连接状态
 const testingConnection = ref(false)
@@ -135,9 +138,9 @@ const lastSyncTimeFormatted = computed(() => {
 // 检测是否有变更
 const hasChanges = computed(() => {
   return (
-    formData.value.enabled !== props.currentSettings.enabled ||
-    formData.value.githubToken !== props.currentSettings.githubToken ||
-    formData.value.gistId !== props.currentSettings.gistId
+    formData.value.enabled !== savedSettings.value.enabled ||
+    formData.value.githubToken !== savedSettings.value.githubToken ||
+    formData.value.gistId !== savedSettings.value.gistId
   )
 })
 
@@ -185,26 +188,31 @@ const getFormData = (): SyncSettings => {
   return { ...formData.value }
 }
 
+// 保存表单数据
+const handleSave = () => {
+  // 更新已保存状态
+  savedSettings.value = { ...formData.value }
+}
+
 // 重置表单
 const reset = () => {
-  const defaultSettings = getSyncSettings()
   formData.value = {
-    enabled: defaultSettings.enabled,
-    githubToken: defaultSettings.githubToken,
-    gistId: defaultSettings.gistId,
-    lastSyncTime: defaultSettings.lastSyncTime
+    enabled: DEFAULT_SETTINGS.sync.enabled,
+    githubToken: DEFAULT_SETTINGS.sync.githubToken,
+    gistId: DEFAULT_SETTINGS.sync.gistId,
+    lastSyncTime: DEFAULT_SETTINGS.sync.lastSyncTime
   }
-  emit('change')
 }
 
 // 暴露方法给父组件
 defineExpose({
   hasChanges,
   getFormData,
-  reset
+  reset,
+  save: handleSave
 })
 
-// 监听 props 变化，更新表单数据
+// 监听 props 变化，更新表单数据和保存状态
 watch(
   () => props.currentSettings,
   (newSettings) => {
@@ -214,6 +222,7 @@ watch(
       gistId: newSettings.gistId,
       lastSyncTime: newSettings.lastSyncTime
     }
+    savedSettings.value = { ...newSettings }
   },
   { deep: true }
 )

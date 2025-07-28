@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.8.2
+// @version      2.8.3
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -94,7 +94,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-v8s3Dszx.js"(exports, module$1) {
+        "main-BcSiDJjv.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20586,8 +20586,9 @@ System.register("./__entry.js", [], (function (exports, module) {
               const props = __props;
               const emit2 = __emit;
               const formData = ref({ ...props.currentSettings });
+              const savedSettings = ref({ ...props.currentSettings });
               const hasChanges = computed(() => {
-                return JSON.stringify(formData.value) !== JSON.stringify(props.currentSettings);
+                return JSON.stringify(formData.value) !== JSON.stringify(savedSettings.value);
               });
               const colorPresets = [
                 "rgba(0,0,0,0)",
@@ -20619,14 +20620,15 @@ System.register("./__entry.js", [], (function (exports, module) {
               });
               const handleSave = () => {
                 emit2("save", { ...formData.value });
+                savedSettings.value = { ...formData.value };
                 showNotification("常规设置已保存！");
               };
               const handleReset = () => {
                 formData.value = { ...props.defaultSettings };
-                showNotification("常规设置已重置为默认！");
               };
               watch(() => props.currentSettings, (newSettings) => {
                 formData.value = { ...newSettings };
+                savedSettings.value = { ...newSettings };
               }, { immediate: true, deep: true });
               __expose({
                 save: handleSave,
@@ -21178,8 +21180,6 @@ System.register("./__entry.js", [], (function (exports, module) {
                   defaultStates[siteName] = true;
                 });
                 presetSettings.value = { ...defaultStates };
-                emit2("reset");
-                showNotification("预设网站设置已重置为默认！");
               };
               const toggleExpanded = (siteName) => {
                 if (expandedSites.value.has(siteName)) {
@@ -21444,7 +21444,6 @@ System.register("./__entry.js", [], (function (exports, module) {
                 newSettings.value = { ...props.defaultSettings };
                 hasNewKeyPress.value = true;
                 isResetMode.value = true;
-                showNotification("已重置为默认快捷键，点击保存应用设置！");
               };
               watch(() => props.currentSettings, (currentSettings) => {
                 formData.value = { ...currentSettings };
@@ -21708,6 +21707,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 gistId: props.currentSettings.gistId,
                 lastSyncTime: props.currentSettings.lastSyncTime
               });
+              const savedSettings = ref({ ...props.currentSettings });
               const testingConnection = ref(false);
               const lastSyncTimeFormatted = computed(() => {
                 if (!formData.value.lastSyncTime) {
@@ -21716,7 +21716,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 return new Date(formData.value.lastSyncTime).toLocaleString();
               });
               const hasChanges = computed(() => {
-                return formData.value.enabled !== props.currentSettings.enabled || formData.value.githubToken !== props.currentSettings.githubToken || formData.value.gistId !== props.currentSettings.gistId;
+                return formData.value.enabled !== savedSettings.value.enabled || formData.value.githubToken !== savedSettings.value.githubToken || formData.value.gistId !== savedSettings.value.gistId;
               });
               const handleEnabledChange = () => {
                 emit2("change");
@@ -21750,20 +21750,22 @@ System.register("./__entry.js", [], (function (exports, module) {
               const getFormData = () => {
                 return { ...formData.value };
               };
+              const handleSave = () => {
+                savedSettings.value = { ...formData.value };
+              };
               const reset = () => {
-                const defaultSettings = getSyncSettings();
                 formData.value = {
-                  enabled: defaultSettings.enabled,
-                  githubToken: defaultSettings.githubToken,
-                  gistId: defaultSettings.gistId,
-                  lastSyncTime: defaultSettings.lastSyncTime
+                  enabled: DEFAULT_SETTINGS.sync.enabled,
+                  githubToken: DEFAULT_SETTINGS.sync.githubToken,
+                  gistId: DEFAULT_SETTINGS.sync.gistId,
+                  lastSyncTime: DEFAULT_SETTINGS.sync.lastSyncTime
                 };
-                emit2("change");
               };
               __expose({
                 hasChanges,
                 getFormData,
-                reset
+                reset,
+                save: handleSave
               });
               watch(
                 () => props.currentSettings,
@@ -21774,6 +21776,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                     gistId: newSettings.gistId,
                     lastSyncTime: newSettings.lastSyncTime
                   };
+                  savedSettings.value = { ...newSettings };
                 },
                 { deep: true }
               );
@@ -21924,6 +21927,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                   const generalData = generalSettingsRef.value?.getFormData();
                   if (generalData) {
                     emit2("generalSave", generalData);
+                    generalSettingsRef.value?.save();
                   }
                 } else if (activeTab.value === "shortcut") {
                   shortcutSettingsRef.value?.save();
@@ -21937,6 +21941,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                   const syncData = syncSettingsRef.value?.getFormData();
                   if (syncData) {
                     emit2("syncSave", syncData);
+                    syncSettingsRef.value?.save();
                   }
                 }
               };
@@ -21949,10 +21954,8 @@ System.register("./__entry.js", [], (function (exports, module) {
                   shortcutSettingsRef.value?.reset();
                 } else if (activeTab.value === "presets") {
                   presetSettingsRef.value?.reset();
-                  emit2("presetReset");
                 } else if (activeTab.value === "sync") {
                   syncSettingsRef.value?.reset();
-                  emit2("syncReset");
                 }
               };
               const handleClosed = () => {
