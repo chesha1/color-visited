@@ -202,10 +202,10 @@ export const PRESET_RULES: PresetRules = {
   },
   'reddit': {
     pages: [
-      /https:\/\/www\.reddit\.com\/r\/[^\/]+\/?$/, // 板块首页
+      /https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/, // 板块首页
     ],
     patterns: [
-      /reddit\.com\/r\/[^\/]+\/comments\/.*/, // 帖子
+      /reddit\.com\/r\/[^/]+\/comments\/.*/, // 帖子
     ],
   },
   'Seeking Alpha': {

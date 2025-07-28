@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.8.3
+// @version      2.8.4
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -55,7 +55,7 @@
 // @include      /https:\/\/www\.pixiv\.net\/bookmark_new_illust(_r18)?\.php.*/
 // @include      /https:\/\/www\.pixiv\.net\/following\/watchlist\/.*/
 // @include      /https:\/\/www\.pixiv\.net\/mypixiv_new_illust\.php.*/
-// @include      /https:\/\/www\.reddit\.com\/r\/[^\/]+\/?$/
+// @include      /https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/
 // @include      /https:\/\/seekingalpha\.com\/$/
 // @include      /https:\/\/seekingalpha\.com\/symbol\/.*/
 // @include      /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/thread\.php\?fid.*/
@@ -94,7 +94,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-BcSiDJjv.js"(exports, module$1) {
+        "main-fH5v5R1S.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20974,11 +20974,11 @@ System.register("./__entry.js", [], (function (exports, module) {
             },
             "reddit": {
               pages: [
-                /https:\/\/www\.reddit\.com\/r\/[^\/]+\/?$/
+                /https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/
                 // 板块首页
               ],
               patterns: [
-                /reddit\.com\/r\/[^\/]+\/comments\/.*/
+                /reddit\.com\/r\/[^/]+\/comments\/.*/
                 // 帖子
               ]
             },
