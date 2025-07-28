@@ -1,4 +1,5 @@
-import type { PresetRules, BatchKeySettings } from '@/types';
+import type { PresetRules, BatchKeySettings } from '../types';
+import { isMac } from './utils';
 
 // ================== 默认设置集合 ==================
 
@@ -10,7 +11,6 @@ export const DEFAULT_SETTINGS = {
   },
 
   get batchKey(): BatchKeySettings {
-    const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
     return {
       ctrlKey: !isMac, // macOS 下为 false，Windows 下为 true
       shiftKey: true,

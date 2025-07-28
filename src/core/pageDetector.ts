@@ -1,7 +1,7 @@
 // ================== 页面检测模块 ==================
 
 import { PRESET_RULES } from '@/core/config';
-import type { ScriptState } from '@/core/state';
+import type { ScriptState } from '@/types';
 import { getActivePresets } from '@/core/state';
 import { registerUrlChangeCallback, ensureDOMObserver } from '@/core/domObserver';
 

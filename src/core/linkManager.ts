@@ -3,8 +3,7 @@
 import { shouldColorLink } from '@/core/pageDetector';
 import { showNotification, removeCustomStyles } from '@/core/ui';
 import { getBaseUrl, logStorageInfo } from '@/core/utils';
-import type { ScriptState } from '@/core/state';
-import type { VisitedLinks } from '@/types';
+import type { ScriptState, VisitedLinks } from '@/types';
 import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
 
 // ================== 链接存储管理 ==================

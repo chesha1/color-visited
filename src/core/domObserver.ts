@@ -1,6 +1,5 @@
 import { updateLinkStatus } from '@/core/linkManager';
-import type { VisitedLinks } from '@/types';
-import type { ScriptState } from '@/core/state';
+import type { VisitedLinks, ScriptState } from '@/types';
 
 // 全局 MutationObserver（单例）
 let globalObserver: MutationObserver | null = null;

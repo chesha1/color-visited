@@ -1,9 +1,12 @@
-// ================== 工具函数模块 ==================
-
-// ================== 操作系统检测 ==================
-
 // 检测当前操作系统
-export const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+export const isMac = (() => {
+  // 优先使用现代 API
+  if ('userAgentData' in navigator && (navigator as any).userAgentData) {
+    return (navigator as any).userAgentData.platform === 'macOS';
+  }
+  // 降级到 userAgent 检测
+  return /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
+})();
 
 // ================== URL 处理工具 ==================
 

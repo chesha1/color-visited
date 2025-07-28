@@ -96,9 +96,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import type { SyncSettings } from '@/types'
-import { getSyncSettings, validateGitHubToken } from '@/core/sync'
+import { validateGitHubToken } from '@/core/sync'
 import { showNotification } from '@/core/ui'
-import { DEFAULT_SETTINGS } from '@/core/config'
 
 interface Props {
   currentSettings: SyncSettings

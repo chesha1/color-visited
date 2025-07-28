@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.8.5
+// @version      2.8.6
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -94,7 +94,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-B1sAXufl.js"(exports, module$1) {
+        "main-C1Dbufmx.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20718,6 +20718,47 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
+          const isMac = (() => {
+            if ("userAgentData" in navigator && navigator.userAgentData) {
+              return navigator.userAgentData.platform === "macOS";
+            }
+            return /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
+          })();
+          function getBaseUrl(url) {
+            const domain = new URL(url).hostname;
+            if (domain === "www.v2ex.com") return url.split("?")[0].split("#")[0];
+            if (domain === "linux.do") return url.replace(/(\/\d+)\/\d+$/, "$1");
+            if (domain === "www.bilibili.com") return url.split("?")[0];
+            if (domain === "tieba.baidu.com") return url.split("?")[0];
+            if (domain === "www.douban.com") return url.split("?")[0];
+            if (domain === "ngabbs.com") return url.split("&")[0];
+            if (domain === "bbs.nga.cn") return url.split("&")[0];
+            if (domain === "nga.178.com") return url.split("&")[0];
+            if (/^www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net$/.test(domain)) {
+              let processedUrl = url;
+              processedUrl = processedUrl.replace(/#a$/, "");
+              processedUrl = processedUrl.replace(/-fpage-\d+/, "");
+              processedUrl = processedUrl.replace(/-page-(\d+|[ea])(\.html)?$/, "$2");
+              return processedUrl;
+            }
+            return url;
+          }
+          function logStorageInfo(visitedLinks) {
+            const serializedData = JSON.stringify(visitedLinks);
+            const sizeInBytes = new TextEncoder().encode(serializedData).length;
+            const sizeInKB = (sizeInBytes / 1024).toFixed(2);
+            const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+            let sizeText;
+            if (sizeInBytes < 1024) {
+              sizeText = `${sizeInBytes} bytes`;
+            } else if (sizeInBytes < 1024 * 1024) {
+              sizeText = `${sizeInKB} KB`;
+            } else {
+              sizeText = `${sizeInMB} MB`;
+            }
+            const itemCount = Object.keys(visitedLinks).length;
+            console.log(`visitedLinks storage size: ${itemCount} items, ${sizeText}`);
+          }
           const DEFAULT_SETTINGS = {
             general: {
               color: "rgba(0,0,0,0)",
@@ -20728,13 +20769,12 @@ System.register("./__entry.js", [], (function (exports, module) {
               // 是否开启调试模式
             },
             get batchKey() {
-              const isMac2 = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
               return {
-                ctrlKey: !isMac2,
+                ctrlKey: !isMac,
                 // macOS 下为 false，Windows 下为 true
                 shiftKey: true,
                 altKey: false,
-                metaKey: isMac2,
+                metaKey: isMac,
                 // macOS 下为 true，Windows 下为 false
                 key: "V"
               };
@@ -22159,42 +22199,6 @@ System.register("./__entry.js", [], (function (exports, module) {
               domObserver: null,
               linkClickHandler: null
             };
-          }
-          const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-          function getBaseUrl(url) {
-            const domain = new URL(url).hostname;
-            if (domain === "www.v2ex.com") return url.split("?")[0].split("#")[0];
-            if (domain === "linux.do") return url.replace(/(\/\d+)\/\d+$/, "$1");
-            if (domain === "www.bilibili.com") return url.split("?")[0];
-            if (domain === "tieba.baidu.com") return url.split("?")[0];
-            if (domain === "www.douban.com") return url.split("?")[0];
-            if (domain === "ngabbs.com") return url.split("&")[0];
-            if (domain === "bbs.nga.cn") return url.split("&")[0];
-            if (domain === "nga.178.com") return url.split("&")[0];
-            if (/^www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net$/.test(domain)) {
-              let processedUrl = url;
-              processedUrl = processedUrl.replace(/#a$/, "");
-              processedUrl = processedUrl.replace(/-fpage-\d+/, "");
-              processedUrl = processedUrl.replace(/-page-(\d+|[ea])(\.html)?$/, "$2");
-              return processedUrl;
-            }
-            return url;
-          }
-          function logStorageInfo(visitedLinks) {
-            const serializedData = JSON.stringify(visitedLinks);
-            const sizeInBytes = new TextEncoder().encode(serializedData).length;
-            const sizeInKB = (sizeInBytes / 1024).toFixed(2);
-            const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
-            let sizeText;
-            if (sizeInBytes < 1024) {
-              sizeText = `${sizeInBytes} bytes`;
-            } else if (sizeInBytes < 1024 * 1024) {
-              sizeText = `${sizeInKB} KB`;
-            } else {
-              sizeText = `${sizeInMB} MB`;
-            }
-            const itemCount = Object.keys(visitedLinks).length;
-            console.log(`visitedLinks storage size: ${itemCount} items, ${sizeText}`);
           }
           function deleteExpiredLinks(expirationTime) {
             const visitedLinks = _GM_getValue("visitedLinks", {});

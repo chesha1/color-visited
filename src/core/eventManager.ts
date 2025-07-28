@@ -4,8 +4,7 @@ import { shouldColorLink } from '@/core/pageDetector';
 import { batchAddLinks } from '@/core/linkManager';
 import { provideLinkContext, ensureDOMObserver } from '@/core/domObserver';
 import { getBaseUrl } from '@/core/utils';
-import type { ScriptState } from '@/core/state';
-import type { VisitedLinks } from '@/types';
+import type { ScriptState, VisitedLinks } from '@/types';
 import { GM_setValue } from 'vite-plugin-monkey/dist/client';
 
 // ================== 快捷键管理 ==================
