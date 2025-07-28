@@ -14,7 +14,6 @@
         </div>
         <el-switch
           v-model="formData.enabled"
-          @change="handleEnabledChange"
         />
       </div>
 
@@ -29,7 +28,6 @@
           placeholder="请输入 GitHub Personal Access Token"
           show-password
           :disabled="!formData.enabled"
-          @input="handleTokenChange"
         />
         <p class="text-xs text-gray-500 mt-1">
           需要创建具有 "gist" 权限的个人访问令牌
@@ -45,7 +43,6 @@
           v-model="formData.gistId"
           placeholder="请输入现有 Gist 的 ID"
           :disabled="!formData.enabled"
-          @input="handleGistIdChange"
         />
         <p class="text-xs text-gray-500 mt-1">
           手动创建一个 Gist，然后输入其 ID
@@ -105,10 +102,12 @@ import { DEFAULT_SETTINGS } from '@/core/config'
 
 interface Props {
   currentSettings: SyncSettings
+  defaultSettings: SyncSettings
 }
 
 interface Emits {
-  (e: 'change'): void
+  (e: 'save', settings: SyncSettings): void
+  (e: 'reset'): void
 }
 
 const props = defineProps<Props>()
@@ -144,20 +143,6 @@ const hasChanges = computed(() => {
   )
 })
 
-// 处理启用状态变更
-const handleEnabledChange = () => {
-  emit('change')
-}
-
-// 处理令牌变更
-const handleTokenChange = () => {
-  emit('change')
-}
-
-// 处理 Gist ID 变更
-const handleGistIdChange = () => {
-  emit('change')
-}
 
 // 测试连接
 const testConnection = async () => {
@@ -190,26 +175,23 @@ const getFormData = (): SyncSettings => {
 
 // 保存表单数据
 const handleSave = () => {
+  emit('save', { ...formData.value })
   // 更新已保存状态
   savedSettings.value = { ...formData.value }
+  showNotification('数据同步设置已保存！')
 }
 
 // 重置表单
-const reset = () => {
-  formData.value = {
-    enabled: DEFAULT_SETTINGS.sync.enabled,
-    githubToken: DEFAULT_SETTINGS.sync.githubToken,
-    gistId: DEFAULT_SETTINGS.sync.gistId,
-    lastSyncTime: DEFAULT_SETTINGS.sync.lastSyncTime
-  }
+const handleReset = () => {
+  formData.value = { ...props.defaultSettings }
 }
 
 // 暴露方法给父组件
 defineExpose({
-  hasChanges,
+  save: handleSave,
+  reset: handleReset,
   getFormData,
-  reset,
-  save: handleSave
+  hasChanges
 })
 
 // 监听 props 变化，更新表单数据和保存状态
@@ -224,6 +206,6 @@ watch(
     }
     savedSettings.value = { ...newSettings }
   },
-  { deep: true }
+  { immediate: true, deep: true }
 )
 </script>

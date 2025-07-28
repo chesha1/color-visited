@@ -101,8 +101,21 @@ class MenuManager {
           current: this.state.generalSettings,
           default: defaultGeneralSettings
         },
-        presetSettings: this.state.presetSettings,
-        syncSettings: this.state.syncSettings,
+        presetSettings: {
+          current: this.state.presetSettings,
+          default: (() => {
+            // 生成默认预设状态（全部启用）
+            const defaultStates: Record<string, boolean> = {};
+            Object.keys(PRESET_RULES).forEach(key => {
+              defaultStates[key] = true;
+            });
+            return defaultStates;
+          })()
+        },
+        syncSettings: {
+          current: this.state.syncSettings,
+          default: DEFAULT_SETTINGS.sync
+        },
         isMac,
         callbacks
       });

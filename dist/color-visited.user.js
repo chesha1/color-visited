@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.8.4
+// @version      2.8.5
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -94,7 +94,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-fH5v5R1S.js"(exports, module$1) {
+        "main-B1sAXufl.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20535,8 +20535,10 @@ System.register("./__entry.js", [], (function (exports, module) {
                 defaultBatchKeySettings: config.batchKeySettings.default,
                 currentGeneralSettings: config.generalSettings.current,
                 defaultGeneralSettings: config.generalSettings.default,
-                currentPresetSettings: config.presetSettings,
-                currentSyncSettings: config.syncSettings,
+                currentPresetSettings: config.presetSettings.current,
+                defaultPresetSettings: config.presetSettings.default,
+                currentSyncSettings: config.syncSettings.current,
+                defaultSyncSettings: config.syncSettings.default,
                 isMac: config.isMac
               }
             });
@@ -21068,9 +21070,6 @@ System.register("./__entry.js", [], (function (exports, module) {
             // TODO: 优化一下多次获取 patterns 的逻辑
             // TODO: 让 o1 优化一下
           };
-          var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
-          var _GM_registerMenuCommand = /* @__PURE__ */ (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
-          var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
           const _hoisted_1$3 = { class: "space-y-4 h-full overflow-y-auto" };
           const _hoisted_2$2 = { class: "border-b pb-3" };
           const _hoisted_3$2 = { class: "flex items-start justify-between" };
@@ -21116,7 +21115,8 @@ System.register("./__entry.js", [], (function (exports, module) {
           const _sfc_main$4 = /* @__PURE__ */ defineComponent({
             __name: "PresetSettings",
             props: {
-              currentPresetSettings: {}
+              currentPresetSettings: {},
+              defaultPresetSettings: {}
             },
             emits: ["save", "reset"],
             setup(__props, { expose: __expose, emit: __emit }) {
@@ -21124,34 +21124,11 @@ System.register("./__entry.js", [], (function (exports, module) {
               const emit2 = __emit;
               const presetRules = PRESET_RULES;
               const expandedSites = ref(/* @__PURE__ */ new Set());
-              const presetSettings = ref({});
-              const savedPresetSettings = ref({});
+              const presetSettings = ref({ ...props.currentPresetSettings });
+              const savedPresetSettings = ref({ ...props.currentPresetSettings });
               const hasChanges = computed(() => {
                 return JSON.stringify(presetSettings.value) !== JSON.stringify(savedPresetSettings.value);
               });
-              const initializePresetSettings = () => {
-                const states = {};
-                Object.keys(presetRules).forEach((siteName) => {
-                  states[siteName] = true;
-                });
-                if (typeof _GM_getValue !== "undefined") {
-                  const savedStates = _GM_getValue("preset_settings", {});
-                  Object.keys(states).forEach((siteName) => {
-                    if (savedStates.hasOwnProperty(siteName)) {
-                      states[siteName] = savedStates[siteName];
-                    }
-                  });
-                }
-                if (props.currentPresetSettings) {
-                  Object.keys(states).forEach((siteName) => {
-                    if (props.currentPresetSettings.hasOwnProperty(siteName)) {
-                      states[siteName] = props.currentPresetSettings[siteName];
-                    }
-                  });
-                }
-                presetSettings.value = { ...states };
-                savedPresetSettings.value = { ...states };
-              };
               const updatePresetState = (siteName, enabled) => {
                 const isEnabled = Boolean(enabled);
                 presetSettings.value[siteName] = isEnabled;
@@ -21162,24 +21139,12 @@ System.register("./__entry.js", [], (function (exports, module) {
                 });
               };
               const handleSave = () => {
-                if (typeof _GM_setValue !== "undefined") {
-                  _GM_setValue("preset_settings", presetSettings.value);
-                }
-                if (typeof window !== "undefined" && window.dispatchEvent) {
-                  window.dispatchEvent(new CustomEvent("preset-states-updated", {
-                    detail: { presetSettings: presetSettings.value }
-                  }));
-                }
-                savedPresetSettings.value = { ...presetSettings.value };
                 emit2("save", { ...presetSettings.value });
+                savedPresetSettings.value = { ...presetSettings.value };
                 showNotification("预设网站设置已保存！");
               };
               const handleReset = () => {
-                const defaultStates = {};
-                Object.keys(presetRules).forEach((siteName) => {
-                  defaultStates[siteName] = true;
-                });
-                presetSettings.value = { ...defaultStates };
+                presetSettings.value = { ...props.defaultPresetSettings };
               };
               const toggleExpanded = (siteName) => {
                 if (expandedSites.value.has(siteName)) {
@@ -21195,14 +21160,9 @@ System.register("./__entry.js", [], (function (exports, module) {
                 return regex;
               };
               watch(() => props.currentPresetSettings, (newStates) => {
-                if (newStates) {
-                  presetSettings.value = { ...newStates };
-                  savedPresetSettings.value = { ...newStates };
-                }
+                presetSettings.value = { ...newStates };
+                savedPresetSettings.value = { ...newStates };
               }, { immediate: true, deep: true });
-              onMounted(() => {
-                initializePresetSettings();
-              });
               __expose({
                 save: handleSave,
                 reset: handleReset,
@@ -21356,6 +21316,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               const props = __props;
               const emit2 = __emit;
               const formData = ref({ ...props.currentSettings });
+              const savedSettings = ref({ ...props.currentSettings });
               const newSettings = ref({ ...props.currentSettings });
               const hasNewKeyPress = ref(false);
               const isResetMode = ref(false);
@@ -21436,6 +21397,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                     showNotification("批量染色快捷键设置已保存！");
                   }
                   formData.value = { ...newSettings.value };
+                  savedSettings.value = { ...newSettings.value };
                   hasNewKeyPress.value = false;
                   isResetMode.value = false;
                 }
@@ -21447,6 +21409,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
               watch(() => props.currentSettings, (currentSettings) => {
                 formData.value = { ...currentSettings };
+                savedSettings.value = { ...currentSettings };
                 if (!hasNewKeyPress.value) {
                   newSettings.value = { ...currentSettings };
                 }
@@ -21469,11 +21432,17 @@ System.register("./__entry.js", [], (function (exports, module) {
               onUnmounted(() => {
                 document.removeEventListener("keydown", handleKeyDown, true);
               });
+              const hasChanges = computed(() => {
+                if (hasNewKeyPress.value) {
+                  return JSON.stringify(newSettings.value) !== JSON.stringify(savedSettings.value);
+                }
+                return false;
+              });
               __expose({
                 save: handleSave,
                 reset: handleReset,
-                hasNewKeyPress,
-                getFormData: () => hasNewKeyPress.value ? { ...newSettings.value } : { ...formData.value }
+                getFormData: () => hasNewKeyPress.value ? { ...newSettings.value } : { ...formData.value },
+                hasChanges
               });
               return (_ctx, _cache) => {
                 const _component_el_input = ElInput;
@@ -21521,6 +21490,9 @@ System.register("./__entry.js", [], (function (exports, module) {
               };
             }
           });
+          var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
+          var _GM_registerMenuCommand = /* @__PURE__ */ (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
+          var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
           function getSyncSettings() {
             return {
               enabled: _GM_getValue("sync_enabled", DEFAULT_SETTINGS.sync.enabled),
@@ -21695,9 +21667,10 @@ System.register("./__entry.js", [], (function (exports, module) {
           const _sfc_main$2 = /* @__PURE__ */ defineComponent({
             __name: "SyncSettings",
             props: {
-              currentSettings: {}
+              currentSettings: {},
+              defaultSettings: {}
             },
-            emits: ["change"],
+            emits: ["save", "reset"],
             setup(__props, { expose: __expose, emit: __emit }) {
               const props = __props;
               const emit2 = __emit;
@@ -21718,15 +21691,6 @@ System.register("./__entry.js", [], (function (exports, module) {
               const hasChanges = computed(() => {
                 return formData.value.enabled !== savedSettings.value.enabled || formData.value.githubToken !== savedSettings.value.githubToken || formData.value.gistId !== savedSettings.value.gistId;
               });
-              const handleEnabledChange = () => {
-                emit2("change");
-              };
-              const handleTokenChange = () => {
-                emit2("change");
-              };
-              const handleGistIdChange = () => {
-                emit2("change");
-              };
               const testConnection = async () => {
                 if (!formData.value.githubToken) {
                   showNotification("请输入 GitHub 令牌");
@@ -21751,21 +21715,18 @@ System.register("./__entry.js", [], (function (exports, module) {
                 return { ...formData.value };
               };
               const handleSave = () => {
+                emit2("save", { ...formData.value });
                 savedSettings.value = { ...formData.value };
+                showNotification("数据同步设置已保存！");
               };
-              const reset = () => {
-                formData.value = {
-                  enabled: DEFAULT_SETTINGS.sync.enabled,
-                  githubToken: DEFAULT_SETTINGS.sync.githubToken,
-                  gistId: DEFAULT_SETTINGS.sync.gistId,
-                  lastSyncTime: DEFAULT_SETTINGS.sync.lastSyncTime
-                };
+              const handleReset = () => {
+                formData.value = { ...props.defaultSettings };
               };
               __expose({
-                hasChanges,
+                save: handleSave,
+                reset: handleReset,
                 getFormData,
-                reset,
-                save: handleSave
+                hasChanges
               });
               watch(
                 () => props.currentSettings,
@@ -21778,7 +21739,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                   };
                   savedSettings.value = { ...newSettings };
                 },
-                { deep: true }
+                { immediate: true, deep: true }
               );
               return (_ctx, _cache) => {
                 const _component_el_switch = ElSwitch;
@@ -21798,8 +21759,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                       ], -1)),
                       createVNode(_component_el_switch, {
                         modelValue: formData.value.enabled,
-                        "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => formData.value.enabled = $event),
-                        onChange: handleEnabledChange
+                        "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => formData.value.enabled = $event)
                       }, null, 8, ["modelValue"])
                     ]),
                     createBaseVNode("div", null, [
@@ -21810,8 +21770,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                         type: "password",
                         placeholder: "请输入 GitHub Personal Access Token",
                         "show-password": "",
-                        disabled: !formData.value.enabled,
-                        onInput: handleTokenChange
+                        disabled: !formData.value.enabled
                       }, null, 8, ["modelValue", "disabled"]),
                       _cache[5] || (_cache[5] = createBaseVNode("p", { class: "text-xs text-gray-500 mt-1" }, ' 需要创建具有 "gist" 权限的个人访问令牌 ', -1))
                     ]),
@@ -21821,8 +21780,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                         modelValue: formData.value.gistId,
                         "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => formData.value.gistId = $event),
                         placeholder: "请输入现有 Gist 的 ID",
-                        disabled: !formData.value.enabled,
-                        onInput: handleGistIdChange
+                        disabled: !formData.value.enabled
                       }, null, 8, ["modelValue", "disabled"]),
                       _cache[7] || (_cache[7] = createBaseVNode("p", { class: "text-xs text-gray-500 mt-1" }, " 手动创建一个 Gist，然后输入其 ID ", -1))
                     ]),
@@ -21894,7 +21852,9 @@ System.register("./__entry.js", [], (function (exports, module) {
               generalSettings: {},
               defaultGeneralSettings: {},
               currentPresetSettings: {},
+              defaultPresetSettings: {},
               currentSyncSettings: {},
+              defaultSyncSettings: {},
               isMac: { type: Boolean }
             },
             emits: ["update:modelValue", "save", "reset", "generalSave", "generalReset", "presetSave", "presetReset", "syncSave", "syncReset"],
@@ -21912,7 +21872,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               const syncSettingsRef = ref();
               const canSave = computed(() => {
                 if (activeTab.value === "shortcut") {
-                  return shortcutSettingsRef.value?.hasNewKeyPress ?? false;
+                  return shortcutSettingsRef.value?.hasChanges ?? false;
                 } else if (activeTab.value === "general") {
                   return generalSettingsRef.value?.hasChanges ?? false;
                 } else if (activeTab.value === "presets") {
@@ -21924,28 +21884,14 @@ System.register("./__entry.js", [], (function (exports, module) {
               });
               const handleSave = () => {
                 if (activeTab.value === "general") {
-                  const generalData = generalSettingsRef.value?.getFormData();
-                  if (generalData) {
-                    emit2("generalSave", generalData);
-                    generalSettingsRef.value?.save();
-                  }
+                  generalSettingsRef.value?.save();
                 } else if (activeTab.value === "shortcut") {
                   shortcutSettingsRef.value?.save();
                 } else if (activeTab.value === "presets") {
-                  const presetData = presetSettingsRef.value?.getFormData();
-                  if (presetData) {
-                    emit2("presetSave", presetData);
-                    presetSettingsRef.value?.save();
-                  }
+                  presetSettingsRef.value?.save();
                 } else if (activeTab.value === "sync") {
-                  const syncData = syncSettingsRef.value?.getFormData();
-                  if (syncData) {
-                    emit2("syncSave", syncData);
-                    syncSettingsRef.value?.save();
-                  }
+                  syncSettingsRef.value?.save();
                 }
-              };
-              const handleSyncChange = () => {
               };
               const handleReset = () => {
                 if (activeTab.value === "general") {
@@ -21968,14 +21914,14 @@ System.register("./__entry.js", [], (function (exports, module) {
                 const _component_el_dialog = ElDialog;
                 return openBlock(), createBlock(_component_el_dialog, {
                   modelValue: visible.value,
-                  "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => visible.value = $event),
+                  "onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => visible.value = $event),
                   width: "900px",
                   "close-on-click-modal": true,
                   "close-on-press-escape": false,
                   "body-style": { padding: "0" },
                   onClosed: handleClosed
                 }, {
-                  header: withCtx(() => _cache[2] || (_cache[2] = [
+                  header: withCtx(() => _cache[10] || (_cache[10] = [
                     createBaseVNode("span", { class: "text-lg font-semibold" }, "设置", -1)
                   ])),
                   footer: withCtx(() => [
@@ -21985,11 +21931,11 @@ System.register("./__entry.js", [], (function (exports, module) {
                         size: "large",
                         plain: ""
                       }, {
-                        default: withCtx(() => _cache[3] || (_cache[3] = [
+                        default: withCtx(() => _cache[11] || (_cache[11] = [
                           createTextVNode(" 重置为默认 ", -1)
                         ])),
                         _: 1,
-                        __: [3]
+                        __: [11]
                       }),
                       createVNode(_component_el_button, {
                         type: "primary",
@@ -21997,11 +21943,11 @@ System.register("./__entry.js", [], (function (exports, module) {
                         onClick: handleSave,
                         disabled: !canSave.value
                       }, {
-                        default: withCtx(() => _cache[4] || (_cache[4] = [
+                        default: withCtx(() => _cache[12] || (_cache[12] = [
                           createTextVNode(" 保存设置 ", -1)
                         ])),
                         _: 1,
-                        __: [4]
+                        __: [12]
                       }, 8, ["disabled"])
                     ])
                   ]),
@@ -22009,7 +21955,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                     createBaseVNode("div", _hoisted_1, [
                       createVNode(_component_el_tabs, {
                         modelValue: activeTab.value,
-                        "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => activeTab.value = $event),
+                        "onUpdate:modelValue": _cache[8] || (_cache[8] = ($event) => activeTab.value = $event),
                         "tab-position": "left",
                         class: "h-full",
                         stretch: ""
@@ -22026,7 +21972,9 @@ System.register("./__entry.js", [], (function (exports, module) {
                                   "current-settings": _ctx.generalSettings,
                                   "default-settings": _ctx.defaultGeneralSettings,
                                   ref_key: "generalSettingsRef",
-                                  ref: generalSettingsRef
+                                  ref: generalSettingsRef,
+                                  onSave: _cache[0] || (_cache[0] = (settings) => emit2("generalSave", settings)),
+                                  onReset: _cache[1] || (_cache[1] = () => emit2("generalReset"))
                                 }, null, 8, ["current-settings", "default-settings"])
                               ])
                             ]),
@@ -22041,9 +21989,12 @@ System.register("./__entry.js", [], (function (exports, module) {
                               createBaseVNode("div", _hoisted_3, [
                                 createVNode(_sfc_main$4, {
                                   "current-preset-settings": _ctx.currentPresetSettings,
+                                  "default-preset-settings": _ctx.defaultPresetSettings,
                                   ref_key: "presetSettingsRef",
-                                  ref: presetSettingsRef
-                                }, null, 8, ["current-preset-settings"])
+                                  ref: presetSettingsRef,
+                                  onSave: _cache[2] || (_cache[2] = (states) => emit2("presetSave", states)),
+                                  onReset: _cache[3] || (_cache[3] = () => emit2("presetReset"))
+                                }, null, 8, ["current-preset-settings", "default-preset-settings"])
                               ])
                             ]),
                             _: 1
@@ -22062,7 +22013,9 @@ System.register("./__entry.js", [], (function (exports, module) {
                                   visible: visible.value,
                                   "is-active": activeTab.value === "shortcut",
                                   ref_key: "shortcutSettingsRef",
-                                  ref: shortcutSettingsRef
+                                  ref: shortcutSettingsRef,
+                                  onSave: _cache[4] || (_cache[4] = (settings) => emit2("save", settings)),
+                                  onReset: _cache[5] || (_cache[5] = () => emit2("reset"))
                                 }, null, 8, ["current-settings", "default-settings", "is-mac", "visible", "is-active"])
                               ])
                             ]),
@@ -22077,10 +22030,12 @@ System.register("./__entry.js", [], (function (exports, module) {
                               createBaseVNode("div", _hoisted_5, [
                                 createVNode(_sfc_main$2, {
                                   "current-settings": _ctx.currentSyncSettings,
+                                  "default-settings": _ctx.defaultSyncSettings,
                                   ref_key: "syncSettingsRef",
                                   ref: syncSettingsRef,
-                                  onChange: handleSyncChange
-                                }, null, 8, ["current-settings"])
+                                  onSave: _cache[6] || (_cache[6] = (settings) => emit2("syncSave", settings)),
+                                  onReset: _cache[7] || (_cache[7] = () => emit2("syncReset"))
+                                }, null, 8, ["current-settings", "default-settings"])
                               ])
                             ]),
                             _: 1
@@ -22162,7 +22117,9 @@ System.register("./__entry.js", [], (function (exports, module) {
                   "general-settings": dialogData.value.currentGeneralSettings,
                   "default-general-settings": dialogData.value.defaultGeneralSettings,
                   "current-preset-settings": dialogData.value.currentPresetSettings,
+                  "default-preset-settings": dialogData.value.defaultPresetSettings,
                   "current-sync-settings": dialogData.value.currentSyncSettings,
+                  "default-sync-settings": dialogData.value.defaultSyncSettings,
                   "is-mac": dialogData.value.isMac,
                   onSave: handleSettingsSave,
                   onReset: handleSettingsReset,
@@ -22172,7 +22129,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                   onPresetReset: handlePresetReset,
                   onSyncSave: handleSyncSave,
                   onSyncReset: handleSyncReset
-                }, null, 8, ["modelValue", "current-settings", "default-settings", "general-settings", "default-general-settings", "current-preset-settings", "current-sync-settings", "is-mac"])) : createCommentVNode("", true);
+                }, null, 8, ["modelValue", "current-settings", "default-settings", "general-settings", "default-general-settings", "current-preset-settings", "default-preset-settings", "current-sync-settings", "default-sync-settings", "is-mac"])) : createCommentVNode("", true);
               };
             }
           });
@@ -22499,8 +22456,20 @@ System.register("./__entry.js", [], (function (exports, module) {
                     current: this.state.generalSettings,
                     default: defaultGeneralSettings
                   },
-                  presetSettings: this.state.presetSettings,
-                  syncSettings: this.state.syncSettings,
+                  presetSettings: {
+                    current: this.state.presetSettings,
+                    default: (() => {
+                      const defaultStates = {};
+                      Object.keys(PRESET_RULES).forEach((key) => {
+                        defaultStates[key] = true;
+                      });
+                      return defaultStates;
+                    })()
+                  },
+                  syncSettings: {
+                    current: this.state.syncSettings,
+                    default: DEFAULT_SETTINGS.sync
+                  },
                   isMac,
                   callbacks
                 });

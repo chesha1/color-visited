@@ -11,7 +11,9 @@ const dialogData = ref<{
   currentGeneralSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
   currentPresetSettings: Record<string, boolean>
+  defaultPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
+  defaultSyncSettings: SyncSettings
   isMac: boolean
 } | null>(null)
 
@@ -93,7 +95,9 @@ onUnmounted(() => {
     :general-settings="dialogData.currentGeneralSettings"
     :default-general-settings="dialogData.defaultGeneralSettings"
     :current-preset-settings="dialogData.currentPresetSettings"
+    :default-preset-settings="dialogData.defaultPresetSettings"
     :current-sync-settings="dialogData.currentSyncSettings"
+    :default-sync-settings="dialogData.defaultSyncSettings"
     :is-mac="dialogData.isMac"
     @save="handleSettingsSave"
     @reset="handleSettingsReset"

@@ -49,6 +49,8 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const formData = ref<BatchKeySettings>({ ...props.currentSettings })
+// 保存的状态 - 用于比较是否有变更
+const savedSettings = ref<BatchKeySettings>({ ...props.currentSettings })
 const newSettings = ref<BatchKeySettings>({ ...props.currentSettings })
 const hasNewKeyPress = ref(false)
 const isResetMode = ref(false) // 标识是否处于重置模式
@@ -144,17 +146,18 @@ const handleKeyDown = (e: KeyboardEvent) => {
 const handleSave = () => {
   if (hasNewKeyPress.value) {
     if (isResetMode.value) {
-      // 如果是重置模式，发送重置事件
+      // 如果是重置模式，直接触发父组件的重置事件
       emit('reset')
       showNotification('批量染色快捷键已重置为默认！')
     } else {
-      // 否则正常保存
+      // 否则正常保存，直接触发父组件的保存事件
       emit('save', newSettings.value)
       showNotification('批量染色快捷键设置已保存！')
     }
     
-    // 保存后重置状态
+    // 保存后更新状态
     formData.value = { ...newSettings.value }
+    savedSettings.value = { ...newSettings.value }
     hasNewKeyPress.value = false
     isResetMode.value = false
   }
@@ -167,9 +170,10 @@ const handleReset = () => {
   isResetMode.value = true // 标记为重置模式
 }
 
-// 监听 props.currentSettings 变化，同步更新 formData
+// 监听 props.currentSettings 变化，同步更新 formData 和 savedSettings
 watch(() => props.currentSettings, (currentSettings) => {
   formData.value = { ...currentSettings }
+  savedSettings.value = { ...currentSettings }
   // 当外部设置变化时，也重置新设置状态
   if (!hasNewKeyPress.value) {
     newSettings.value = { ...currentSettings }
@@ -200,11 +204,19 @@ onUnmounted(() => {
   document.removeEventListener('keydown', handleKeyDown, true)
 })
 
+// 检测是否有改动
+const hasChanges = computed(() => {
+  if (hasNewKeyPress.value) {
+    return JSON.stringify(newSettings.value) !== JSON.stringify(savedSettings.value)
+  }
+  return false
+})
+
 // 暴露给父组件调用的方法和属性
 defineExpose({
   save: handleSave,
   reset: handleReset,
-  hasNewKeyPress,
-  getFormData: () => hasNewKeyPress.value ? ({ ...newSettings.value }) : ({ ...formData.value })
+  getFormData: () => hasNewKeyPress.value ? ({ ...newSettings.value }) : ({ ...formData.value }),
+  hasChanges
 })
 </script>

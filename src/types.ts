@@ -51,7 +51,9 @@ export interface SettingsDialogPayload {
   currentGeneralSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
   currentPresetSettings: Record<string, boolean>
+  defaultPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
+  defaultSyncSettings: SyncSettings
   isMac: boolean
 }
 

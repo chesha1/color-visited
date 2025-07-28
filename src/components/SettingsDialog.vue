@@ -24,6 +24,8 @@
               :current-settings="generalSettings"
               :default-settings="defaultGeneralSettings"
               ref="generalSettingsRef"
+              @save="(settings) => emit('generalSave', settings)"
+              @reset="() => emit('generalReset')"
             />
           </div>
         </el-tab-pane>
@@ -31,7 +33,10 @@
           <div class="p-6 h-full overflow-y-auto">
             <PresetSettingsComponent 
               :current-preset-settings="currentPresetSettings"
+              :default-preset-settings="defaultPresetSettings"
               ref="presetSettingsRef"
+              @save="(states) => emit('presetSave', states)"
+              @reset="() => emit('presetReset')"
             />
           </div>
         </el-tab-pane>
@@ -44,6 +49,8 @@
               :visible="visible"
               :is-active="activeTab === 'shortcut'"
               ref="shortcutSettingsRef"
+              @save="(settings) => emit('save', settings)"
+              @reset="() => emit('reset')"
             />
           </div>
         </el-tab-pane>
@@ -51,8 +58,10 @@
           <div class="p-6 h-full overflow-y-auto">
             <SyncSettingsComponent
               :current-settings="currentSyncSettings"
+              :default-settings="defaultSyncSettings"
               ref="syncSettingsRef"
-              @change="handleSyncChange"
+              @save="(settings) => emit('syncSave', settings)"
+              @reset="() => emit('syncReset')"
             />
           </div>
         </el-tab-pane>
@@ -92,7 +101,9 @@ interface Props {
   generalSettings: GeneralSettings
   defaultGeneralSettings: GeneralSettings
   currentPresetSettings: Record<string, boolean>
+  defaultPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
+  defaultSyncSettings: SyncSettings
   isMac: boolean
 }
 
@@ -125,7 +136,7 @@ const syncSettingsRef = ref()
 // 计算是否可以保存
 const canSave = computed(() => {
   if (activeTab.value === 'shortcut') {
-    return shortcutSettingsRef.value?.hasNewKeyPress ?? false
+    return shortcutSettingsRef.value?.hasChanges ?? false
   } else if (activeTab.value === 'general') {
     return generalSettingsRef.value?.hasChanges ?? false
   } else if (activeTab.value === 'presets') {
@@ -138,37 +149,18 @@ const canSave = computed(() => {
 
 const handleSave = () => {
   if (activeTab.value === 'general') {
-    // 获取常规设置的当前数据并触发保存事件
-    const generalData = generalSettingsRef.value?.getFormData()
-    if (generalData) {
-      emit('generalSave', generalData)
-      // 调用子组件的 save 方法更新内部状态
-      generalSettingsRef.value?.save()
-    }
+    // 直接调用子组件的 save 方法，该方法会emit事件并重置状态
+    generalSettingsRef.value?.save()
   } else if (activeTab.value === 'shortcut') {
     // 直接调用子组件的 save 方法，该方法会emit事件并重置状态
     shortcutSettingsRef.value?.save()
   } else if (activeTab.value === 'presets') {
-    // 获取预设设置的当前数据并触发保存事件
-    const presetData = presetSettingsRef.value?.getFormData()
-    if (presetData) {
-      emit('presetSave', presetData)
-      // 调用子组件的 save 方法更新内部状态
-      presetSettingsRef.value?.save()
-    }
+    // 直接调用子组件的 save 方法，该方法会emit事件并重置状态
+    presetSettingsRef.value?.save()
   } else if (activeTab.value === 'sync') {
-    // 获取同步设置的当前数据并触发保存事件
-    const syncData = syncSettingsRef.value?.getFormData()
-    if (syncData) {
-      emit('syncSave', syncData)
-      // 调用子组件的 save 方法更新内部状态
-      syncSettingsRef.value?.save()
-    }
+    // 直接调用子组件的 save 方法，该方法会emit事件并重置状态
+    syncSettingsRef.value?.save()
   }
-}
-
-const handleSyncChange = () => {
-  // 同步设置变更时的处理逻辑（可以在这里添加额外的逻辑）
 }
 
 const handleReset = () => {

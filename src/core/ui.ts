@@ -71,8 +71,14 @@ interface SettingsDialogConfig {
     current: GeneralSettings;
     default: GeneralSettings;
   };
-  presetSettings: Record<string, boolean>;
-  syncSettings: SyncSettings;
+  presetSettings: {
+    current: Record<string, boolean>;
+    default: Record<string, boolean>;
+  };
+  syncSettings: {
+    current: SyncSettings;
+    default: SyncSettings;
+  };
   // 系统信息
   isMac: boolean;
   // 回调函数
@@ -98,8 +104,10 @@ export function showSettingsDialog(config: SettingsDialogConfig): () => void {
       defaultBatchKeySettings: config.batchKeySettings.default,
       currentGeneralSettings: config.generalSettings.current,
       defaultGeneralSettings: config.generalSettings.default,
-      currentPresetSettings: config.presetSettings,
-      currentSyncSettings: config.syncSettings,
+      currentPresetSettings: config.presetSettings.current,
+      defaultPresetSettings: config.presetSettings.default,
+      currentSyncSettings: config.syncSettings.current,
+      defaultSyncSettings: config.syncSettings.default,
       isMac: config.isMac
     }
   });
