@@ -65,19 +65,15 @@ interface SettingsDialogConfig {
   // 设置数据
   batchKeySettings: {
     current: BatchKeySettings;
-    default: BatchKeySettings;
   };
   generalSettings: {
     current: GeneralSettings;
-    default: GeneralSettings;
   };
   presetSettings: {
     current: Record<string, boolean>;
-    default: Record<string, boolean>;
   };
   syncSettings: {
     current: SyncSettings;
-    default: SyncSettings;
   };
   // 系统信息
   isMac: boolean;
@@ -101,13 +97,9 @@ export function showSettingsDialog(config: SettingsDialogConfig): () => void {
     type: 'settings',
     payload: {
       currentBatchKeySettings: config.batchKeySettings.current,
-      defaultBatchKeySettings: config.batchKeySettings.default,
       currentGeneralSettings: config.generalSettings.current,
-      defaultGeneralSettings: config.generalSettings.default,
       currentPresetSettings: config.presetSettings.current,
-      defaultPresetSettings: config.presetSettings.default,
       currentSyncSettings: config.syncSettings.current,
-      defaultSyncSettings: config.syncSettings.default,
       isMac: config.isMac
     }
   });

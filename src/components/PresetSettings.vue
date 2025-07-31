@@ -132,7 +132,6 @@ import type { PresetRules } from '@/types'
 
 interface Props {
   currentPresetSettings: Record<string, boolean>
-  defaultPresetSettings: Record<string, boolean>
 }
 
 interface Emits {
@@ -179,7 +178,12 @@ const handleSave = () => {
 
 // 重置为默认值，但仅更新界面，真正保存需用户点击「保存设置」
 const handleReset = () => {
-  presetSettings.value = { ...props.defaultPresetSettings }
+  // 生成默认预设状态（全部启用）
+  const defaultStates: Record<string, boolean> = {};
+  Object.keys(PRESET_RULES).forEach(key => {
+    defaultStates[key] = true;
+  });
+  presetSettings.value = { ...defaultStates }
 }
 
 // 切换展开状态

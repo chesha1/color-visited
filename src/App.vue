@@ -7,13 +7,9 @@ import type { BatchKeySettings, GeneralSettings, SyncSettings, SettingsDialogPay
 const dialogData = ref<{
   visible: boolean
   currentBatchKeySettings: BatchKeySettings
-  defaultBatchKeySettings: BatchKeySettings
   currentGeneralSettings: GeneralSettings
-  defaultGeneralSettings: GeneralSettings
   currentPresetSettings: Record<string, boolean>
-  defaultPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
-  defaultSyncSettings: SyncSettings
   isMac: boolean
 } | null>(null)
 
@@ -91,13 +87,9 @@ onUnmounted(() => {
     v-if="dialogData"
     v-model="dialogData.visible"
     :current-settings="dialogData.currentBatchKeySettings"
-    :default-settings="dialogData.defaultBatchKeySettings"
     :general-settings="dialogData.currentGeneralSettings"
-    :default-general-settings="dialogData.defaultGeneralSettings"
     :current-preset-settings="dialogData.currentPresetSettings"
-    :default-preset-settings="dialogData.defaultPresetSettings"
     :current-sync-settings="dialogData.currentSyncSettings"
-    :default-sync-settings="dialogData.defaultSyncSettings"
     :is-mac="dialogData.isMac"
     @save="handleSettingsSave"
     @reset="handleSettingsReset"

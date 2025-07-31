@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.8.7
+// @version      2.8.8
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -94,7 +94,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-Cq9QtdxQ.js"(exports, module$1) {
+        "main-C-AKCVcC.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20473,151 +20473,6 @@ System.register("./__entry.js", [], (function (exports, module) {
           message.closeAll = closeAll;
           message._context = null;
           const ElMessage = withInstallFunction(message, "$message");
-          const _hoisted_1$4 = { class: "space-y-6" };
-          const _hoisted_2$3 = { class: "flex items-center gap-3" };
-          const _hoisted_3$3 = { class: "space-y-2" };
-          const _hoisted_4$3 = { class: "flex items-center gap-2" };
-          const _hoisted_5$3 = { class: "space-y-2" };
-          const _sfc_main$5 = /* @__PURE__ */ defineComponent({
-            __name: "GeneralSettings",
-            props: {
-              currentSettings: {},
-              defaultSettings: {}
-            },
-            emits: ["save", "reset"],
-            setup(__props, { expose: __expose, emit: __emit }) {
-              const props = __props;
-              const emit2 = __emit;
-              const formData = ref({ ...props.currentSettings });
-              const savedSettings = ref({ ...props.currentSettings });
-              const hasChanges = computed(() => {
-                return JSON.stringify(formData.value) !== JSON.stringify(savedSettings.value);
-              });
-              const colorPresets = [
-                "rgba(0,0,0,0)",
-                // 透明色，适配暗色模式
-                "#f1f5f9",
-                // slate-100
-                "#e2e8f0",
-                // slate-200
-                "#cbd5e1",
-                // slate-300
-                "#94a3b8",
-                // slate-400
-                "#64748b",
-                // slate-500
-                "#475569",
-                // slate-600
-                "#334155",
-                // slate-700
-                "#1e293b",
-                // slate-800
-                "#0f172a"
-                // slate-900
-              ];
-              const expirationDays = computed({
-                get: () => Math.round(formData.value.expirationTime / (1e3 * 60 * 60 * 24)),
-                set: (days) => {
-                  formData.value.expirationTime = days * 1e3 * 60 * 60 * 24;
-                }
-              });
-              const handleSave = () => {
-                emit2("save", { ...formData.value });
-                savedSettings.value = { ...formData.value };
-              };
-              const handleReset = () => {
-                formData.value = { ...props.defaultSettings };
-              };
-              watch(() => props.currentSettings, (newSettings) => {
-                formData.value = { ...newSettings };
-                savedSettings.value = { ...newSettings };
-              }, { immediate: true, deep: true });
-              __expose({
-                save: handleSave,
-                reset: handleReset,
-                getFormData: () => ({ ...formData.value }),
-                hasChanges
-              });
-              return (_ctx, _cache) => {
-                const _component_el_color_picker = ElColorPicker;
-                const _component_el_input = ElInput;
-                const _component_el_form_item = ElFormItem;
-                const _component_el_input_number = ElInputNumber;
-                const _component_el_switch = ElSwitch;
-                const _component_el_form = ElForm;
-                return openBlock(), createElementBlock("div", _hoisted_1$4, [
-                  _cache[7] || (_cache[7] = createBaseVNode("div", { class: "border-b pb-4" }, [
-                    createBaseVNode("h3", { class: "text-lg font-semibold text-gray-900 mb-2" }, "常规设置"),
-                    createBaseVNode("p", { class: "text-sm text-gray-600" }, "自定义链接颜色和行为设置")
-                  ], -1)),
-                  createVNode(_component_el_form, {
-                    model: formData.value,
-                    "label-width": "120px",
-                    class: "space-y-6"
-                  }, {
-                    default: withCtx(() => [
-                      createVNode(_component_el_form_item, { label: "链接颜色" }, {
-                        default: withCtx(() => [
-                          createBaseVNode("div", _hoisted_2$3, [
-                            createVNode(_component_el_color_picker, {
-                              modelValue: formData.value.color,
-                              "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => formData.value.color = $event),
-                              "show-alpha": "",
-                              predefine: colorPresets,
-                              size: "large"
-                            }, null, 8, ["modelValue"]),
-                            createVNode(_component_el_input, {
-                              modelValue: formData.value.color,
-                              "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => formData.value.color = $event),
-                              class: "flex-1",
-                              placeholder: "请输入颜色值",
-                              clearable: ""
-                            }, null, 8, ["modelValue"])
-                          ])
-                        ]),
-                        _: 1
-                      }),
-                      createVNode(_component_el_form_item, { label: "过期时间" }, {
-                        default: withCtx(() => [
-                          createBaseVNode("div", _hoisted_3$3, [
-                            createBaseVNode("div", _hoisted_4$3, [
-                              createVNode(_component_el_input_number, {
-                                modelValue: expirationDays.value,
-                                "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => expirationDays.value = $event),
-                                min: 1,
-                                max: 3650,
-                                "controls-position": "right",
-                                size: "large",
-                                class: "w-32"
-                              }, null, 8, ["modelValue"]),
-                              _cache[4] || (_cache[4] = createBaseVNode("span", { class: "text-sm text-gray-600" }, "天", -1))
-                            ]),
-                            _cache[5] || (_cache[5] = createBaseVNode("div", { class: "text-xs text-gray-500" }, "设置已访问链接的记录保留时间", -1))
-                          ])
-                        ]),
-                        _: 1
-                      }),
-                      createVNode(_component_el_form_item, { label: "调试模式" }, {
-                        default: withCtx(() => [
-                          createBaseVNode("div", _hoisted_5$3, [
-                            createVNode(_component_el_switch, {
-                              modelValue: formData.value.debug,
-                              "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => formData.value.debug = $event),
-                              size: "large",
-                              "inline-prompt": ""
-                            }, null, 8, ["modelValue"]),
-                            _cache[6] || (_cache[6] = createBaseVNode("div", { class: "text-xs text-gray-500" }, "开启后将在控制台显示详细调试信息", -1))
-                          ])
-                        ]),
-                        _: 1
-                      })
-                    ]),
-                    _: 1
-                  }, 8, ["model"])
-                ]);
-              };
-            }
-          });
           const isMac = (() => {
             if ("userAgentData" in navigator && navigator.userAgentData) {
               return navigator.userAgentData.platform === "macOS";
@@ -21010,6 +20865,150 @@ System.register("./__entry.js", [], (function (exports, module) {
             // TODO: 优化一下多次获取 patterns 的逻辑
             // TODO: 让 o1 优化一下
           };
+          const _hoisted_1$4 = { class: "space-y-6" };
+          const _hoisted_2$3 = { class: "flex items-center gap-3" };
+          const _hoisted_3$3 = { class: "space-y-2" };
+          const _hoisted_4$3 = { class: "flex items-center gap-2" };
+          const _hoisted_5$3 = { class: "space-y-2" };
+          const _sfc_main$5 = /* @__PURE__ */ defineComponent({
+            __name: "GeneralSettings",
+            props: {
+              currentSettings: {}
+            },
+            emits: ["save", "reset"],
+            setup(__props, { expose: __expose, emit: __emit }) {
+              const props = __props;
+              const emit2 = __emit;
+              const formData = ref({ ...props.currentSettings });
+              const savedSettings = ref({ ...props.currentSettings });
+              const hasChanges = computed(() => {
+                return JSON.stringify(formData.value) !== JSON.stringify(savedSettings.value);
+              });
+              const colorPresets = [
+                "rgba(0,0,0,0)",
+                // 透明色，适配暗色模式
+                "#f1f5f9",
+                // slate-100
+                "#e2e8f0",
+                // slate-200
+                "#cbd5e1",
+                // slate-300
+                "#94a3b8",
+                // slate-400
+                "#64748b",
+                // slate-500
+                "#475569",
+                // slate-600
+                "#334155",
+                // slate-700
+                "#1e293b",
+                // slate-800
+                "#0f172a"
+                // slate-900
+              ];
+              const expirationDays = computed({
+                get: () => Math.round(formData.value.expirationTime / (1e3 * 60 * 60 * 24)),
+                set: (days) => {
+                  formData.value.expirationTime = days * 1e3 * 60 * 60 * 24;
+                }
+              });
+              const handleSave = () => {
+                emit2("save", { ...formData.value });
+                savedSettings.value = { ...formData.value };
+              };
+              const handleReset = () => {
+                formData.value = { ...DEFAULT_SETTINGS.general };
+              };
+              watch(() => props.currentSettings, (newSettings) => {
+                formData.value = { ...newSettings };
+                savedSettings.value = { ...newSettings };
+              }, { immediate: true, deep: true });
+              __expose({
+                save: handleSave,
+                reset: handleReset,
+                getFormData: () => ({ ...formData.value }),
+                hasChanges
+              });
+              return (_ctx, _cache) => {
+                const _component_el_color_picker = ElColorPicker;
+                const _component_el_input = ElInput;
+                const _component_el_form_item = ElFormItem;
+                const _component_el_input_number = ElInputNumber;
+                const _component_el_switch = ElSwitch;
+                const _component_el_form = ElForm;
+                return openBlock(), createElementBlock("div", _hoisted_1$4, [
+                  _cache[7] || (_cache[7] = createBaseVNode("div", { class: "border-b pb-4" }, [
+                    createBaseVNode("h3", { class: "text-lg font-semibold text-gray-900 mb-2" }, "常规设置"),
+                    createBaseVNode("p", { class: "text-sm text-gray-600" }, "自定义链接颜色和行为设置")
+                  ], -1)),
+                  createVNode(_component_el_form, {
+                    model: formData.value,
+                    "label-width": "120px",
+                    class: "space-y-6"
+                  }, {
+                    default: withCtx(() => [
+                      createVNode(_component_el_form_item, { label: "链接颜色" }, {
+                        default: withCtx(() => [
+                          createBaseVNode("div", _hoisted_2$3, [
+                            createVNode(_component_el_color_picker, {
+                              modelValue: formData.value.color,
+                              "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => formData.value.color = $event),
+                              "show-alpha": "",
+                              predefine: colorPresets,
+                              size: "large"
+                            }, null, 8, ["modelValue"]),
+                            createVNode(_component_el_input, {
+                              modelValue: formData.value.color,
+                              "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => formData.value.color = $event),
+                              class: "flex-1",
+                              placeholder: "请输入颜色值",
+                              clearable: ""
+                            }, null, 8, ["modelValue"])
+                          ])
+                        ]),
+                        _: 1
+                      }),
+                      createVNode(_component_el_form_item, { label: "过期时间" }, {
+                        default: withCtx(() => [
+                          createBaseVNode("div", _hoisted_3$3, [
+                            createBaseVNode("div", _hoisted_4$3, [
+                              createVNode(_component_el_input_number, {
+                                modelValue: expirationDays.value,
+                                "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => expirationDays.value = $event),
+                                min: 1,
+                                max: 3650,
+                                "controls-position": "right",
+                                size: "large",
+                                class: "w-32"
+                              }, null, 8, ["modelValue"]),
+                              _cache[4] || (_cache[4] = createBaseVNode("span", { class: "text-sm text-gray-600" }, "天", -1))
+                            ]),
+                            _cache[5] || (_cache[5] = createBaseVNode("div", { class: "text-xs text-gray-500" }, "设置已访问链接的记录保留时间", -1))
+                          ])
+                        ]),
+                        _: 1
+                      }),
+                      createVNode(_component_el_form_item, { label: "调试模式" }, {
+                        default: withCtx(() => [
+                          createBaseVNode("div", _hoisted_5$3, [
+                            createVNode(_component_el_switch, {
+                              modelValue: formData.value.debug,
+                              "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => formData.value.debug = $event),
+                              size: "large",
+                              "inline-prompt": ""
+                            }, null, 8, ["modelValue"]),
+                            _cache[6] || (_cache[6] = createBaseVNode("div", { class: "text-xs text-gray-500" }, "开启后将在控制台显示详细调试信息", -1))
+                          ])
+                        ]),
+                        _: 1
+                      })
+                    ]),
+                    _: 1
+                  }, 8, ["model"])
+                ]);
+              };
+            }
+          });
           const _hoisted_1$3 = { class: "space-y-4 h-full overflow-y-auto" };
           const _hoisted_2$2 = { class: "border-b pb-3" };
           const _hoisted_3$2 = { class: "flex items-start justify-between" };
@@ -21055,8 +21054,7 @@ System.register("./__entry.js", [], (function (exports, module) {
           const _sfc_main$4 = /* @__PURE__ */ defineComponent({
             __name: "PresetSettings",
             props: {
-              currentPresetSettings: {},
-              defaultPresetSettings: {}
+              currentPresetSettings: {}
             },
             emits: ["save", "reset"],
             setup(__props, { expose: __expose, emit: __emit }) {
@@ -21083,7 +21081,11 @@ System.register("./__entry.js", [], (function (exports, module) {
                 savedPresetSettings.value = { ...presetSettings.value };
               };
               const handleReset = () => {
-                presetSettings.value = { ...props.defaultPresetSettings };
+                const defaultStates = {};
+                Object.keys(PRESET_RULES).forEach((key) => {
+                  defaultStates[key] = true;
+                });
+                presetSettings.value = { ...defaultStates };
               };
               const toggleExpanded = (siteName) => {
                 if (expandedSites.value.has(siteName)) {
@@ -21245,7 +21247,6 @@ System.register("./__entry.js", [], (function (exports, module) {
             __name: "ShortcutSettings",
             props: {
               currentSettings: {},
-              defaultSettings: {},
               isMac: { type: Boolean },
               visible: { type: Boolean },
               isActive: { type: Boolean }
@@ -21340,7 +21341,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 }
               };
               const handleReset = () => {
-                newSettings.value = { ...props.defaultSettings };
+                newSettings.value = { ...DEFAULT_SETTINGS.batchKey };
                 hasNewKeyPress.value = true;
                 isResetMode.value = true;
               };
@@ -21651,13 +21652,9 @@ System.register("./__entry.js", [], (function (exports, module) {
               type: "settings",
               payload: {
                 currentBatchKeySettings: config.batchKeySettings.current,
-                defaultBatchKeySettings: config.batchKeySettings.default,
                 currentGeneralSettings: config.generalSettings.current,
-                defaultGeneralSettings: config.generalSettings.default,
                 currentPresetSettings: config.presetSettings.current,
-                defaultPresetSettings: config.presetSettings.default,
                 currentSyncSettings: config.syncSettings.current,
-                defaultSyncSettings: config.syncSettings.default,
                 isMac: config.isMac
               }
             });
@@ -21703,8 +21700,7 @@ System.register("./__entry.js", [], (function (exports, module) {
           const _sfc_main$2 = /* @__PURE__ */ defineComponent({
             __name: "SyncSettings",
             props: {
-              currentSettings: {},
-              defaultSettings: {}
+              currentSettings: {}
             },
             emits: ["save", "reset"],
             setup(__props, { expose: __expose, emit: __emit }) {
@@ -21755,7 +21751,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 savedSettings.value = { ...formData.value };
               };
               const handleReset = () => {
-                formData.value = { ...props.defaultSettings };
+                formData.value = { ...DEFAULT_SETTINGS.sync };
               };
               __expose({
                 save: handleSave,
@@ -21883,13 +21879,9 @@ System.register("./__entry.js", [], (function (exports, module) {
             props: {
               modelValue: { type: Boolean },
               currentSettings: {},
-              defaultSettings: {},
               generalSettings: {},
-              defaultGeneralSettings: {},
               currentPresetSettings: {},
-              defaultPresetSettings: {},
               currentSyncSettings: {},
-              defaultSyncSettings: {},
               isMac: { type: Boolean }
             },
             emits: ["update:modelValue", "save", "reset", "generalSave", "generalReset", "presetSave", "presetReset", "syncSave", "syncReset"],
@@ -22005,12 +21997,11 @@ System.register("./__entry.js", [], (function (exports, module) {
                               createBaseVNode("div", _hoisted_2, [
                                 createVNode(_sfc_main$5, {
                                   "current-settings": _ctx.generalSettings,
-                                  "default-settings": _ctx.defaultGeneralSettings,
                                   ref_key: "generalSettingsRef",
                                   ref: generalSettingsRef,
                                   onSave: _cache[0] || (_cache[0] = (settings) => emit2("generalSave", settings)),
                                   onReset: _cache[1] || (_cache[1] = () => emit2("generalReset"))
-                                }, null, 8, ["current-settings", "default-settings"])
+                                }, null, 8, ["current-settings"])
                               ])
                             ]),
                             _: 1
@@ -22024,12 +22015,11 @@ System.register("./__entry.js", [], (function (exports, module) {
                               createBaseVNode("div", _hoisted_3, [
                                 createVNode(_sfc_main$4, {
                                   "current-preset-settings": _ctx.currentPresetSettings,
-                                  "default-preset-settings": _ctx.defaultPresetSettings,
                                   ref_key: "presetSettingsRef",
                                   ref: presetSettingsRef,
                                   onSave: _cache[2] || (_cache[2] = (states) => emit2("presetSave", states)),
                                   onReset: _cache[3] || (_cache[3] = () => emit2("presetReset"))
-                                }, null, 8, ["current-preset-settings", "default-preset-settings"])
+                                }, null, 8, ["current-preset-settings"])
                               ])
                             ]),
                             _: 1
@@ -22043,7 +22033,6 @@ System.register("./__entry.js", [], (function (exports, module) {
                               createBaseVNode("div", _hoisted_4, [
                                 createVNode(_sfc_main$3, {
                                   "current-settings": _ctx.currentSettings,
-                                  "default-settings": _ctx.defaultSettings,
                                   "is-mac": _ctx.isMac,
                                   visible: visible.value,
                                   "is-active": activeTab.value === "shortcut",
@@ -22051,7 +22040,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                                   ref: shortcutSettingsRef,
                                   onSave: _cache[4] || (_cache[4] = (settings) => emit2("save", settings)),
                                   onReset: _cache[5] || (_cache[5] = () => emit2("reset"))
-                                }, null, 8, ["current-settings", "default-settings", "is-mac", "visible", "is-active"])
+                                }, null, 8, ["current-settings", "is-mac", "visible", "is-active"])
                               ])
                             ]),
                             _: 1
@@ -22065,12 +22054,11 @@ System.register("./__entry.js", [], (function (exports, module) {
                               createBaseVNode("div", _hoisted_5, [
                                 createVNode(_sfc_main$2, {
                                   "current-settings": _ctx.currentSyncSettings,
-                                  "default-settings": _ctx.defaultSyncSettings,
                                   ref_key: "syncSettingsRef",
                                   ref: syncSettingsRef,
                                   onSave: _cache[6] || (_cache[6] = (settings) => emit2("syncSave", settings)),
                                   onReset: _cache[7] || (_cache[7] = () => emit2("syncReset"))
-                                }, null, 8, ["current-settings", "default-settings"])
+                                }, null, 8, ["current-settings"])
                               ])
                             ]),
                             _: 1
@@ -22148,13 +22136,9 @@ System.register("./__entry.js", [], (function (exports, module) {
                   modelValue: dialogData.value.visible,
                   "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => dialogData.value.visible = $event),
                   "current-settings": dialogData.value.currentBatchKeySettings,
-                  "default-settings": dialogData.value.defaultBatchKeySettings,
                   "general-settings": dialogData.value.currentGeneralSettings,
-                  "default-general-settings": dialogData.value.defaultGeneralSettings,
                   "current-preset-settings": dialogData.value.currentPresetSettings,
-                  "default-preset-settings": dialogData.value.defaultPresetSettings,
                   "current-sync-settings": dialogData.value.currentSyncSettings,
-                  "default-sync-settings": dialogData.value.defaultSyncSettings,
                   "is-mac": dialogData.value.isMac,
                   onSave: handleSettingsSave,
                   onReset: handleSettingsReset,
@@ -22164,7 +22148,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                   onPresetReset: handlePresetReset,
                   onSyncSave: handleSyncSave,
                   onSyncReset: handleSyncReset
-                }, null, 8, ["modelValue", "current-settings", "default-settings", "general-settings", "default-general-settings", "current-preset-settings", "default-preset-settings", "current-sync-settings", "default-sync-settings", "is-mac"])) : createCommentVNode("", true);
+                }, null, 8, ["modelValue", "current-settings", "general-settings", "current-preset-settings", "current-sync-settings", "is-mac"])) : createCommentVNode("", true);
               };
             }
           });
@@ -22443,31 +22427,19 @@ System.register("./__entry.js", [], (function (exports, module) {
             // 注册油猴脚本右键菜单项
             registerMenuCommand() {
               const callbacks = this.createSettingsCallbacks();
-              const defaultGeneralSettings = DEFAULT_SETTINGS.general;
-              const defaultBatchKey = DEFAULT_SETTINGS.batchKey;
               _GM_registerMenuCommand("设置", () => {
                 showSettingsDialog({
                   batchKeySettings: {
-                    current: this.state.batchKeySettings,
-                    default: defaultBatchKey
+                    current: this.state.batchKeySettings
                   },
                   generalSettings: {
-                    current: this.state.generalSettings,
-                    default: defaultGeneralSettings
+                    current: this.state.generalSettings
                   },
                   presetSettings: {
-                    current: this.state.presetSettings,
-                    default: (() => {
-                      const defaultStates = {};
-                      Object.keys(PRESET_RULES).forEach((key) => {
-                        defaultStates[key] = true;
-                      });
-                      return defaultStates;
-                    })()
+                    current: this.state.presetSettings
                   },
                   syncSettings: {
-                    current: this.state.syncSettings,
-                    default: DEFAULT_SETTINGS.sync
+                    current: this.state.syncSettings
                   },
                   isMac,
                   callbacks

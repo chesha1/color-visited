@@ -88,33 +88,20 @@ class MenuManager {
   // 注册油猴脚本右键菜单项
   registerMenuCommand(): void {
     const callbacks = this.createSettingsCallbacks();
-    const defaultGeneralSettings = DEFAULT_SETTINGS.general;
-    const defaultBatchKey = DEFAULT_SETTINGS.batchKey;
 
     GM_registerMenuCommand('设置', () => {
       showSettingsDialog({
         batchKeySettings: {
-          current: this.state.batchKeySettings,
-          default: defaultBatchKey
+          current: this.state.batchKeySettings
         },
         generalSettings: {
-          current: this.state.generalSettings,
-          default: defaultGeneralSettings
+          current: this.state.generalSettings
         },
         presetSettings: {
-          current: this.state.presetSettings,
-          default: (() => {
-            // 生成默认预设状态（全部启用）
-            const defaultStates: Record<string, boolean> = {};
-            Object.keys(PRESET_RULES).forEach(key => {
-              defaultStates[key] = true;
-            });
-            return defaultStates;
-          })()
+          current: this.state.presetSettings
         },
         syncSettings: {
-          current: this.state.syncSettings,
-          default: DEFAULT_SETTINGS.sync
+          current: this.state.syncSettings
         },
         isMac,
         callbacks

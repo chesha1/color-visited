@@ -56,11 +56,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { DEFAULT_SETTINGS } from '@/core/config'
 import type { GeneralSettings } from '@/types'
 
 interface Props {
   currentSettings: GeneralSettings
-  defaultSettings: GeneralSettings
 }
 
 interface Emits {
@@ -109,7 +109,7 @@ const handleSave = () => {
 
 // 重置为默认值，但仅更新界面，真正保存需用户点击「保存设置」
 const handleReset = () => {
-  formData.value = { ...props.defaultSettings }
+  formData.value = { ...DEFAULT_SETTINGS.general }
 }
 
 // 监听 props.currentSettings 变化，同步更新 formData 和 savedSettings

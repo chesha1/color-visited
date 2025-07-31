@@ -29,11 +29,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
+import { DEFAULT_SETTINGS } from '@/core/config'
 import type { BatchKeySettings } from '@/types'
 
 interface Props {
   currentSettings: BatchKeySettings
-  defaultSettings: BatchKeySettings
   isMac: boolean
   visible: boolean
   isActive: boolean
@@ -162,7 +162,7 @@ const handleSave = () => {
 
 const handleReset = () => {
   // 仅重置界面显示为默认值，不立即生效
-  newSettings.value = { ...props.defaultSettings }
+  newSettings.value = { ...DEFAULT_SETTINGS.batchKey }
   hasNewKeyPress.value = true // 标记为有新的按键设置，需要保存
   isResetMode.value = true // 标记为重置模式
 }

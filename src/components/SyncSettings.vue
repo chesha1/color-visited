@@ -95,13 +95,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { DEFAULT_SETTINGS } from '@/core/config'
 import type { SyncSettings } from '@/types'
 import { validateGitHubToken } from '@/core/sync'
 import { showNotification } from '@/core/ui'
 
 interface Props {
   currentSettings: SyncSettings
-  defaultSettings: SyncSettings
 }
 
 interface Emits {
@@ -181,7 +181,7 @@ const handleSave = () => {
 
 // 重置表单
 const handleReset = () => {
-  formData.value = { ...props.defaultSettings }
+  formData.value = { ...DEFAULT_SETTINGS.sync }
 }
 
 // 暴露方法给父组件

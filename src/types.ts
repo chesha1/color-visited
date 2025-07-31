@@ -47,13 +47,9 @@ export type PresetRules = Record<string, PresetRule>
 
 export interface SettingsDialogPayload {
   currentBatchKeySettings: BatchKeySettings
-  defaultBatchKeySettings: BatchKeySettings
   currentGeneralSettings: GeneralSettings
-  defaultGeneralSettings: GeneralSettings
   currentPresetSettings: Record<string, boolean>
-  defaultPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
-  defaultSyncSettings: SyncSettings
   isMac: boolean
 }
 

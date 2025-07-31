@@ -22,7 +22,6 @@
           <div class="p-6 h-full overflow-y-auto">
             <GeneralSettingsComponent
               :current-settings="generalSettings"
-              :default-settings="defaultGeneralSettings"
               ref="generalSettingsRef"
               @save="(settings) => emit('generalSave', settings)"
               @reset="() => emit('generalReset')"
@@ -33,7 +32,6 @@
           <div class="p-6 h-full overflow-y-auto">
             <PresetSettingsComponent 
               :current-preset-settings="currentPresetSettings"
-              :default-preset-settings="defaultPresetSettings"
               ref="presetSettingsRef"
               @save="(states) => emit('presetSave', states)"
               @reset="() => emit('presetReset')"
@@ -44,7 +42,6 @@
           <div class="p-6 h-full overflow-y-auto">
             <ShortcutSettingsComponent
               :current-settings="currentSettings"
-              :default-settings="defaultSettings"
               :is-mac="isMac"
               :visible="visible"
               :is-active="activeTab === 'shortcut'"
@@ -58,7 +55,6 @@
           <div class="p-6 h-full overflow-y-auto">
             <SyncSettingsComponent
               :current-settings="currentSyncSettings"
-              :default-settings="defaultSyncSettings"
               ref="syncSettingsRef"
               @save="(settings) => emit('syncSave', settings)"
               @reset="() => emit('syncReset')"
@@ -97,13 +93,9 @@ import SyncSettingsComponent from './SyncSettings.vue'
 interface Props {
   modelValue: boolean
   currentSettings: BatchKeySettings
-  defaultSettings: BatchKeySettings
   generalSettings: GeneralSettings
-  defaultGeneralSettings: GeneralSettings
   currentPresetSettings: Record<string, boolean>
-  defaultPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
-  defaultSyncSettings: SyncSettings
   isMac: boolean
 }
 
