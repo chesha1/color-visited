@@ -30,7 +30,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
 import type { BatchKeySettings } from '@/types'
-import { showNotification } from '@/core/ui'
 
 interface Props {
   currentSettings: BatchKeySettings
@@ -148,11 +147,9 @@ const handleSave = () => {
     if (isResetMode.value) {
       // 如果是重置模式，直接触发父组件的重置事件
       emit('reset')
-      showNotification('批量染色快捷键已重置为默认！')
     } else {
       // 否则正常保存，直接触发父组件的保存事件
       emit('save', newSettings.value)
-      showNotification('批量染色快捷键设置已保存！')
     }
     
     // 保存后更新状态

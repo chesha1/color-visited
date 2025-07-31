@@ -129,7 +129,6 @@
 import { ref, computed, watch } from 'vue'
 import { PRESET_RULES } from '@/core/config'
 import type { PresetRules } from '@/types'
-import { showNotification } from '@/core/ui'
 
 interface Props {
   currentPresetSettings: Record<string, boolean>
@@ -176,7 +175,6 @@ const handleSave = () => {
   emit('save', { ...presetSettings.value })
   // 更新保存的状态
   savedPresetSettings.value = { ...presetSettings.value }
-  showNotification('预设网站设置已保存！')
 }
 
 // 重置为默认值，但仅更新界面，真正保存需用户点击「保存设置」

@@ -57,7 +57,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import type { GeneralSettings } from '@/types'
-import { showNotification } from '@/core/ui'
 
 interface Props {
   currentSettings: GeneralSettings
@@ -106,7 +105,6 @@ const handleSave = () => {
   emit('save', { ...formData.value })
   // 更新已保存状态
   savedSettings.value = { ...formData.value }
-  showNotification('常规设置已保存！')
 }
 
 // 重置为默认值，但仅更新界面，真正保存需用户点击「保存设置」

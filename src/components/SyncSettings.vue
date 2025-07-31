@@ -177,7 +177,6 @@ const handleSave = () => {
   emit('save', { ...formData.value })
   // 更新已保存状态
   savedSettings.value = { ...formData.value }
-  showNotification('数据同步设置已保存！')
 }
 
 // 重置表单
