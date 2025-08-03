@@ -1,75 +1,75 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.8.10
+// @version      2.8.11
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
 // @homepage     https://github.com/chesha1/color-visited
 // @supportURL   https://github.com/chesha1/color-visited/issues
-// @include      /https:\/\/36kr\.com\/$/
-// @include      /https:\/\/36kr\.com\/motif\/\d+$/
-// @include      /https:\/\/36kr\.com\/newsflashes\/$/
-// @include      /https:\/\/36kr\.com\/information\/.*/
-// @include      /https:\/\/36kr\.com\/topics\/\d+$/
-// @include      /https:\/\/forum\.gamer\.com\.tw\/(A|B|G1)\.php\?bsn=.*/
-// @include      /https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/
-// @include      /https:\/\/space\.bilibili\.com\/\d+\/video/
-// @include      /https:\/\/space\.bilibili\.com\/\d+\/upload.*/
-// @include      /https:\/\/www\.bilibili\.com\/video\/BV.*/
-// @include      /https:\/\/www\.bilibili\.com\/list\/watchlater\?.*/
-// @include      /https:\/\/www\.chiphell\.com\/forum-.*/
-// @include      /https:\/\/www\.douban\.com\/group\/.*/
-// @include      /https:\/\/forums\.e-hentai\.org\/index\.php\?showforum=\d+/
-// @include      /https:\/\/e-hentai\.org\/?$/
-// @include      /https:\/\/exhentai\.org\/?$/
-// @include      /https:\/\/e-hentai\.org\/toplist\.php\?tl=\d+/
-// @include      /https:\/\/exhentai\.org\/toplist\.php\?tl=\d+/
-// @include      /https:\/\/e-hentai\.org\/\?f_search=.*/
-// @include      /https:\/\/exhentai\.org\/\?f_search=.*/
-// @include      /https:\/\/e-hentai\.org\/popular/
-// @include      /https:\/\/exhentai\.org\/popular/
-// @include      /https:\/\/www\.hacg\.me\/wp\/$/
-// @include      /https:\/\/www\.hacg\.me\/wp\/[a-zA-Z].*/
-// @include      /https:\/\/news\.ycombinator\.com\/.*/
-// @include      /https:\/\/news\.ycombinator\.com\/newest.*/
-// @include      /https:\/\/news\.ycombinator\.com\/front.*/
-// @include      /https:\/\/news\.ycombinator\.com\/show.*/
-// @include      /https:\/\/hostloc\.com\/forum-.*/
-// @include      /https:\/\/bbs\.hupu\.com\/[a-zA-Z].*/
-// @include      /https:\/\/linux\.do\/?$/
-// @include      /https:\/\/linux\.do\/(latest|new|top|hot|categories)/
-// @include      /https:\/\/linux\.do\/c\/.*/
-// @include      /https:\/\/bbs\.nga\.cn\/thread\.php\?(fid|stid).*/
-// @include      /https:\/\/ngabbs\.com\/thread\.php\?(fid|stid).*/
-// @include      /https:\/\/nga\.178\.com\/thread\.php\?(fid|stid).*/
-// @include      /https:\/\/www\.nodeseek\.com\/?$/
-// @include      /https:\/\/www\.nodeseek\.com\/categories\/.*/
-// @include      /https:\/\/www\.nodeseek\.com\/page-\d+/
-// @include      /https:\/\/www\.pixiv\.net\/$/
-// @include      /https:\/\/www\.pixiv\.net\/illustration.*/
-// @include      /https:\/\/www\.pixiv\.net\/manga.*/
-// @include      /https:\/\/www\.pixiv\.net\/novel.*/
-// @include      /https:\/\/www\.pixiv\.net\/novel\/ranking\.php.*/
-// @include      /https:\/\/www\.pixiv\.net\/tags\/.*/
-// @include      /https:\/\/www\.pixiv\.net\/new_illust(_r18)?\.php.*/
-// @include      /https:\/\/www\.pixiv\.net\/bookmark_new_illust(_r18)?\.php.*/
-// @include      /https:\/\/www\.pixiv\.net\/following\/watchlist\/.*/
-// @include      /https:\/\/www\.pixiv\.net\/mypixiv_new_illust\.php.*/
-// @include      /https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/
-// @include      /https:\/\/seekingalpha\.com\/$/
-// @include      /https:\/\/seekingalpha\.com\/symbol\/.*/
-// @include      /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/thread\.php\?fid.*/
-// @include      /https:\/\/bbs\.imoutolove\.me\/thread\.php\?fid.*/
-// @include      /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/u\.php\?action-topic-uid-.*/
-// @include      /https:\/\/www\.techflowpost\.com\/$/
-// @include      /https:\/\/tieba\.baidu\.com\/f\?kw=.*/
-// @include      /https:\/\/tieba\.baidu\.com\/hottopic.*/
-// @include      /https:\/\/www\.v2ex\.com\/$/
-// @include      /https:\/\/www\.v2ex\.com\/\?tab.*/
-// @include      /https:\/\/www\.v2ex\.com\/go\/.*/
-// @include      /https:\/\/www\.zhihu\.com\/$/
-// @include      /https:\/\/www\.zhihu\.com\/hot$/
-// @include      /https:\/\/www\.zhihu\.com\/people\/.*/
+// @include      /^https:\/\/36kr\.com\/$/
+// @include      /^https:\/\/36kr\.com\/motif\/\d+$/
+// @include      /^https:\/\/36kr\.com\/newsflashes\/$/
+// @include      /^https:\/\/36kr\.com\/information\/.*/
+// @include      /^https:\/\/36kr\.com\/topics\/\d+$/
+// @include      /^https:\/\/forum\.gamer\.com\.tw\/(A|B|G1)\.php\?bsn=.*/
+// @include      /^https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/
+// @include      /^https:\/\/space\.bilibili\.com\/\d+\/video/
+// @include      /^https:\/\/space\.bilibili\.com\/\d+\/upload.*/
+// @include      /^https:\/\/www\.bilibili\.com\/video\/BV.*/
+// @include      /^https:\/\/www\.bilibili\.com\/list\/watchlater\?.*/
+// @include      /^https:\/\/www\.chiphell\.com\/forum-.*/
+// @include      /^https:\/\/www\.douban\.com\/group\/.*/
+// @include      /^https:\/\/forums\.e-hentai\.org\/index\.php\?showforum=\d+/
+// @include      /^https:\/\/e-hentai\.org\/?$/
+// @include      /^https:\/\/exhentai\.org\/?$/
+// @include      /^https:\/\/e-hentai\.org\/toplist\.php\?tl=\d+/
+// @include      /^https:\/\/exhentai\.org\/toplist\.php\?tl=\d+/
+// @include      /^https:\/\/e-hentai\.org\/\?f_search=.*/
+// @include      /^https:\/\/exhentai\.org\/\?f_search=.*/
+// @include      /^https:\/\/e-hentai\.org\/popular/
+// @include      /^https:\/\/exhentai\.org\/popular/
+// @include      /^https:\/\/www\.hacg\.me\/wp\/$/
+// @include      /^https:\/\/www\.hacg\.me\/wp\/[a-zA-Z].*/
+// @include      /^https:\/\/news\.ycombinator\.com\/.*/
+// @include      /^https:\/\/news\.ycombinator\.com\/newest.*/
+// @include      /^https:\/\/news\.ycombinator\.com\/front.*/
+// @include      /^https:\/\/news\.ycombinator\.com\/show.*/
+// @include      /^https:\/\/hostloc\.com\/forum-.*/
+// @include      /^https:\/\/bbs\.hupu\.com\/[a-zA-Z].*/
+// @include      /^https:\/\/linux\.do\/?$/
+// @include      /^https:\/\/linux\.do\/(latest|new|top|hot|categories)/
+// @include      /^https:\/\/linux\.do\/c\/.*/
+// @include      /^https:\/\/bbs\.nga\.cn\/thread\.php\?(fid|stid).*/
+// @include      /^https:\/\/ngabbs\.com\/thread\.php\?(fid|stid).*/
+// @include      /^https:\/\/nga\.178\.com\/thread\.php\?(fid|stid).*/
+// @include      /^https:\/\/www\.nodeseek\.com\/?$/
+// @include      /^https:\/\/www\.nodeseek\.com\/categories\/.*/
+// @include      /^https:\/\/www\.nodeseek\.com\/page-\d+/
+// @include      /^https:\/\/www\.pixiv\.net\/$/
+// @include      /^https:\/\/www\.pixiv\.net\/illustration.*/
+// @include      /^https:\/\/www\.pixiv\.net\/manga.*/
+// @include      /^https:\/\/www\.pixiv\.net\/novel.*/
+// @include      /^https:\/\/www\.pixiv\.net\/novel\/ranking\.php.*/
+// @include      /^https:\/\/www\.pixiv\.net\/tags\/.*/
+// @include      /^https:\/\/www\.pixiv\.net\/new_illust(_r18)?\.php.*/
+// @include      /^https:\/\/www\.pixiv\.net\/bookmark_new_illust(_r18)?\.php.*/
+// @include      /^https:\/\/www\.pixiv\.net\/following\/watchlist\/.*/
+// @include      /^https:\/\/www\.pixiv\.net\/mypixiv_new_illust\.php.*/
+// @include      /^https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/
+// @include      /^https:\/\/seekingalpha\.com\/$/
+// @include      /^https:\/\/seekingalpha\.com\/symbol\/.*/
+// @include      /^https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/thread\.php\?fid.*/
+// @include      /^https:\/\/bbs\.imoutolove\.me\/thread\.php\?fid.*/
+// @include      /^https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/u\.php\?action-topic-uid-.*/
+// @include      /^https:\/\/www\.techflowpost\.com\/$/
+// @include      /^https:\/\/tieba\.baidu\.com\/f\?kw=.*/
+// @include      /^https:\/\/tieba\.baidu\.com\/hottopic.*/
+// @include      /^https:\/\/www\.v2ex\.com\/$/
+// @include      /^https:\/\/www\.v2ex\.com\/\?tab.*/
+// @include      /^https:\/\/www\.v2ex\.com\/go\/.*/
+// @include      /^https:\/\/www\.zhihu\.com\/$/
+// @include      /^https:\/\/www\.zhihu\.com\/hot$/
+// @include      /^https:\/\/www\.zhihu\.com\/people\/.*/
 // @require      https://cdn.jsdelivr.net/npm/systemjs@6.15.1/dist/system.min.js
 // @require      https://cdn.jsdelivr.net/npm/systemjs@6.15.1/dist/extras/named-register.min.js
 // @require      data:application/javascript,%3B(typeof%20System!%3D'undefined')%26%26(System%3Dnew%20System.constructor())%3B
@@ -94,7 +94,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-DWrY34Rr.js"(exports, module$1) {
+        "main-BDaLDot_.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20550,31 +20550,31 @@ System.register("./__entry.js", [], (function (exports, module) {
           const PRESET_RULES = {
             "36kr": {
               pages: [
-                /https:\/\/36kr\.com\/$/,
+                /^https:\/\/36kr\.com\/$/,
                 // 首页
-                /https:\/\/36kr\.com\/motif\/\d+$/,
+                /^https:\/\/36kr\.com\/motif\/\d+$/,
                 // 主题页
-                /https:\/\/36kr\.com\/newsflashes\/$/,
+                /^https:\/\/36kr\.com\/newsflashes\/$/,
                 // 快讯页
-                /https:\/\/36kr\.com\/information\/.*/,
+                /^https:\/\/36kr\.com\/information\/.*/,
                 // 资讯页
-                /https:\/\/36kr\.com\/topics\/\d+$/
+                /^https:\/\/36kr\.com\/topics\/\d+$/
                 // 专题页
               ],
               patterns: [
-                /36kr\.com\/p\/\d+$/,
+                /^https:\/\/36kr\.com\/p\/\d+$/,
                 // 文章页
-                /36kr\.com\/newsflashes\/\d+$/
+                /^https:\/\/36kr\.com\/newsflashes\/\d+$/
                 // 快讯详情页
               ]
             },
             "bahamut": {
               pages: [
-                /https:\/\/forum\.gamer\.com\.tw\/(A|B|G1)\.php\?bsn=.*/
+                /^https:\/\/forum\.gamer\.com\.tw\/(A|B|G1)\.php\?bsn=.*/
                 // 各个板块首页
               ],
               patterns: [
-                /forum\.gamer\.com\.tw\/C\.php\?bsn=.*/
+                /^https:\/\/forum\.gamer\.com\.tw\/C\.php\?bsn=.*/
                 // 帖子
               ]
             },
@@ -20582,98 +20582,98 @@ System.register("./__entry.js", [], (function (exports, module) {
               pages: [
                 // TODO: 动态页挂载不上，以后再研究研究
                 // /https:\/\/t\.bilibili\.com.*/,
-                /https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/,
+                /^https:\/\/space\.bilibili\.com\/\d+(\?.*)?$/,
                 // 个人空间首页
-                /https:\/\/space\.bilibili\.com\/\d+\/video/,
+                /^https:\/\/space\.bilibili\.com\/\d+\/video/,
                 // 个人空间投稿（疑似已失效）
-                /https:\/\/space\.bilibili\.com\/\d+\/upload.*/,
+                /^https:\/\/space\.bilibili\.com\/\d+\/upload.*/,
                 // 个人空间投稿
-                /https:\/\/www\.bilibili\.com\/video\/BV.*/,
+                /^https:\/\/www\.bilibili\.com\/video\/BV.*/,
                 // 视频详情页
-                /https:\/\/www\.bilibili\.com\/list\/watchlater\?.*/
+                /^https:\/\/www\.bilibili\.com\/list\/watchlater\?.*/
                 // 稍后再看中的视频详情页
               ],
               patterns: [
-                /www\.bilibili\.com\/video\/BV.*/
+                /^https:\/\/www\.bilibili\.com\/video\/BV.*/
                 // 视频详情页
               ]
             },
             "chiphell": {
               pages: [
-                /https:\/\/www\.chiphell\.com\/forum-.*/
+                /^https:\/\/www\.chiphell\.com\/forum-.*/
               ],
               patterns: [
-                /chiphell\.com\/thread-.*/
+                /^https:\/\/chiphell\.com\/thread-.*/
               ]
             },
             "douban": {
               pages: [
-                /https:\/\/www\.douban\.com\/group\/.*/
+                /^https:\/\/www\.douban\.com\/group\/.*/
                 // 小组首页
               ],
               patterns: [
-                /douban\.com\/group\/topic\/\d+\//
+                /^https:\/\/douban\.com\/group\/topic\/\d+\//
                 // 小组帖子
               ]
             },
             "e-hentai-forums": {
               pages: [
-                /https:\/\/forums\.e-hentai\.org\/index\.php\?showforum=\d+/
+                /^https:\/\/forums\.e-hentai\.org\/index\.php\?showforum=\d+/
                 // 论坛版块页面
               ],
               patterns: [
-                /https:\/\/forums\.e-hentai\.org\/index\.php\?showtopic=\d+/
+                /^https:\/\/forums\.e-hentai\.org\/index\.php\?showtopic=\d+/
                 // 帖子页面
               ]
             },
             "ehentai": {
               pages: [
-                /https:\/\/e-hentai\.org\/?$/,
+                /^https:\/\/e-hentai\.org\/?$/,
                 // 首页
-                /https:\/\/exhentai\.org\/?$/,
+                /^https:\/\/exhentai\.org\/?$/,
                 // 首页
-                /https:\/\/e-hentai\.org\/toplist\.php\?tl=\d+/,
+                /^https:\/\/e-hentai\.org\/toplist\.php\?tl=\d+/,
                 // 排行榜
-                /https:\/\/exhentai\.org\/toplist\.php\?tl=\d+/,
+                /^https:\/\/exhentai\.org\/toplist\.php\?tl=\d+/,
                 // 排行榜
-                /https:\/\/e-hentai\.org\/\?f_search=.*/,
+                /^https:\/\/e-hentai\.org\/\?f_search=.*/,
                 // 首页搜索页
-                /https:\/\/exhentai\.org\/\?f_search=.*/,
+                /^https:\/\/exhentai\.org\/\?f_search=.*/,
                 // 首页搜索页
-                /https:\/\/e-hentai\.org\/popular/,
+                /^https:\/\/e-hentai\.org\/popular/,
                 // 热门页面
-                /https:\/\/exhentai\.org\/popular/
+                /^https:\/\/exhentai\.org\/popular/
                 // 热门页面
               ],
               patterns: [
-                /https:\/\/e-hentai\.org\/g\/\d+\/\w+\//,
+                /^https:\/\/e-hentai\.org\/g\/\d+\/\w+\//,
                 // 画廊页面
-                /https:\/\/exhentai\.org\/g\/\d+\/\w+\//
+                /^https:\/\/exhentai\.org\/g\/\d+\/\w+\//
                 // 画廊页面
               ]
             },
             // TODO: 很纯粹的网站，纯静态资源，暂时无能为力，后续研究一下
             "hacg": {
               pages: [
-                /https:\/\/www\.hacg\.me\/wp\/$/,
+                /^https:\/\/www\.hacg\.me\/wp\/$/,
                 // 首页
-                /https:\/\/www\.hacg\.me\/wp\/[a-zA-Z].*/
+                /^https:\/\/www\.hacg\.me\/wp\/[a-zA-Z].*/
                 // 分类目录页
               ],
               patterns: [
-                /hacg\.me\/wp\/\d+\.html/
+                /^https:\/\/hacg\.me\/wp\/\d+\.html/
                 // 文章页
               ]
             },
             "Hacker News": {
               pages: [
-                /https:\/\/news\.ycombinator\.com\/.*/,
+                /^https:\/\/news\.ycombinator\.com\/.*/,
                 // 任意内容
-                /https:\/\/news\.ycombinator\.com\/newest.*/,
+                /^https:\/\/news\.ycombinator\.com\/newest.*/,
                 // newest任意内容
-                /https:\/\/news\.ycombinator\.com\/front.*/,
+                /^https:\/\/news\.ycombinator\.com\/front.*/,
                 // front任意内容
-                /https:\/\/news\.ycombinator\.com\/show.*/
+                /^https:\/\/news\.ycombinator\.com\/show.*/
                 // show任意内容
               ],
               patterns: [
@@ -20683,187 +20683,185 @@ System.register("./__entry.js", [], (function (exports, module) {
             },
             "hostloc": {
               pages: [
-                /https:\/\/hostloc\.com\/forum-.*/
+                /^https:\/\/hostloc\.com\/forum-.*/
                 // 板块首页
               ],
               patterns: [
-                /hostloc\.com\/thread.*/
+                /^https:\/\/hostloc\.com\/thread.*/
                 // 帖子
               ]
             },
             "hupu": {
               pages: [
-                /https:\/\/bbs\.hupu\.com\/[a-zA-Z].*/
+                /^https:\/\/bbs\.hupu\.com\/[a-zA-Z].*/
                 // 各个板块首页
               ],
               patterns: [
-                /bbs\.hupu\.com\/\d+\.html/
+                /^https:\/\/bbs\.hupu\.com\/\d+\.html/
                 // 帖子
               ]
             },
             "linuxdo": {
               pages: [
-                /https:\/\/linux\.do\/?$/,
+                /^https:\/\/linux\.do\/?$/,
                 // 首页
-                /https:\/\/linux\.do\/(latest|new|top|hot|categories)/,
+                /^https:\/\/linux\.do\/(latest|new|top|hot|categories)/,
                 // 首页的几个页签
-                /https:\/\/linux\.do\/c\/.*/
+                /^https:\/\/linux\.do\/c\/.*/
               ],
               patterns: [
-                /linux\.do\/t\/topic\/.*/
+                /^https:\/\/linux\.do\/t\/topic\/.*/
               ]
             },
             "nga": {
               pages: [
-                /https:\/\/bbs\.nga\.cn\/thread\.php\?(fid|stid).*/,
-                /https:\/\/ngabbs\.com\/thread\.php\?(fid|stid).*/,
-                /https:\/\/nga\.178\.com\/thread\.php\?(fid|stid).*/
+                /^https:\/\/bbs\.nga\.cn\/thread\.php\?(fid|stid).*/,
+                /^https:\/\/ngabbs\.com\/thread\.php\?(fid|stid).*/,
+                /^https:\/\/nga\.178\.com\/thread\.php\?(fid|stid).*/
               ],
               patterns: [
-                /bbs\.nga\.cn\/read\.php\?tid.*/,
-                /ngabbs\.com\/read\.php\?tid.*/,
-                /nga\.178\.com\/read\.php\?tid.*/
+                /^https:\/\/bbs\.nga\.cn\/read\.php\?tid.*/,
+                /^https:\/\/ngabbs\.com\/read\.php\?tid.*/,
+                /^https:\/\/nga\.178\.com\/read\.php\?tid.*/
               ]
             },
             "nodeseek": {
               pages: [
-                /https:\/\/www\.nodeseek\.com\/?$/,
+                /^https:\/\/www\.nodeseek\.com\/?$/,
                 // 首页
-                /https:\/\/www\.nodeseek\.com\/categories\/.*/,
+                /^https:\/\/www\.nodeseek\.com\/categories\/.*/,
                 // 各个板块
-                /https:\/\/www\.nodeseek\.com\/page-\d+/
+                /^https:\/\/www\.nodeseek\.com\/page-\d+/
                 // 分页
               ],
               patterns: [
-                /https:\/\/www\.nodeseek\.com\/post-.*/
+                /^https:\/\/www\.nodeseek\.com\/post-.*/
                 // 帖子
               ]
             },
             "pixiv": {
               pages: [
-                /https:\/\/www\.pixiv\.net\/$/,
+                /^https:\/\/www\.pixiv\.net\/$/,
                 // 首页
-                /https:\/\/www\.pixiv\.net\/illustration.*/,
+                /^https:\/\/www\.pixiv\.net\/illustration.*/,
                 // 插画页面
-                /https:\/\/www\.pixiv\.net\/manga.*/,
+                /^https:\/\/www\.pixiv\.net\/manga.*/,
                 // 漫画页面
-                /https:\/\/www\.pixiv\.net\/novel.*/,
+                /^https:\/\/www\.pixiv\.net\/novel.*/,
                 // 小说页面
-                /https:\/\/www\.pixiv\.net\/novel\/ranking\.php.*/,
+                /^https:\/\/www\.pixiv\.net\/novel\/ranking\.php.*/,
                 // 排行榜
-                /https:\/\/www\.pixiv\.net\/tags\/.*/,
+                /^https:\/\/www\.pixiv\.net\/tags\/.*/,
                 // 标签页面
-                /https:\/\/www\.pixiv\.net\/new_illust(_r18)?\.php.*/,
+                /^https:\/\/www\.pixiv\.net\/new_illust(_r18)?\.php.*/,
                 // 新作品页面（包括R18版本）
-                /https:\/\/www\.pixiv\.net\/bookmark_new_illust(_r18)?\.php.*/,
+                /^https:\/\/www\.pixiv\.net\/bookmark_new_illust(_r18)?\.php.*/,
                 // 已关注用户的作品（包括R18版本）
-                /https:\/\/www\.pixiv\.net\/following\/watchlist\/.*/,
+                /^https:\/\/www\.pixiv\.net\/following\/watchlist\/.*/,
                 // 追更列表中的作品
-                /https:\/\/www\.pixiv\.net\/mypixiv_new_illust\.php.*/
+                /^https:\/\/www\.pixiv\.net\/mypixiv_new_illust\.php.*/
                 // 好P友的作品
               ],
               patterns: [
-                /pixiv\.net\/artworks\/\d+/,
+                /^https:\/\/pixiv\.net\/artworks\/\d+/,
                 // 作品详情页
-                /pixiv\.net\/novel\/show\.php\?id=\d+/
+                /^https:\/\/pixiv\.net\/novel\/show\.php\?id=\d+/
                 // 小说详情页
               ]
             },
             "reddit": {
               pages: [
-                /https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/
+                /^https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/
                 // 板块首页
               ],
               patterns: [
-                /reddit\.com\/r\/[^/]+\/comments\/.*/
+                /^https:\/\/reddit\.com\/r\/[^/]+\/comments\/.*/
                 // 帖子
               ]
             },
             "Seeking Alpha": {
               pages: [
-                /https:\/\/seekingalpha\.com\/$/,
+                /^https:\/\/seekingalpha\.com\/$/,
                 // 首页
-                /https:\/\/seekingalpha\.com\/symbol\/.*/
+                /^https:\/\/seekingalpha\.com\/symbol\/.*/
                 // 股票符号页面
               ],
               patterns: [
-                /https:\/\/seekingalpha\.com\/article\/.*/,
+                /^https:\/\/seekingalpha\.com\/article\/.*/,
                 // 文章页面
-                /https:\/\/seekingalpha\.com\/news\/.*/
+                /^https:\/\/seekingalpha\.com\/news\/.*/
                 // 新闻页面
               ]
             },
             "south-plus": {
               pages: [
-                /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/thread\.php\?fid.*/,
+                /^https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/thread\.php\?fid.*/,
                 // 板块首页
-                /https:\/\/bbs\.imoutolove\.me\/thread\.php\?fid.*/,
+                /^https:\/\/bbs\.imoutolove\.me\/thread\.php\?fid.*/,
                 // 板块首页
-                /https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/u\.php\?action-topic-uid-.*/
+                /^https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/u\.php\?action-topic-uid-.*/
                 // 个人主页
               ],
               patterns: [
-                /(south|north|blue|white|level|snow|spring|summer)-plus\.net\/read\.php\?tid-.*/,
+                /^https:\/\/(south|north|blue|white|level|snow|spring|summer)-plus\.net\/read\.php\?tid-.*/,
                 // 帖子
-                /bbs\.imoutolove\.me\/read\.php\?tid-.*/
+                /^https:\/\/bbs\.imoutolove\.me\/read\.php\?tid-.*/
                 // 帖子
               ]
             },
             "techflow": {
               pages: [
-                /https:\/\/www\.techflowpost\.com\/$/
+                /^https:\/\/www\.techflowpost\.com\/$/
                 // 首页
               ],
               patterns: [
-                /techflowpost\.com\/article\/.*/
+                /^https:\/\/techflowpost\.com\/article\/.*/
                 // 文章页
               ]
             },
             "tieba": {
               pages: [
-                /https:\/\/tieba\.baidu\.com\/f\?kw=.*/,
+                /^https:\/\/tieba\.baidu\.com\/f\?kw=.*/,
                 // 某个吧首页
-                /https:\/\/tieba\.baidu\.com\/hottopic.*/
+                /^https:\/\/tieba\.baidu\.com\/hottopic.*/
                 // 热榜
               ],
               patterns: [
-                /tieba\.baidu\.com\/p\/\d+/
+                /^https:\/\/tieba\.baidu\.com\/p\/\d+/
                 // 帖子
               ]
             },
             "v2ex": {
               pages: [
-                /https:\/\/www\.v2ex\.com\/$/,
-                /https:\/\/www\.v2ex\.com\/\?tab.*/,
-                /https:\/\/www\.v2ex\.com\/go\/.*/
+                /^https:\/\/www\.v2ex\.com\/$/,
+                /^https:\/\/www\.v2ex\.com\/\?tab.*/,
+                /^https:\/\/www\.v2ex\.com\/go\/.*/
               ],
               patterns: [
-                /v2ex\.com\/t\/.*/
+                /^https:\/\/www\.v2ex\.com\/t\/.*/
               ]
             },
             "zhihu": {
               pages: [
-                /https:\/\/www\.zhihu\.com\/$/,
+                /^https:\/\/www\.zhihu\.com\/$/,
                 // 首页
-                /https:\/\/www\.zhihu\.com\/hot$/,
+                /^https:\/\/www\.zhihu\.com\/hot$/,
                 // 热榜
-                /https:\/\/www\.zhihu\.com\/people\/.*/
+                /^https:\/\/www\.zhihu\.com\/people\/.*/
                 // 个人
               ],
               patterns: [
-                /zhihu\.com\/question\/\d+\/answer\/\d+$/,
+                /^https:\/\/zhihu\.com\/question\/\d+\/answer\/\d+$/,
                 // 具体的回答页
-                /zhihu\.com\/question\/\d+$/,
+                /^https:\/\/zhihu\.com\/question\/\d+$/,
                 // 问题页
-                /zhuanlan\.zhihu\.com\/p\/\d+/
+                /^https:\/\/zhuanlan\.zhihu\.com\/p\/\d+/
                 // 专栏文章
               ]
             }
             // resources: https://rebang.today/
             // TODO: enshan 油猴脚本都加载不进去，之后再试试
             // TODO: reddit 第一次点击的时候不会变色，刷新后才会
-            // TODO: 优化一下多次获取 patterns 的逻辑
-            // TODO: 让 o1 优化一下
           };
           const _hoisted_1$4 = { class: "space-y-6" };
           const _hoisted_2$3 = { class: "flex items-center gap-3" };
