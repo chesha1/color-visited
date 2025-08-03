@@ -7,7 +7,7 @@ import { isPageActive, onUrlChange } from '@/core/pageDetector';
 import { createMenuManager } from '@/core/menuManager';
 import { activateLinkFeatures, removeScript } from '@/core/linkManager';
 import { setupBatchKeyListener, setupDOMObserver, setupLinkEventListeners } from '@/core/eventManager';
-import { GM_setValue } from 'vite-plugin-monkey/dist/client';
+import { saveUserSettings } from '@/core/state';
 
 // ================== 核心启动函数 ==================
 
@@ -29,7 +29,7 @@ function setupGlobalEventListeners(state: ScriptState): void {
     const customEvent = event as CustomEvent<{ presetSettings: Record<string, boolean> }>;
     const { presetSettings: newPresetSettings } = customEvent.detail;
     state.presetSettings = newPresetSettings;
-    GM_setValue('preset_settings', state.presetSettings);
+    saveUserSettings(state);
 
     // 重新设置页面以应用新的预设配置
     setupPage(state);

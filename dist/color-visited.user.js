@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.8.9
+// @version      2.8.10
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -94,7 +94,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-C9dYZsc3.js"(exports, module$1) {
+        "main-DWrY34Rr.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21432,18 +21432,23 @@ System.register("./__entry.js", [], (function (exports, module) {
           var _GM_registerMenuCommand = /* @__PURE__ */ (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
           var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
           function getSyncSettings() {
-            return {
-              enabled: _GM_getValue("sync_enabled", DEFAULT_SETTINGS.sync.enabled),
-              githubToken: _GM_getValue("sync_github_token", DEFAULT_SETTINGS.sync.githubToken),
-              gistId: _GM_getValue("sync_gist_id", DEFAULT_SETTINGS.sync.gistId),
-              lastSyncTime: _GM_getValue("sync_last_sync_time", DEFAULT_SETTINGS.sync.lastSyncTime)
-            };
+            const userSettings = _GM_getValue("userSettings", {
+              general: DEFAULT_SETTINGS.general,
+              preset: DEFAULT_SETTINGS.presetStates,
+              batch: DEFAULT_SETTINGS.batchKey,
+              sync: { ...DEFAULT_SETTINGS.sync }
+            });
+            return userSettings.sync;
           }
           function saveSyncSettings(settings) {
-            _GM_setValue("sync_enabled", settings.enabled);
-            _GM_setValue("sync_github_token", settings.githubToken);
-            _GM_setValue("sync_gist_id", settings.gistId);
-            _GM_setValue("sync_last_sync_time", settings.lastSyncTime);
+            const userSettings = _GM_getValue("userSettings", {
+              general: DEFAULT_SETTINGS.general,
+              preset: DEFAULT_SETTINGS.presetStates,
+              batch: DEFAULT_SETTINGS.batchKey,
+              sync: { ...DEFAULT_SETTINGS.sync }
+            });
+            userSettings.sync = settings;
+            _GM_setValue("userSettings", userSettings);
           }
           async function validateGitHubToken(token) {
             try {
@@ -22184,28 +22189,30 @@ System.register("./__entry.js", [], (function (exports, module) {
             return Object.keys(state.presetSettings).filter((preset) => state.presetSettings[preset]);
           }
           function initializeScriptState() {
-            const generalSettings = {
-              color: _GM_getValue("color_setting", DEFAULT_SETTINGS.general.color),
-              expirationTime: _GM_getValue("expiration_time_setting", DEFAULT_SETTINGS.general.expirationTime),
-              debug: _GM_getValue("debug_setting", DEFAULT_SETTINGS.general.debug)
-            };
-            const presetSettings = _GM_getValue("preset_settings", DEFAULT_SETTINGS.presetStates);
-            const batchKeySettings = _GM_getValue("batch_shortcut_settings", DEFAULT_SETTINGS.batchKey);
-            const syncSettings = {
-              enabled: _GM_getValue("sync_enabled", DEFAULT_SETTINGS.sync.enabled),
-              githubToken: _GM_getValue("sync_github_token", DEFAULT_SETTINGS.sync.githubToken),
-              gistId: _GM_getValue("sync_gist_id", DEFAULT_SETTINGS.sync.gistId),
-              lastSyncTime: _GM_getValue("sync_last_sync_time", DEFAULT_SETTINGS.sync.lastSyncTime)
-            };
+            const userSettings = _GM_getValue("userSettings", {
+              general: DEFAULT_SETTINGS.general,
+              preset: DEFAULT_SETTINGS.presetStates,
+              batch: DEFAULT_SETTINGS.batchKey,
+              sync: DEFAULT_SETTINGS.sync
+            });
             return {
-              generalSettings,
-              presetSettings,
-              batchKeySettings,
-              syncSettings,
+              generalSettings: userSettings.general,
+              presetSettings: userSettings.preset,
+              batchKeySettings: userSettings.batch,
+              syncSettings: userSettings.sync,
               batchKeyHandler: null,
               domObserver: null,
               linkClickHandler: null
             };
+          }
+          function saveUserSettings(state) {
+            const userSettings = {
+              general: state.generalSettings,
+              preset: state.presetSettings,
+              batch: state.batchKeySettings,
+              sync: state.syncSettings
+            };
+            _GM_setValue("userSettings", userSettings);
           }
           function deleteExpiredLinks(expirationTime) {
             const visitedLinks = _GM_getValue("visitedLinks", {});
@@ -22420,30 +22427,26 @@ System.register("./__entry.js", [], (function (exports, module) {
               return {
                 onBatchKeySave: (newSettings) => {
                   this.state.batchKeySettings = newSettings;
-                  _GM_setValue("batch_shortcut_settings", this.state.batchKeySettings);
+                  saveUserSettings(this.state);
                 },
                 onBatchKeyReset: () => {
                   const defaultBatchKey = DEFAULT_SETTINGS.batchKey;
                   this.state.batchKeySettings = { ...defaultBatchKey };
-                  _GM_setValue("batch_shortcut_settings", defaultBatchKey);
+                  saveUserSettings(this.state);
                 },
                 onGeneralSave: (newGeneralSettings) => {
                   this.state.generalSettings = newGeneralSettings;
-                  _GM_setValue("color_setting", newGeneralSettings.color);
-                  _GM_setValue("expiration_time_setting", newGeneralSettings.expirationTime);
-                  _GM_setValue("debug_setting", newGeneralSettings.debug);
+                  saveUserSettings(this.state);
                   this.reinitializeScript?.(this.state);
                 },
                 onGeneralReset: () => {
                   this.state.generalSettings = { ...defaultGeneralSettings };
-                  _GM_setValue("color_setting", defaultGeneralSettings.color);
-                  _GM_setValue("expiration_time_setting", defaultGeneralSettings.expirationTime);
-                  _GM_setValue("debug_setting", defaultGeneralSettings.debug);
+                  saveUserSettings(this.state);
                   this.reinitializeScript?.(this.state);
                 },
                 onPresetSave: (newPresetSettings) => {
                   this.state.presetSettings = newPresetSettings;
-                  _GM_setValue("preset_settings", this.state.presetSettings);
+                  saveUserSettings(this.state);
                   this.reinitializeScript?.(this.state);
                 },
                 onPresetReset: () => {
@@ -22452,17 +22455,17 @@ System.register("./__entry.js", [], (function (exports, module) {
                     defaultStates[key] = true;
                   });
                   this.state.presetSettings = defaultStates;
-                  _GM_setValue("preset_settings", this.state.presetSettings);
+                  saveUserSettings(this.state);
                   this.reinitializeScript?.(this.state);
                 },
                 onSyncSave: (newSyncSettings) => {
                   this.state.syncSettings = newSyncSettings;
-                  saveSyncSettings(this.state.syncSettings);
+                  saveUserSettings(this.state);
                   this.registerMenuCommand();
                 },
                 onSyncReset: () => {
                   this.state.syncSettings = { ...DEFAULT_SETTINGS.sync };
-                  saveSyncSettings(this.state.syncSettings);
+                  saveUserSettings(this.state);
                   this.registerMenuCommand();
                 }
               };
@@ -22545,7 +22548,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               const customEvent = event;
               const { presetSettings: newPresetSettings } = customEvent.detail;
               state.presetSettings = newPresetSettings;
-              _GM_setValue("preset_settings", state.presetSettings);
+              saveUserSettings(state);
               setupPage(state);
             });
             onUrlChange(() => {

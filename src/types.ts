@@ -67,6 +67,13 @@ export interface NotificationOptions {
 
 export type VisitedLinks = Record<string, number>
 
+export interface UserSettings {
+  general: GeneralSettings           // 基础设置（颜色、过期时间、调试模式）
+  preset: Record<string, boolean>    // 预设网站启用状态
+  batch: BatchKeySettings           // 批量标记快捷键配置
+  sync: SyncSettings               // GitHub同步配置
+}
+
 // ================== 事件类型 ==================
 
 export type Events = {
