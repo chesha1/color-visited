@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.8.8
+// @version      2.8.9
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -94,7 +94,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-C-AKCVcC.js"(exports, module$1) {
+        "main-C9dYZsc3.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21627,19 +21627,47 @@ System.register("./__entry.js", [], (function (exports, module) {
             });
           }
           function injectCustomStyles(color) {
-            if (document.querySelector("#color-visited-style")) return;
             const linkColor = color || "rgba(0,0,0,0)";
+            let existingStyle = document.querySelector("#color-visited-style");
+            if (existingStyle) {
+              existingStyle.innerHTML = generateStyleContent(linkColor);
+              return;
+            }
             const style = document.createElement("style");
             style.id = "color-visited-style";
-            style.innerHTML = `
+            style.innerHTML = generateStyleContent(linkColor);
+            document.head.appendChild(style);
+          }
+          function generateStyleContent(linkColor) {
+            return `
+    /* 基础选择器 */
     a.visited-link,
     a.visited-link *,
     a.visited-link *::before,
     a.visited-link *::after {
       color: ${linkColor} !important;
     }
+    
+    /* 高特异性选择器，覆盖可能的网站样式 */
+    html a.visited-link,
+    body a.visited-link,
+    html body a.visited-link,
+    html body div a.visited-link,
+    html body a.visited-link span,
+    html body a.visited-link div {
+      color: ${linkColor} !important;
+    }
+    
+    /* 处理常见的论坛结构 */
+    .topic-list a.visited-link,
+    .post-list a.visited-link,
+    .content a.visited-link,
+    .main a.visited-link,
+    #main a.visited-link,
+    .container a.visited-link {
+      color: ${linkColor} !important;
+    }
   `;
-            document.head.appendChild(style);
           }
           function removeCustomStyles() {
             const styleElement = document.querySelector("#color-visited-style");
@@ -22205,25 +22233,36 @@ System.register("./__entry.js", [], (function (exports, module) {
               }
             });
             if (linksToUpdate.length > 0) {
+              _GM_setValue("visitedLinks", visitedLinks);
               if (linksToUpdate.length > 1e3) {
-                batchProcessWithTimeSlicing(linksToUpdate);
+                batchProcessWithTimeSlicing(linksToUpdate, () => {
+                  const refreshedVisitedLinks = _GM_getValue("visitedLinks", {});
+                  updateAllLinksStatus(refreshedVisitedLinks, state);
+                  const endTime = performance.now();
+                  const processingTime = endTime - startTime;
+                  if (state.generalSettings.debug) {
+                    console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
+                  }
+                  showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
+                });
               } else {
                 linksToUpdate.forEach((link) => {
                   link.classList.add("visited-link");
                 });
+                const refreshedVisitedLinks = _GM_getValue("visitedLinks", {});
+                updateAllLinksStatus(refreshedVisitedLinks, state);
+                const endTime = performance.now();
+                const processingTime = endTime - startTime;
+                if (state.generalSettings.debug) {
+                  console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
+                }
+                showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
               }
-              _GM_setValue("visitedLinks", visitedLinks);
-              const endTime = performance.now();
-              const processingTime = endTime - startTime;
-              if (state.generalSettings.debug) {
-                console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
-              }
-              showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
             } else {
               showNotification("没有找到新的符合规则的链接可添加");
             }
           }
-          function batchProcessWithTimeSlicing(linksToUpdate) {
+          function batchProcessWithTimeSlicing(linksToUpdate, onComplete) {
             const BATCH_SIZE = 200;
             let currentIndex = 0;
             function processNextBatch() {
@@ -22238,6 +22277,10 @@ System.register("./__entry.js", [], (function (exports, module) {
                 setTimeout(processNextBatch, 0);
               } else if (currentIndex < linksToUpdate.length) {
                 processNextBatch();
+              } else {
+                if (onComplete) {
+                  onComplete();
+                }
               }
             }
             processNextBatch();

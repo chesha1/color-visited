@@ -48,29 +48,47 @@ export function batchAddLinks(state: ScriptState): void {
 
   // 第二遍：批量更新DOM
   if (linksToUpdate.length > 0) {
+    // 保存更新后的访问链接记录
+    GM_setValue('visitedLinks', visitedLinks);
+
     // 对于大量链接，使用 DocumentFragment 或分时处理
     if (linksToUpdate.length > 1000) {
       // 分时处理：对于超大量链接，分批在不同时隙处理，避免长时间阻塞
-      batchProcessWithTimeSlicing(linksToUpdate);
+      batchProcessWithTimeSlicing(linksToUpdate, () => {
+        // 处理完成后重新应用所有链接状态，模拟页面刷新的效果
+        const refreshedVisitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
+        updateAllLinksStatus(refreshedVisitedLinks, state);
+
+        // 处理完成后显示通知
+        const endTime = performance.now();
+        const processingTime = endTime - startTime;
+
+        if (state.generalSettings.debug) {
+          console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
+        }
+
+        showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
+      });
     } else {
       // 直接批量处理：现代浏览器对此已经有很好的优化
       linksToUpdate.forEach(link => {
         link.classList.add('visited-link');
       });
+
+      // 批量添加完成后，重新应用所有链接状态，模拟页面刷新的效果
+      const refreshedVisitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
+      updateAllLinksStatus(refreshedVisitedLinks, state);
+
+      // 性能监控：计算处理时间
+      const endTime = performance.now();
+      const processingTime = endTime - startTime;
+
+      if (state.generalSettings.debug) {
+        console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
+      }
+
+      showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
     }
-
-    // 保存更新后的访问链接记录
-    GM_setValue('visitedLinks', visitedLinks);
-
-    // 性能监控：计算处理时间
-    const endTime = performance.now();
-    const processingTime = endTime - startTime;
-
-    if (state.generalSettings.debug) {
-      console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
-    }
-
-    showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
   }
   else {
     showNotification('没有找到新的符合规则的链接可添加');
@@ -78,7 +96,7 @@ export function batchAddLinks(state: ScriptState): void {
 }
 
 // 分时处理函数：仅在链接数量极大时使用
-function batchProcessWithTimeSlicing(linksToUpdate: Element[]): void {
+function batchProcessWithTimeSlicing(linksToUpdate: Element[], onComplete?: () => void): void {
   const BATCH_SIZE = 200; // 更大的批次，减少调度开销
   let currentIndex = 0;
 
@@ -101,6 +119,11 @@ function batchProcessWithTimeSlicing(linksToUpdate: Element[]): void {
     } else if (currentIndex < linksToUpdate.length) {
       // 如果处理很快，继续同步处理
       processNextBatch();
+    } else {
+      // 所有链接处理完成，执行完成回调
+      if (onComplete) {
+        onComplete();
+      }
     }
   }
 

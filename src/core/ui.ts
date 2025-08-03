@@ -34,20 +34,55 @@ export function showNotification(message: string, type?: MessageProps['type']): 
 // 在文档中注入一段自定义的 CSS 样式，针对这个类名的元素及其所有子元素，设置颜色样式，使用更高的选择器优先级和 !important
 // 直接使用 link.style.color 会被后续的样式覆盖，所以这么做
 export function injectCustomStyles(color?: string): void {
-  if (document.querySelector('#color-visited-style')) return;
-
   const linkColor = color || 'rgba(0,0,0,0)';
+
+  // 检查是否已存在样式元素
+  let existingStyle = document.querySelector('#color-visited-style') as HTMLStyleElement;
+
+  if (existingStyle) {
+    // 如果已存在，更新其内容而不是直接返回
+    existingStyle.innerHTML = generateStyleContent(linkColor);
+    return;
+  }
+
+  // 如果不存在，创建新的样式元素
   const style = document.createElement('style');
   style.id = 'color-visited-style';
-  style.innerHTML = `
+  style.innerHTML = generateStyleContent(linkColor);
+  document.head.appendChild(style);
+}
+
+// 生成样式内容：使用更高的特异性和多种选择器来确保样式优先级
+function generateStyleContent(linkColor: string): string {
+  return `
+    /* 基础选择器 */
     a.visited-link,
     a.visited-link *,
     a.visited-link *::before,
     a.visited-link *::after {
       color: ${linkColor} !important;
     }
+    
+    /* 高特异性选择器，覆盖可能的网站样式 */
+    html a.visited-link,
+    body a.visited-link,
+    html body a.visited-link,
+    html body div a.visited-link,
+    html body a.visited-link span,
+    html body a.visited-link div {
+      color: ${linkColor} !important;
+    }
+    
+    /* 处理常见的论坛结构 */
+    .topic-list a.visited-link,
+    .post-list a.visited-link,
+    .content a.visited-link,
+    .main a.visited-link,
+    #main a.visited-link,
+    .container a.visited-link {
+      color: ${linkColor} !important;
+    }
   `;
-  document.head.appendChild(style);
 }
 
 // 移除注入的样式
