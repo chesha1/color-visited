@@ -78,7 +78,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.chiphell\.com\/forum-.*/,
     ],
     patterns: [
-      /^https:\/\/chiphell\.com\/thread-.*/,
+      /^https:\/\/www\.chiphell\.com\/thread-.*/,
     ],
   },
   'douban': {
@@ -86,7 +86,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.douban\.com\/group\/.*/, // 小组首页
     ],
     patterns: [
-      /^https:\/\/douban\.com\/group\/topic\/\d+\//, // 小组帖子
+      /^https:\/\/www\.douban\.com\/group\/topic\/\d+\//, // 小组帖子
     ],
   },
   'e-hentai-forums': {
@@ -120,7 +120,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.hacg\.me\/wp\/[a-zA-Z].*/, // 分类目录页
     ],
     patterns: [
-      /^https:\/\/hacg\.me\/wp\/\d+\.html/, // 文章页
+      /^https:\/\/www\.hacg\.me\/wp\/\d+\.html/, // 文章页
     ],
   },
   'Hacker News': {
@@ -196,8 +196,8 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.pixiv\.net\/mypixiv_new_illust\.php.*/, // 好P友的作品
     ],
     patterns: [
-      /^https:\/\/pixiv\.net\/artworks\/\d+/, // 作品详情页
-      /^https:\/\/pixiv\.net\/novel\/show\.php\?id=\d+/, // 小说详情页
+      /^https:\/\/www\.pixiv\.net\/artworks\/\d+/, // 作品详情页
+      /^https:\/\/www\.pixiv\.net\/novel\/show\.php\?id=\d+/, // 小说详情页
     ],
   },
   'reddit': {
@@ -205,7 +205,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/, // 板块首页
     ],
     patterns: [
-      /^https:\/\/reddit\.com\/r\/[^/]+\/comments\/.*/, // 帖子
+      /^https:\/\/www\.reddit\.com\/r\/[^/]+\/comments\/.*/, // 帖子
     ],
   },
   'Seeking Alpha': {
@@ -264,8 +264,8 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.zhihu\.com\/people\/.*/, // 个人
     ],
     patterns: [
-      /^https:\/\/zhihu\.com\/question\/\d+\/answer\/\d+$/, // 具体的回答页
-      /^https:\/\/zhihu\.com\/question\/\d+$/, // 问题页
+      /^https:\/\/www\.zhihu\.com\/question\/\d+\/answer\/\d+$/, // 具体的回答页
+      /^https:\/\/www\.zhihu\.com\/question\/\d+$/, // 问题页
       /^https:\/\/zhuanlan\.zhihu\.com\/p\/\d+/, // 专栏文章
     ],
   },

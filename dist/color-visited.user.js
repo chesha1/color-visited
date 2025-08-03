@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.8.11
+// @version      2.8.12
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -94,7 +94,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-BDaLDot_.js"(exports, module$1) {
+        "main-pHj-FxsH.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20603,7 +20603,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 /^https:\/\/www\.chiphell\.com\/forum-.*/
               ],
               patterns: [
-                /^https:\/\/chiphell\.com\/thread-.*/
+                /^https:\/\/www\.chiphell\.com\/thread-.*/
               ]
             },
             "douban": {
@@ -20612,7 +20612,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 // 小组首页
               ],
               patterns: [
-                /^https:\/\/douban\.com\/group\/topic\/\d+\//
+                /^https:\/\/www\.douban\.com\/group\/topic\/\d+\//
                 // 小组帖子
               ]
             },
@@ -20661,7 +20661,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 // 分类目录页
               ],
               patterns: [
-                /^https:\/\/hacg\.me\/wp\/\d+\.html/
+                /^https:\/\/www\.hacg\.me\/wp\/\d+\.html/
                 // 文章页
               ]
             },
@@ -20763,9 +20763,9 @@ System.register("./__entry.js", [], (function (exports, module) {
                 // 好P友的作品
               ],
               patterns: [
-                /^https:\/\/pixiv\.net\/artworks\/\d+/,
+                /^https:\/\/www\.pixiv\.net\/artworks\/\d+/,
                 // 作品详情页
-                /^https:\/\/pixiv\.net\/novel\/show\.php\?id=\d+/
+                /^https:\/\/www\.pixiv\.net\/novel\/show\.php\?id=\d+/
                 // 小说详情页
               ]
             },
@@ -20775,7 +20775,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 // 板块首页
               ],
               patterns: [
-                /^https:\/\/reddit\.com\/r\/[^/]+\/comments\/.*/
+                /^https:\/\/www\.reddit\.com\/r\/[^/]+\/comments\/.*/
                 // 帖子
               ]
             },
@@ -20851,9 +20851,9 @@ System.register("./__entry.js", [], (function (exports, module) {
                 // 个人
               ],
               patterns: [
-                /^https:\/\/zhihu\.com\/question\/\d+\/answer\/\d+$/,
+                /^https:\/\/www\.zhihu\.com\/question\/\d+\/answer\/\d+$/,
                 // 具体的回答页
-                /^https:\/\/zhihu\.com\/question\/\d+$/,
+                /^https:\/\/www\.zhihu\.com\/question\/\d+$/,
                 // 问题页
                 /^https:\/\/zhuanlan\.zhihu\.com\/p\/\d+/
                 // 专栏文章
