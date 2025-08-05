@@ -225,7 +225,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/u\.php\?action-topic-uid-.*/, // 个人主页
     ],
     patterns: [
-      /^https:\/\/(south|north|blue|white|level|snow|spring|summer)-plus\.net\/read\.php\?tid-.*/, // 帖子
+      /^https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/read\.php\?tid-.*/, // 帖子
       /^https:\/\/bbs\.imoutolove\.me\/read\.php\?tid-.*/, // 帖子
 
     ],
@@ -235,7 +235,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.techflowpost\.com\/$/, // 首页
     ],
     patterns: [
-      /^https:\/\/techflowpost\.com\/article\/.*/, // 文章页
+      /^https:\/\/www\.techflowpost\.com\/article\/.*/, // 文章页
     ],
   },
   'tieba': {

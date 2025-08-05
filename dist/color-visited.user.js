@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.8.12
+// @version      2.8.13
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -94,7 +94,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-pHj-FxsH.js"(exports, module$1) {
+        "main-Dr93H1BZ.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20803,7 +20803,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 // 个人主页
               ],
               patterns: [
-                /^https:\/\/(south|north|blue|white|level|snow|spring|summer)-plus\.net\/read\.php\?tid-.*/,
+                /^https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/read\.php\?tid-.*/,
                 // 帖子
                 /^https:\/\/bbs\.imoutolove\.me\/read\.php\?tid-.*/
                 // 帖子
@@ -20815,7 +20815,7 @@ System.register("./__entry.js", [], (function (exports, module) {
                 // 首页
               ],
               patterns: [
-                /^https:\/\/techflowpost\.com\/article\/.*/
+                /^https:\/\/www\.techflowpost\.com\/article\/.*/
                 // 文章页
               ]
             },
