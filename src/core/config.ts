@@ -73,6 +73,15 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频详情页
     ],
   },
+  'bloomberg': {
+    pages: [
+      /^https:\/\/www\.bloomberg\.com\/?$/, // 首页
+      /^https:\/\/www\.bloomberg\.com\/.*/, // 任意页面
+    ],
+    patterns: [
+      /^https:\/\/www\.bloomberg\.com\/news\/articles.*/, // 文章页
+    ],
+  },
   'chiphell': {
     pages: [
       /^https:\/\/www\.chiphell\.com\/forum-.*/,

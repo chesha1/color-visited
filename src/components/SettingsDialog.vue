@@ -85,10 +85,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { BatchKeySettings, GeneralSettings, SyncSettings } from '@/types'
-import GeneralSettingsComponent from './GeneralSettings.vue'
-import PresetSettingsComponent from './PresetSettings.vue'
-import ShortcutSettingsComponent from './ShortcutSettings.vue'
-import SyncSettingsComponent from './SyncSettings.vue'
+import GeneralSettingsComponent from '@/components/GeneralSettings.vue'
+import PresetSettingsComponent from '@/components/PresetSettings.vue'
+import ShortcutSettingsComponent from '@/components/ShortcutSettings.vue'
+import SyncSettingsComponent from '@/components/SyncSettings.vue'
 
 interface Props {
   modelValue: boolean
