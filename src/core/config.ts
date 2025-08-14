@@ -82,6 +82,15 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.bloomberg\.com\/news\/articles.*/, // 文章页
     ],
   },
+  'The Economist': {
+    pages: [
+      /^https:\/\/www\.economist\.com\/?$/, // 首页
+      /^https:\/\/www\.economist\.com\/.*/, // 任意页面
+    ],
+    patterns: [
+      /^https:\/\/www\.economist\.com\/.+\/\d{4}\/\d{2}\/\d{2}\/.*$/, // 日期型文章页
+    ],
+  },
   'chiphell': {
     pages: [
       /^https:\/\/www\.chiphell\.com\/forum-.*/,
