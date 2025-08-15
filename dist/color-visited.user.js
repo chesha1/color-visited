@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.10.0
+// @version      2.11.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -40,6 +40,9 @@
 // @include      /^https:\/\/news\.ycombinator\.com\/show.*/
 // @include      /^https:\/\/hostloc\.com\/forum-.*/
 // @include      /^https:\/\/bbs\.hupu\.com\/[a-zA-Z].*/
+// @include      /^https:\/\/www\.1point3acres\.com\/?$/
+// @include      /^https:\/\/www\.1point3acres\.com\/.*/
+// @include      /^https:\/\/1point3acres\.com\/.*/
 // @include      /^https:\/\/linux\.do\/?$/
 // @include      /^https:\/\/linux\.do\/(latest|new|top|hot|categories)/
 // @include      /^https:\/\/linux\.do\/c\/.*/
@@ -98,7 +101,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-CvyGm1rx.js"(exports, module$1) {
+        "main-BmPe9Zg6.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20727,6 +20730,20 @@ System.register("./__entry.js", [], (function (exports, module) {
               patterns: [
                 /^https:\/\/bbs\.hupu\.com\/\d+\.html/
                 // 帖子
+              ]
+            },
+            "一亩三分地": {
+              pages: [
+                /^https:\/\/www\.1point3acres\.com\/?$/,
+                // 首页
+                /^https:\/\/www\.1point3acres\.com\/.*/,
+                // 任意页面
+                /^https:\/\/1point3acres\.com\/.*/
+                // 任意页面（无 www）
+              ],
+              patterns: [
+                /^https:\/\/www\.1point3acres\.com\/bbs\/thread-.*/
+                // 帖子页面
               ]
             },
             "linuxdo": {

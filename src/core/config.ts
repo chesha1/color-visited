@@ -168,6 +168,16 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/bbs\.hupu\.com\/\d+\.html/, // 帖子
     ],
   },
+  '一亩三分地': {
+    pages: [
+      /^https:\/\/www\.1point3acres\.com\/?$/, // 首页
+      /^https:\/\/www\.1point3acres\.com\/.*/, // 任意页面
+      /^https:\/\/1point3acres\.com\/.*/, // 任意页面（无 www）
+    ],
+    patterns: [
+      /^https:\/\/www\.1point3acres\.com\/bbs\/thread-.*/, // 帖子页面
+    ],
+  },
   'linuxdo': {
     pages: [
       /^https:\/\/linux\.do\/?$/, // 首页
