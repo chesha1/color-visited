@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.11.1
+// @version      2.12.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -62,6 +62,8 @@
 // @include      /^https:\/\/www\.pixiv\.net\/bookmark_new_illust(_r18)?\.php.*/
 // @include      /^https:\/\/www\.pixiv\.net\/following\/watchlist\/.*/
 // @include      /^https:\/\/www\.pixiv\.net\/mypixiv_new_illust\.php.*/
+// @include      /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/model\/.*/
+// @include      /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/pornstar\/.*/
 // @include      /^https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/
 // @include      /^https:\/\/seekingalpha\.com\/$/
 // @include      /^https:\/\/seekingalpha\.com\/symbol\/.*/
@@ -101,7 +103,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-CsnGMlNT.js"(exports, module$1) {
+        "main-CJPBWbCd.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21176,6 +21178,18 @@ System.register("./__entry.js", [], (function (exports, module) {
                 // 作品详情页
                 /^https:\/\/www\.pixiv\.net\/novel\/show\.php\?id=\d+/
                 // 小说详情页
+              ]
+            },
+            "pornhub": {
+              pages: [
+                /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/model\/.*/,
+                // 模特主页与相关页面（支持语言子域，长度不限，如 cn、de、zh-cn）
+                /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/pornstar\/.*/
+                // Pornstar 主页与相关页面（支持语言子域，长度不限，如 cn、de、zh-cn）
+              ],
+              patterns: [
+                /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/view_video\.php\?viewkey=.*/
+                // 视频详情页（支持语言子域，长度不限，如 cn、de、zh-cn）
               ]
             },
             "reddit": {

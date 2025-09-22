@@ -32,7 +32,7 @@ export default defineConfig({
       entry: 'src/main.ts',
       userscript: {
         name: 'color-visited 对已访问过的链接染色',
-        version: '2.11.1',
+        version: '2.12.0',
         description: '把访问过的链接染色成灰色',
         author: 'chesha1',
         license: 'GPL-3.0-only',

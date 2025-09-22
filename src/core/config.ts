@@ -228,6 +228,15 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.pixiv\.net\/novel\/show\.php\?id=\d+/, // 小说详情页
     ],
   },
+  'pornhub': {
+    pages: [
+      /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/model\/.*/, // 模特主页与相关页面（支持语言子域，长度不限，如 cn、de、zh-cn）
+      /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/pornstar\/.*/, // Pornstar 主页与相关页面（支持语言子域，长度不限，如 cn、de、zh-cn）
+    ],
+    patterns: [
+      /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/view_video\.php\?viewkey=.*/, // 视频详情页（支持语言子域，长度不限，如 cn、de、zh-cn）
+    ],
+  },
   'reddit': {
     pages: [
       /^https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/, // 板块首页
