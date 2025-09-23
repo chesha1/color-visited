@@ -284,6 +284,14 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/tieba\.baidu\.com\/p\/\d+/, // 帖子
     ],
   },
+  '通信人家园': {
+    pages: [
+      /^https:\/\/www\.txrjy\.com\/forum.*/,
+    ],
+    patterns: [
+      /^https:\/\/www\.txrjy\.com\/thread.*/,
+    ],
+  },
   'v2ex': {
     pages: [
       /^https:\/\/www\.v2ex\.com\/$/,

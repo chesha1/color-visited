@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.12.0
+// @version      2.13.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -73,6 +73,7 @@
 // @include      /^https:\/\/www\.techflowpost\.com\/$/
 // @include      /^https:\/\/tieba\.baidu\.com\/f\?kw=.*/
 // @include      /^https:\/\/tieba\.baidu\.com\/hottopic.*/
+// @include      /^https:\/\/www\.txrjy\.com\/forum.*/
 // @include      /^https:\/\/www\.v2ex\.com\/$/
 // @include      /^https:\/\/www\.v2ex\.com\/\?tab.*/
 // @include      /^https:\/\/www\.v2ex\.com\/go\/.*/
@@ -103,7 +104,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-CJPBWbCd.js"(exports, module$1) {
+        "main-DisqHZ5Z.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21252,6 +21253,14 @@ System.register("./__entry.js", [], (function (exports, module) {
               patterns: [
                 /^https:\/\/tieba\.baidu\.com\/p\/\d+/
                 // 帖子
+              ]
+            },
+            "通信人家园": {
+              pages: [
+                /^https:\/\/www\.txrjy\.com\/forum.*/
+              ],
+              patterns: [
+                /^https:\/\/www\.txrjy\.com\/thread.*/
               ]
             },
             "v2ex": {
