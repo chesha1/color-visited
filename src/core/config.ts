@@ -277,7 +277,7 @@ export const PRESET_RULES: PresetRules = {
   },
   'tieba': {
     pages: [
-      /^https:\/\/tieba\.baidu\.com\/f\?kw=.*/, // 某个吧首页
+      /^https:\/\/tieba\.baidu\.com\/f\?[^#]*kw=.*/, // 某个吧首页
       /^https:\/\/tieba\.baidu\.com\/hottopic.*/, // 热榜
     ],
     patterns: [
