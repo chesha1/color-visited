@@ -8,6 +8,7 @@ import { createMenuManager } from '@/core/menuManager';
 import { activateLinkFeatures, removeScript } from '@/core/linkManager';
 import { setupBatchKeyListener, setupDOMObserver, setupLinkEventListeners } from '@/core/eventManager';
 import { saveUserSettings } from '@/core/state';
+import { eventBus } from '@/core/eventBus';
 
 // ================== 核心启动函数 ==================
 
@@ -37,6 +38,12 @@ function setupGlobalEventListeners(state: ScriptState): void {
 
   // 监听 URL 变化
   onUrlChange(() => {
+    setupPage(state);
+  });
+
+  // 监听同步完成事件
+  eventBus.on('sync:completed', () => {
+    console.log('同步完成，刷新页面链接状态...');
     setupPage(state);
   });
 }

@@ -96,6 +96,7 @@ export type Events = {
   'menu:update': {
     // 菜单更新事件
   }
+  'sync:completed': void
 }
 
 // ================== 同步相关类型 ==================

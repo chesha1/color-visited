@@ -2,6 +2,7 @@
 
 import type { SyncSettings, SyncData, VisitedLinksData } from '@/types';
 import { DEFAULT_SETTINGS } from '@/core/config';
+import { eventBus } from '@/core/eventBus';
 import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
 
 
@@ -234,6 +235,9 @@ export async function syncOnStartup(): Promise<void> {
     const syncSettings = getSyncSettings();
     syncSettings.lastSyncTime = Date.now();
     saveSyncSettings(syncSettings);
+
+    // 7. 发送同步完成事件
+    eventBus.emit('sync:completed');
   }
   catch (error: unknown) {
     const syncError = error as Error;

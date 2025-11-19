@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.13.1
+// @version      2.13.2
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -104,7 +104,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-ghIgY8ci.js"(exports, module$1) {
+        "main-CDMSojt2.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21864,6 +21864,24 @@ System.register("./__entry.js", [], (function (exports, module) {
           });
           const elCardCss = ".el-card{--el-card-border-color:var(--el-border-color-light);--el-card-border-radius:4px;--el-card-padding:20px;--el-card-bg-color:var(--el-fill-color-blank);background-color:var(--el-card-bg-color);border:1px solid var(--el-card-border-color);border-radius:var(--el-card-border-radius);color:var(--el-text-color-primary);overflow:hidden;transition:var(--el-transition-duration)}.el-card.is-always-shadow,.el-card.is-hover-shadow:focus,.el-card.is-hover-shadow:hover{box-shadow:var(--el-box-shadow-light)}.el-card__header{border-bottom:1px solid var(--el-card-border-color);box-sizing:border-box;padding:calc(var(--el-card-padding) - 2px) var(--el-card-padding)}.el-card__body{padding:var(--el-card-padding)}.el-card__footer{border-top:1px solid var(--el-card-border-color);box-sizing:border-box;padding:calc(var(--el-card-padding) - 2px) var(--el-card-padding)}";
           importCSS(elCardCss);
+          function mitt(n) {
+            return { all: n = n || /* @__PURE__ */ new Map(), on: function(t, e) {
+              var i = n.get(t);
+              i ? i.push(e) : n.set(t, [e]);
+            }, off: function(t, e) {
+              var i = n.get(t);
+              i && (e ? i.splice(i.indexOf(e) >>> 0, 1) : n.set(t, []));
+            }, emit: function(t, e) {
+              var i = n.get(t);
+              i && i.slice().map(function(n2) {
+                n2(e);
+              }), (i = n.get("*")) && i.slice().map(function(n2) {
+                n2(t, e);
+              });
+            } };
+          }
+          const emitter = mitt();
+          const eventBus = emitter;
           var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
           var _GM_registerMenuCommand = /* @__PURE__ */ (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
           var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
@@ -22028,30 +22046,13 @@ System.register("./__entry.js", [], (function (exports, module) {
               const syncSettings = getSyncSettings();
               syncSettings.lastSyncTime = Date.now();
               saveSyncSettings(syncSettings);
+              eventBus.emit("sync:completed");
             } catch (error) {
               const syncError = error;
               console.warn("同步失败，使用本地数据:", syncError.message);
               throw error;
             }
           }
-          function mitt(n) {
-            return { all: n = n || /* @__PURE__ */ new Map(), on: function(t, e) {
-              var i = n.get(t);
-              i ? i.push(e) : n.set(t, [e]);
-            }, off: function(t, e) {
-              var i = n.get(t);
-              i && (e ? i.splice(i.indexOf(e) >>> 0, 1) : n.set(t, []));
-            }, emit: function(t, e) {
-              var i = n.get(t);
-              i && i.slice().map(function(n2) {
-                n2(e);
-              }), (i = n.get("*")) && i.slice().map(function(n2) {
-                n2(t, e);
-              });
-            } };
-          }
-          const emitter = mitt();
-          const eventBus = emitter;
           const elBadgeCss = ".el-badge{--el-badge-bg-color:var(--el-color-danger);--el-badge-radius:10px;--el-badge-font-size:12px;--el-badge-padding:6px;--el-badge-size:18px;display:inline-block;position:relative;vertical-align:middle;width:-moz-fit-content;width:fit-content}.el-badge__content{align-items:center;background-color:var(--el-badge-bg-color);border:1px solid var(--el-bg-color);border-radius:var(--el-badge-radius);color:var(--el-color-white);display:inline-flex;font-size:var(--el-badge-font-size);height:var(--el-badge-size);justify-content:center;padding:0 var(--el-badge-padding);white-space:nowrap}.el-badge__content.is-fixed{position:absolute;right:calc(1px + var(--el-badge-size)/2);top:0;transform:translateY(-50%) translate(100%);z-index:var(--el-index-normal)}.el-badge__content.is-fixed.is-dot{right:5px}.el-badge__content.is-dot{border-radius:50%;height:8px;padding:0;right:0;width:8px}.el-badge__content.is-hide-zero{display:none}.el-badge__content--primary{background-color:var(--el-color-primary)}.el-badge__content--success{background-color:var(--el-color-success)}.el-badge__content--warning{background-color:var(--el-color-warning)}.el-badge__content--info{background-color:var(--el-color-info)}.el-badge__content--danger{background-color:var(--el-color-danger)}";
           importCSS(elBadgeCss);
           const elMessageCss = ".el-message{--el-message-bg-color:var(--el-color-info-light-9);--el-message-border-color:var(--el-border-color-lighter);--el-message-padding:11px 15px;--el-message-close-size:16px;--el-message-close-icon-color:var(--el-text-color-placeholder);--el-message-close-hover-color:var(--el-text-color-secondary);align-items:center;background-color:var(--el-message-bg-color);border-color:var(--el-message-border-color);border-radius:var(--el-border-radius-base);border-style:var(--el-border-style);border-width:var(--el-border-width);box-sizing:border-box;display:flex;gap:8px;max-width:calc(100% - 32px);padding:var(--el-message-padding);position:fixed;transition:opacity var(--el-transition-duration),transform .4s,top .4s,bottom .4s;width:-moz-fit-content;width:fit-content}.el-message.is-left{left:16px}.el-message.is-right{right:16px}.el-message.is-center{left:50%;transform:translate(-50%)}.el-message.is-plain{background-color:var(--el-bg-color-overlay);border-color:var(--el-bg-color-overlay);box-shadow:var(--el-box-shadow-light)}.el-message p{margin:0}.el-message--primary{--el-message-bg-color:var(--el-color-primary-light-9);--el-message-border-color:var(--el-color-primary-light-8);--el-message-text-color:var(--el-color-primary)}.el-message--primary .el-message__content{color:var(--el-message-text-color);overflow-wrap:break-word}.el-message .el-message-icon--primary{color:var(--el-message-text-color)}.el-message--success{--el-message-bg-color:var(--el-color-success-light-9);--el-message-border-color:var(--el-color-success-light-8);--el-message-text-color:var(--el-color-success)}.el-message--success .el-message__content{color:var(--el-message-text-color);overflow-wrap:break-word}.el-message .el-message-icon--success{color:var(--el-message-text-color)}.el-message--info{--el-message-bg-color:var(--el-color-info-light-9);--el-message-border-color:var(--el-color-info-light-8);--el-message-text-color:var(--el-color-info)}.el-message--info .el-message__content{color:var(--el-message-text-color);overflow-wrap:break-word}.el-message .el-message-icon--info{color:var(--el-message-text-color)}.el-message--warning{--el-message-bg-color:var(--el-color-warning-light-9);--el-message-border-color:var(--el-color-warning-light-8);--el-message-text-color:var(--el-color-warning)}.el-message--warning .el-message__content{color:var(--el-message-text-color);overflow-wrap:break-word}.el-message .el-message-icon--warning{color:var(--el-message-text-color)}.el-message--error{--el-message-bg-color:var(--el-color-error-light-9);--el-message-border-color:var(--el-color-error-light-8);--el-message-text-color:var(--el-color-error)}.el-message--error .el-message__content{color:var(--el-message-text-color);overflow-wrap:break-word}.el-message .el-message-icon--error{color:var(--el-message-text-color)}.el-message .el-message__badge{position:absolute;right:-8px;top:-8px}.el-message__content{font-size:14px;line-height:1;padding:0}.el-message__content:focus{outline-width:0}.el-message .el-message__closeBtn{color:var(--el-message-close-icon-color);cursor:pointer;font-size:var(--el-message-close-size)}.el-message .el-message__closeBtn:focus{outline-width:0}.el-message .el-message__closeBtn:hover{color:var(--el-message-close-hover-color)}.el-message-fade-enter-from,.el-message-fade-leave-to{opacity:0}.el-message-fade-enter-from:is(.is-left,.is-right),.el-message-fade-leave-to:is(.is-left,.is-right){transform:translateY(-100%)}.el-message-fade-enter-from:is(.is-left,.is-right).is-bottom,.el-message-fade-leave-to:is(.is-left,.is-right).is-bottom{transform:translateY(100%)}.el-message-fade-enter-from.is-center,.el-message-fade-leave-to.is-center{transform:translate(-50%,-100%)}.el-message-fade-enter-from.is-center.is-bottom,.el-message-fade-leave-to.is-center.is-bottom{transform:translate(-50%,100%)}";
@@ -22989,6 +22990,10 @@ System.register("./__entry.js", [], (function (exports, module) {
               setupPage(state);
             });
             onUrlChange(() => {
+              setupPage(state);
+            });
+            eventBus.on("sync:completed", () => {
+              console.log("同步完成，刷新页面链接状态...");
               setupPage(state);
             });
           }
