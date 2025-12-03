@@ -2,13 +2,14 @@
 import { syncOnStartup } from '@/core/sync';
 import { showNotification, injectCustomStyles } from '@/core/ui';
 import { initializeScriptState } from '@/core/state';
-import type { ScriptState } from '@/types';
+import type { ScriptState, VisitedLinks } from '@/types';
 import { isPageActive, onUrlChange } from '@/core/pageDetector';
 import { createMenuManager } from '@/core/menuManager';
-import { activateLinkFeatures, removeScript } from '@/core/linkManager';
+import { activateLinkFeatures, removeScript, updateAllLinksStatus } from '@/core/linkManager';
 import { setupBatchKeyListener, setupDOMObserver, setupLinkEventListeners } from '@/core/eventManager';
 import { saveUserSettings } from '@/core/state';
 import { eventBus } from '@/core/eventBus';
+import { GM_getValue } from 'vite-plugin-monkey/dist/client';
 
 // ================== 核心启动函数 ==================
 
@@ -42,9 +43,14 @@ function setupGlobalEventListeners(state: ScriptState): void {
   });
 
   // 监听同步完成事件
+  // 使用增量更新而非重置页面，避免清除同步期间用户点击产生的染色
   eventBus.on('sync:completed', () => {
-    console.log('同步完成，刷新页面链接状态...');
-    setupPage(state);
+    console.log('同步完成，增量更新链接状态...');
+    if (isPageActive(state)) {
+      // 直接获取最新的 visitedLinks 并增量更新，不调用 setupPage 避免 removeScript 清除染色
+      const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
+      updateAllLinksStatus(visitedLinks, state);
+    }
   });
 }
 

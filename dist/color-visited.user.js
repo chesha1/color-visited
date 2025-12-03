@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.13.2
+// @version      2.13.3
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -104,7 +104,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-CDMSojt2.js"(exports, module$1) {
+        "main-BLzBA6KJ.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22030,12 +22030,14 @@ System.register("./__entry.js", [], (function (exports, module) {
           async function syncOnStartup() {
             try {
               console.log("开始同步数据...");
-              const localLinks = _GM_getValue("visitedLinks", {});
+              const localLinksSnapshot = _GM_getValue("visitedLinks", {});
               const cloudData = await downloadFromCloud();
               const cloudLinks = extractVisitedLinks(cloudData);
-              const mergedLinks = mergeVisitedLinks(localLinks, cloudLinks);
+              let mergedLinks = mergeVisitedLinks(localLinksSnapshot, cloudLinks);
+              const currentLocalLinks = _GM_getValue("visitedLinks", {});
+              mergedLinks = mergeVisitedLinks(mergedLinks, currentLocalLinks);
               _GM_setValue("visitedLinks", mergedLinks);
-              const localChanged = hasDataChanged(localLinks, mergedLinks);
+              const localChanged = hasDataChanged(localLinksSnapshot, mergedLinks);
               const cloudChanged = hasDataChanged(cloudLinks, mergedLinks);
               if (localChanged || cloudChanged) {
                 await uploadToCloud(mergedLinks);
@@ -22993,8 +22995,11 @@ System.register("./__entry.js", [], (function (exports, module) {
               setupPage(state);
             });
             eventBus.on("sync:completed", () => {
-              console.log("同步完成，刷新页面链接状态...");
-              setupPage(state);
+              console.log("同步完成，增量更新链接状态...");
+              if (isPageActive(state)) {
+                const visitedLinks = _GM_getValue("visitedLinks", {});
+                updateAllLinksStatus(visitedLinks, state);
+              }
             });
           }
           function setupPage(state) {

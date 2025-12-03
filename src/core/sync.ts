@@ -206,21 +206,26 @@ export async function syncOnStartup(): Promise<void> {
   try {
     console.log('开始同步数据...');
 
-    // 1. 获取本地数据
-    const localLinks = GM_getValue('visitedLinks', {}) as VisitedLinksData;
+    // 1. 获取本地数据快照（同步开始时）
+    const localLinksSnapshot = GM_getValue('visitedLinks', {}) as VisitedLinksData;
 
-    // 2. 从云端获取数据
+    // 2. 从云端获取数据（这个过程可能较慢）
     const cloudData = await downloadFromCloud();
     const cloudLinks = extractVisitedLinks(cloudData);
 
     // 3. 合并数据（以最新时间戳为准）
-    const mergedLinks = mergeVisitedLinks(localLinks, cloudLinks);
+    let mergedLinks = mergeVisitedLinks(localLinksSnapshot, cloudLinks);
 
-    // 4. 保存到本地
+    // 4. 重新获取本地数据，合并同步期间用户可能新增的链接
+    // 这是为了防止在网络请求期间用户点击的链接被覆盖丢失
+    const currentLocalLinks = GM_getValue('visitedLinks', {}) as VisitedLinksData;
+    mergedLinks = mergeVisitedLinks(mergedLinks, currentLocalLinks);
+
+    // 5. 保存到本地
     GM_setValue('visitedLinks', mergedLinks);
 
-    // 5. 检查是否需要上传到云端
-    const localChanged = hasDataChanged(localLinks, mergedLinks);
+    // 6. 检查是否需要上传到云端
+    const localChanged = hasDataChanged(localLinksSnapshot, mergedLinks);
     const cloudChanged = hasDataChanged(cloudLinks, mergedLinks);
 
     if (localChanged || cloudChanged) {
@@ -231,12 +236,12 @@ export async function syncOnStartup(): Promise<void> {
       console.log('数据已同步，无需上传');
     }
 
-    // 6. 更新同步时间
+    // 7. 更新同步时间
     const syncSettings = getSyncSettings();
     syncSettings.lastSyncTime = Date.now();
     saveSyncSettings(syncSettings);
 
-    // 7. 发送同步完成事件
+    // 8. 发送同步完成事件
     eventBus.emit('sync:completed');
   }
   catch (error: unknown) {
