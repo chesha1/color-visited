@@ -168,16 +168,6 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/bbs\.hupu\.com\/\d+\.html/, // 帖子
     ],
   },
-  '一亩三分地': {
-    pages: [
-      /^https:\/\/www\.1point3acres\.com\/?$/, // 首页
-      /^https:\/\/www\.1point3acres\.com\/.*/, // 任意页面
-      /^https:\/\/1point3acres\.com\/.*/, // 任意页面（无 www）
-    ],
-    patterns: [
-      /^https:\/\/www\.1point3acres\.com\/bbs\/thread-.*/, // 帖子页面
-    ],
-  },
   'linuxdo': {
     pages: [
       /^https:\/\/linux\.do\/?$/, // 首页
@@ -186,6 +176,15 @@ export const PRESET_RULES: PresetRules = {
     ],
     patterns: [
       /^https:\/\/linux\.do\/t\/topic\/.*/,
+    ],
+  },
+  '美卡论坛': {
+    pages: [
+      /^https:\/\/www\.uscardforum\.com\/?$/, // 首页
+      /^https:\/\/www\.uscardforum\.com\/c\/.*/, // 分类页
+    ],
+    patterns: [
+      /^https:\/\/www\.uscardforum\.com\/t\/topic\/\d+/, // 帖子
     ],
   },
   'nga': {
@@ -300,6 +299,16 @@ export const PRESET_RULES: PresetRules = {
     ],
     patterns: [
       /^https:\/\/www\.v2ex\.com\/t\/.*/,
+    ],
+  },
+  '一亩三分地': {
+    pages: [
+      /^https:\/\/www\.1point3acres\.com\/?$/, // 首页
+      /^https:\/\/www\.1point3acres\.com\/.*/, // 任意页面
+      /^https:\/\/1point3acres\.com\/.*/, // 任意页面（无 www）
+    ],
+    patterns: [
+      /^https:\/\/www\.1point3acres\.com\/bbs\/thread-.*/, // 帖子页面
     ],
   },
   'zhihu': {

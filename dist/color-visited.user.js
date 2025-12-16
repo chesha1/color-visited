@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.13.3
+// @version      2.14.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -40,12 +40,11 @@
 // @include      /^https:\/\/news\.ycombinator\.com\/show.*/
 // @include      /^https:\/\/hostloc\.com\/forum-.*/
 // @include      /^https:\/\/bbs\.hupu\.com\/[a-zA-Z].*/
-// @include      /^https:\/\/www\.1point3acres\.com\/?$/
-// @include      /^https:\/\/www\.1point3acres\.com\/.*/
-// @include      /^https:\/\/1point3acres\.com\/.*/
 // @include      /^https:\/\/linux\.do\/?$/
 // @include      /^https:\/\/linux\.do\/(latest|new|top|hot|categories)/
 // @include      /^https:\/\/linux\.do\/c\/.*/
+// @include      /^https:\/\/www\.uscardforum\.com\/?$/
+// @include      /^https:\/\/www\.uscardforum\.com\/c\/.*/
 // @include      /^https:\/\/bbs\.nga\.cn\/thread\.php\?(fid|stid).*/
 // @include      /^https:\/\/ngabbs\.com\/thread\.php\?(fid|stid).*/
 // @include      /^https:\/\/nga\.178\.com\/thread\.php\?(fid|stid).*/
@@ -77,6 +76,9 @@
 // @include      /^https:\/\/www\.v2ex\.com\/$/
 // @include      /^https:\/\/www\.v2ex\.com\/\?tab.*/
 // @include      /^https:\/\/www\.v2ex\.com\/go\/.*/
+// @include      /^https:\/\/www\.1point3acres\.com\/?$/
+// @include      /^https:\/\/www\.1point3acres\.com\/.*/
+// @include      /^https:\/\/1point3acres\.com\/.*/
 // @include      /^https:\/\/www\.zhihu\.com\/$/
 // @include      /^https:\/\/www\.zhihu\.com\/hot$/
 // @include      /^https:\/\/www\.zhihu\.com\/people\/.*/
@@ -104,7 +106,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-BLzBA6KJ.js"(exports, module$1) {
+        "main-BXr4paCF.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21099,20 +21101,6 @@ System.register("./__entry.js", [], (function (exports, module) {
                 // 帖子
               ]
             },
-            "一亩三分地": {
-              pages: [
-                /^https:\/\/www\.1point3acres\.com\/?$/,
-                // 首页
-                /^https:\/\/www\.1point3acres\.com\/.*/,
-                // 任意页面
-                /^https:\/\/1point3acres\.com\/.*/
-                // 任意页面（无 www）
-              ],
-              patterns: [
-                /^https:\/\/www\.1point3acres\.com\/bbs\/thread-.*/
-                // 帖子页面
-              ]
-            },
             "linuxdo": {
               pages: [
                 /^https:\/\/linux\.do\/?$/,
@@ -21123,6 +21111,18 @@ System.register("./__entry.js", [], (function (exports, module) {
               ],
               patterns: [
                 /^https:\/\/linux\.do\/t\/topic\/.*/
+              ]
+            },
+            "美卡论坛": {
+              pages: [
+                /^https:\/\/www\.uscardforum\.com\/?$/,
+                // 首页
+                /^https:\/\/www\.uscardforum\.com\/c\/.*/
+                // 分类页
+              ],
+              patterns: [
+                /^https:\/\/www\.uscardforum\.com\/t\/topic\/\d+/
+                // 帖子
               ]
             },
             "nga": {
@@ -21271,6 +21271,20 @@ System.register("./__entry.js", [], (function (exports, module) {
               ],
               patterns: [
                 /^https:\/\/www\.v2ex\.com\/t\/.*/
+              ]
+            },
+            "一亩三分地": {
+              pages: [
+                /^https:\/\/www\.1point3acres\.com\/?$/,
+                // 首页
+                /^https:\/\/www\.1point3acres\.com\/.*/,
+                // 任意页面
+                /^https:\/\/1point3acres\.com\/.*/
+                // 任意页面（无 www）
+              ],
+              patterns: [
+                /^https:\/\/www\.1point3acres\.com\/bbs\/thread-.*/
+                // 帖子页面
               ]
             },
             "zhihu": {
