@@ -291,6 +291,15 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.txrjy\.com\/thread.*/,
     ],
   },
+  '51吃瓜网': {
+    pages: [
+      /^https:\/\/51cg1\.com\/?$/, // 首页
+      /^https:\/\/51cg1\.com\/page\/\d+\/?$/, // 分页
+    ],
+    patterns: [
+      /^https:\/\/51cg1\.com\/archives\/\d+\/?$/, // 文章页
+    ],
+  },
   'v2ex': {
     pages: [
       /^https:\/\/www\.v2ex\.com\/$/,

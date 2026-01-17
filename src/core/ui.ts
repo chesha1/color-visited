@@ -82,6 +82,12 @@ function generateStyleContent(linkColor: string): string {
     .container a.visited-link {
       color: ${linkColor} !important;
     }
+
+    /* 处理子元素的背景图 */
+    a.visited-link [style*="background-image"],
+    a.visited-link [style*="background:"] {
+      filter: opacity(0.1) !important;
+    }
   `;
 }
 
