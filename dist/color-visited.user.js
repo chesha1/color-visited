@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.15.0
+// @version      2.15.1
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -108,7 +108,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-DNzvE7hv.js"(exports, module$1) {
+        "main-mg_YcZHi.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22669,6 +22669,16 @@ System.register("./__entry.js", [], (function (exports, module) {
               batch: DEFAULT_SETTINGS.batchKey,
               sync: DEFAULT_SETTINGS.sync
             });
+            let needsSave = false;
+            Object.keys(PRESET_RULES).forEach((key) => {
+              if (!(key in userSettings.preset)) {
+                userSettings.preset[key] = true;
+                needsSave = true;
+              }
+            });
+            if (needsSave) {
+              _GM_setValue("userSettings", userSettings);
+            }
             return {
               generalSettings: userSettings.general,
               presetSettings: userSettings.preset,
