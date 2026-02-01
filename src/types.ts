@@ -6,8 +6,6 @@ export interface ScriptState {
   batchKeySettings: BatchKeySettings;
   syncSettings: SyncSettings;
   batchKeyHandler: ((event: KeyboardEvent) => void) | null;
-  /** DOM 变化观察器 */
-  domObserver: MutationObserver | null;
   /** 全局链接点击/中键点击事件处理器 */
   linkClickHandler: ((event: Event) => void) | null;
 }

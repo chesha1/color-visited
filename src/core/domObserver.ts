@@ -37,24 +37,66 @@ export function ensureDOMObserver(): MutationObserver {
     globalObserver = new MutationObserver((mutations: MutationRecord[]): void => {
         // 1. 处理新增节点中的链接染色
         if (linkContext) {
+            let newLinksCount = 0;
+            let attrLinksCount = 0;
             mutations.forEach((mutation: MutationRecord): void => {
-                mutation.addedNodes.forEach((node: Node): void => {
-                    if (node.nodeType !== Node.ELEMENT_NODE) return;
-                    const element = node as Element;
-                    element.querySelectorAll('a[href]:not(.visited-link)').forEach((link: Element): void => {
-                        updateLinkStatus(link, linkContext!.visitedLinks, linkContext!.state);
+                // 处理新增节点
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach((node: Node): void => {
+                        if (node.nodeType !== Node.ELEMENT_NODE) return;
+                        const element = node as Element;
+                        // 检查节点本身是否是链接
+                        if (element.tagName === 'A' && element.hasAttribute('href') && !element.classList.contains('visited-link')) {
+                            updateLinkStatus(element, linkContext!.visitedLinks, linkContext!.state);
+                            newLinksCount++;
+                        }
+                        // 检查子节点中的链接
+                        const newLinks = element.querySelectorAll('a[href]:not(.visited-link)');
+                        newLinksCount += newLinks.length;
+                        newLinks.forEach((link: Element): void => {
+                            updateLinkStatus(link, linkContext!.visitedLinks, linkContext!.state);
+                        });
                     });
-                });
+                }
+                // 处理 href 属性变化
+                else if (mutation.type === 'attributes' && mutation.attributeName === 'href') {
+                    const target = mutation.target as Element;
+                    if (target.tagName === 'A' && !target.classList.contains('visited-link')) {
+                        updateLinkStatus(target, linkContext!.visitedLinks, linkContext!.state);
+                        attrLinksCount++;
+                    }
+                }
             });
+            if (linkContext.state.generalSettings.debug && newLinksCount > 0) {
+                console.log(`[DOMObserver] 检测到 ${newLinksCount} 个新链接`);
+            }
+            if (linkContext.state.generalSettings.debug && attrLinksCount > 0) {
+                console.log(`[DOMObserver] 检测到 ${attrLinksCount} 个链接 href 属性变化`);
+            }
         }
 
         // 2. 检测 URL 变化（针对 SPA 页面）
         if (lastHref !== location.href) {
+            if (linkContext?.state.generalSettings.debug) {
+                console.log(`[DOMObserver] URL变化: ${lastHref} -> ${location.href}`);
+            }
             lastHref = location.href;
             urlChangeCallbacks.forEach((cb) => cb());
         }
     });
 
-    globalObserver.observe(document.body, { childList: true, subtree: true });
+    globalObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] });
     return globalObserver;
+}
+
+/**
+ * 断开并重置全局 DOM 观察器，清空链接上下文。
+ * 下次调用 ensureDOMObserver 时会重新创建。
+ */
+export function disconnectDOMObserver(): void {
+    if (globalObserver) {
+        globalObserver.disconnect();
+        globalObserver = null;
+    }
+    linkContext = null;
 } 

@@ -40,9 +40,19 @@ export function getCurrentPagePreset(state: ScriptState): string | null {
 
   // 重新计算并缓存结果
   const enabledPresets = getEnabledPresets(state);
+
+  if (state.generalSettings.debug) {
+    console.log(`[getCurrentPagePreset] 当前页面URL: ${currentUrl}`);
+    console.log(`[getCurrentPagePreset] 启用的预设: ${enabledPresets.join(', ')}`);
+  }
+
   for (const preset of enabledPresets) {
     const presetRule = PRESET_RULES[preset];
-    if (presetRule?.pages.some((pattern) => pattern.test(currentUrl))) {
+    const matchedPage = presetRule?.pages.find((pattern) => pattern.test(currentUrl));
+    if (matchedPage) {
+      if (state.generalSettings.debug) {
+        console.log(`[getCurrentPagePreset] 匹配到预设: ${preset}, 匹配模式: ${matchedPage.source}`);
+      }
       cachedUrl = currentUrl;
       cachedCurrentPreset = preset;
       return preset;
@@ -50,6 +60,9 @@ export function getCurrentPagePreset(state: ScriptState): string | null {
   }
 
   // 未匹配到预设时也要更新缓存，避免重复计算
+  if (state.generalSettings.debug) {
+    console.log(`[getCurrentPagePreset] 未匹配到任何预设`);
+  }
   cachedUrl = currentUrl;
   cachedCurrentPreset = null;
   return null;
@@ -58,10 +71,24 @@ export function getCurrentPagePreset(state: ScriptState): string | null {
 // 检查链接是否应该被染色（只检查当前页面对应预设的patterns）
 export function shouldColorLink(url: string, state: ScriptState): boolean {
   const currentPreset = getCurrentPagePreset(state);
+
+  if (state.generalSettings.debug) {
+    console.log(`[shouldColorLink] 当前预设: ${currentPreset ?? '无'}`);
+  }
+
   if (!currentPreset) return false;
 
   const presetRule = PRESET_RULES[currentPreset];
-  return presetRule?.patterns.some((pattern) => pattern.test(url)) ?? false;
+  const matchedPattern = presetRule?.patterns.find((pattern) => pattern.test(url));
+  const result = matchedPattern !== undefined;
+
+  if (state.generalSettings.debug) {
+    console.log(`[shouldColorLink] 检查URL: ${url}`);
+    console.log(`[shouldColorLink] 可用patterns: ${presetRule?.patterns.map(p => p.source).join(', ')}`);
+    console.log(`[shouldColorLink] 匹配结果: ${result}${matchedPattern ? `, 匹配模式: ${matchedPattern.source}` : ''}`);
+  }
+
+  return result;
 }
 
 // 检测 URL 变化 - 复用全局 MutationObserver

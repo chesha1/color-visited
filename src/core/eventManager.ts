@@ -60,16 +60,30 @@ export function createLinkClickHandler(visitedLinks: VisitedLinks, state: Script
     const link = target.closest('a[href]') as HTMLAnchorElement | null;
     if (!link) return; // 如果点击的不是链接，直接返回
 
-    const inputUrl = getBaseUrl(link.href);
-    if (!shouldColorLink(inputUrl, state)) return; // 如果链接不符合匹配规则，返回
+    const originalHref = link.href;
+    const inputUrl = getBaseUrl(originalHref);
+    const shouldColor = shouldColorLink(inputUrl, state);
 
-    if (!Object.hasOwn(visitedLinks, inputUrl)) {
+    if (state.generalSettings.debug) {
+      console.log(`[handleLinkClick] 原始href: ${originalHref}`);
+      console.log(`[handleLinkClick] 处理后URL: ${inputUrl}`);
+      console.log(`[handleLinkClick] shouldColorLink结果: ${shouldColor}`);
+    }
+
+    if (!shouldColor) return; // 如果链接不符合匹配规则，返回
+
+    const alreadyVisited = Object.hasOwn(visitedLinks, inputUrl);
+    if (state.generalSettings.debug) {
+      console.log(`[handleLinkClick] 是否已记录: ${alreadyVisited}`);
+    }
+
+    if (!alreadyVisited) {
       // 如果是第一次点击该链接，记录到 visitedLinks 并更新存储
       visitedLinks[inputUrl] = Date.now();
       GM_setValue('visitedLinks', visitedLinks);
-      if (state.generalSettings.debug) console.log(`${inputUrl} saved`);
+      if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} saved`);
       link.classList.add('visited-link');
-      if (state.generalSettings.debug) console.log(`${inputUrl} class added`);
+      if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} class added`);
     }
   };
 }

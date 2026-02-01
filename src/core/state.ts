@@ -37,7 +37,6 @@ export function initializeScriptState(): ScriptState {
     batchKeySettings: userSettings.batch,
     syncSettings: userSettings.sync,
     batchKeyHandler: null,
-    domObserver: null,
     linkClickHandler: null
   };
 }

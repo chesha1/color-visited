@@ -168,6 +168,15 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/bbs\.hupu\.com\/\d+\.html/, // 帖子
     ],
   },
+  'juejin': {
+    pages: [
+      /^https:\/\/juejin\.cn\/(\?sort=.*)?$/, // 首页（含排序参数）
+      /^https:\/\/juejin\.cn\/(hot|following|backend|frontend|android|ios|ai|freebie|career|article).*/, // 各分类页面
+    ],
+    patterns: [
+      /^https:\/\/juejin\.cn\/post\/.*/, // 文章页
+    ],
+  },
   'linuxdo': {
     pages: [
       /^https:\/\/linux\.do\/?$/, // 首页

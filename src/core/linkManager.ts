@@ -3,6 +3,7 @@
 import { shouldColorLink } from '@/core/pageDetector';
 import { showNotification, removeCustomStyles } from '@/core/ui';
 import { getBaseUrl, logStorageInfo } from '@/core/utils';
+import { disconnectDOMObserver } from '@/core/domObserver';
 import type { ScriptState, VisitedLinks } from '@/types';
 import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
 
@@ -33,6 +34,10 @@ export function batchAddLinks(state: ScriptState): void {
   // 使用 :not(.visited-link) 选择器可以显著提升性能，避免处理已标记的链接
   const links = document.querySelectorAll('a[href]:not(.visited-link)');
   const linksToUpdate: Element[] = [];
+
+  if (state.generalSettings.debug) {
+    console.log(`[batchAddLinks] 开始批量处理，找到 ${links.length} 个未标记链接`);
+  }
 
   // 第一遍：收集需要更新的链接，避免在DOM操作过程中修改数据
   links.forEach((link) => {
@@ -138,13 +143,27 @@ export function updateLinkStatus(link: Element, visitedLinks: VisitedLinks, stat
   // 这个检查避免了重复的DOM操作和URL处理
   if (link.classList.contains('visited-link')) return;
 
-  const inputUrl = getBaseUrl((link as HTMLAnchorElement).href);
-  if (!shouldColorLink(inputUrl, state)) return;
+  const originalHref = (link as HTMLAnchorElement).href;
+  const inputUrl = getBaseUrl(originalHref);
+  const shouldColor = shouldColorLink(inputUrl, state);
+
+  if (state.generalSettings.debug) {
+    console.log(`[updateLinkStatus] 原始href: ${originalHref}`);
+    console.log(`[updateLinkStatus] 处理后URL: ${inputUrl}`);
+    console.log(`[updateLinkStatus] shouldColorLink结果: ${shouldColor}`);
+  }
+
+  if (!shouldColor) return;
 
   // 添加 visited-link 类名
-  if (Object.hasOwn(visitedLinks, inputUrl)) {
+  const isVisited = Object.hasOwn(visitedLinks, inputUrl);
+  if (state.generalSettings.debug) {
+    console.log(`[updateLinkStatus] 是否已访问: ${isVisited}`);
+  }
+
+  if (isVisited) {
     link.classList.add('visited-link');
-    if (state.generalSettings.debug) console.log(`${inputUrl} class added`);
+    if (state.generalSettings.debug) console.log(`[updateLinkStatus] ${inputUrl} class added`);
   }
 }
 
@@ -176,10 +195,7 @@ export function removeScript(state: ScriptState): void {
   }
 
   // 断开 DOM 观察器
-  if (state.domObserver) {
-    state.domObserver.disconnect();
-    state.domObserver = null;
-  }
+  disconnectDOMObserver();
 
   // 移除全局链接点击 / 中键点击事件监听器
   if (state.linkClickHandler) {

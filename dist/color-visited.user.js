@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.15.1
+// @version      2.16.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -40,6 +40,8 @@
 // @include      /^https:\/\/news\.ycombinator\.com\/show.*/
 // @include      /^https:\/\/hostloc\.com\/forum-.*/
 // @include      /^https:\/\/bbs\.hupu\.com\/[a-zA-Z].*/
+// @include      /^https:\/\/juejin\.cn\/(\?sort=.*)?$/
+// @include      /^https:\/\/juejin\.cn\/(hot|following|backend|frontend|android|ios|ai|freebie|career|article).*/
 // @include      /^https:\/\/linux\.do\/?$/
 // @include      /^https:\/\/linux\.do\/(latest|new|top|hot|categories)/
 // @include      /^https:\/\/linux\.do\/c\/.*/
@@ -91,7 +93,7 @@
 // @grant        GM_getValue
 // @grant        GM_registerMenuCommand
 // @grant        GM_setValue
-// @run-at       document-end
+// @run-at       document-idle
 // @noframes
 // ==/UserScript==
 
@@ -108,7 +110,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-mg_YcZHi.js"(exports, module$1) {
+        "main-BGJq5zXh.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21103,6 +21105,18 @@ System.register("./__entry.js", [], (function (exports, module) {
                 // 帖子
               ]
             },
+            "juejin": {
+              pages: [
+                /^https:\/\/juejin\.cn\/(\?sort=.*)?$/,
+                // 首页（含排序参数）
+                /^https:\/\/juejin\.cn\/(hot|following|backend|frontend|android|ios|ai|freebie|career|article).*/
+                // 各分类页面
+              ],
+              patterns: [
+                /^https:\/\/juejin\.cn\/post\/.*/
+                // 文章页
+              ]
+            },
             "linuxdo": {
               pages: [
                 /^https:\/\/linux\.do\/?$/,
@@ -22685,7 +22699,6 @@ System.register("./__entry.js", [], (function (exports, module) {
               batchKeySettings: userSettings.batch,
               syncSettings: userSettings.sync,
               batchKeyHandler: null,
-              domObserver: null,
               linkClickHandler: null
             };
           }
@@ -22715,6 +22728,9 @@ System.register("./__entry.js", [], (function (exports, module) {
             let addedCount = 0;
             const links = document.querySelectorAll("a[href]:not(.visited-link)");
             const linksToUpdate = [];
+            if (state.generalSettings.debug) {
+              console.log(`[batchAddLinks] 开始批量处理，找到 ${links.length} 个未标记链接`);
+            }
             links.forEach((link) => {
               const inputUrl = getBaseUrl(link.href);
               if (shouldColorLink(inputUrl, state) && !Object.hasOwn(visitedLinks, inputUrl)) {
@@ -22778,11 +22794,22 @@ System.register("./__entry.js", [], (function (exports, module) {
           }
           function updateLinkStatus(link, visitedLinks, state) {
             if (link.classList.contains("visited-link")) return;
-            const inputUrl = getBaseUrl(link.href);
-            if (!shouldColorLink(inputUrl, state)) return;
-            if (Object.hasOwn(visitedLinks, inputUrl)) {
+            const originalHref = link.href;
+            const inputUrl = getBaseUrl(originalHref);
+            const shouldColor = shouldColorLink(inputUrl, state);
+            if (state.generalSettings.debug) {
+              console.log(`[updateLinkStatus] 原始href: ${originalHref}`);
+              console.log(`[updateLinkStatus] 处理后URL: ${inputUrl}`);
+              console.log(`[updateLinkStatus] shouldColorLink结果: ${shouldColor}`);
+            }
+            if (!shouldColor) return;
+            const isVisited = Object.hasOwn(visitedLinks, inputUrl);
+            if (state.generalSettings.debug) {
+              console.log(`[updateLinkStatus] 是否已访问: ${isVisited}`);
+            }
+            if (isVisited) {
               link.classList.add("visited-link");
-              if (state.generalSettings.debug) console.log(`${inputUrl} class added`);
+              if (state.generalSettings.debug) console.log(`[updateLinkStatus] ${inputUrl} class added`);
             }
           }
           function updateAllLinksStatus(visitedLinks, state) {
@@ -22799,10 +22826,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               document.removeEventListener("keydown", state.batchKeyHandler);
               state.batchKeyHandler = null;
             }
-            if (state.domObserver) {
-              state.domObserver.disconnect();
-              state.domObserver = null;
-            }
+            disconnectDOMObserver();
             if (state.linkClickHandler) {
               document.removeEventListener("click", state.linkClickHandler, true);
               document.removeEventListener("auxclick", state.linkClickHandler, true);
@@ -22831,23 +22855,55 @@ System.register("./__entry.js", [], (function (exports, module) {
             if (globalObserver) return globalObserver;
             globalObserver = new MutationObserver((mutations) => {
               if (linkContext) {
+                let newLinksCount = 0;
+                let attrLinksCount = 0;
                 mutations.forEach((mutation) => {
-                  mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType !== Node.ELEMENT_NODE) return;
-                    const element = node;
-                    element.querySelectorAll("a[href]:not(.visited-link)").forEach((link) => {
-                      updateLinkStatus(link, linkContext.visitedLinks, linkContext.state);
+                  if (mutation.type === "childList") {
+                    mutation.addedNodes.forEach((node) => {
+                      if (node.nodeType !== Node.ELEMENT_NODE) return;
+                      const element = node;
+                      if (element.tagName === "A" && element.hasAttribute("href") && !element.classList.contains("visited-link")) {
+                        updateLinkStatus(element, linkContext.visitedLinks, linkContext.state);
+                        newLinksCount++;
+                      }
+                      const newLinks = element.querySelectorAll("a[href]:not(.visited-link)");
+                      newLinksCount += newLinks.length;
+                      newLinks.forEach((link) => {
+                        updateLinkStatus(link, linkContext.visitedLinks, linkContext.state);
+                      });
                     });
-                  });
+                  } else if (mutation.type === "attributes" && mutation.attributeName === "href") {
+                    const target = mutation.target;
+                    if (target.tagName === "A" && !target.classList.contains("visited-link")) {
+                      updateLinkStatus(target, linkContext.visitedLinks, linkContext.state);
+                      attrLinksCount++;
+                    }
+                  }
                 });
+                if (linkContext.state.generalSettings.debug && newLinksCount > 0) {
+                  console.log(`[DOMObserver] 检测到 ${newLinksCount} 个新链接`);
+                }
+                if (linkContext.state.generalSettings.debug && attrLinksCount > 0) {
+                  console.log(`[DOMObserver] 检测到 ${attrLinksCount} 个链接 href 属性变化`);
+                }
               }
               if (lastHref !== location.href) {
+                if (linkContext?.state.generalSettings.debug) {
+                  console.log(`[DOMObserver] URL变化: ${lastHref} -> ${location.href}`);
+                }
                 lastHref = location.href;
                 urlChangeCallbacks.forEach((cb) => cb());
               }
             });
-            globalObserver.observe(document.body, { childList: true, subtree: true });
+            globalObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["href"] });
             return globalObserver;
+          }
+          function disconnectDOMObserver() {
+            if (globalObserver) {
+              globalObserver.disconnect();
+              globalObserver = null;
+            }
+            linkContext = null;
           }
           let cachedCurrentPreset = null;
           let cachedUrl = null;
@@ -22869,13 +22925,24 @@ System.register("./__entry.js", [], (function (exports, module) {
               return cachedCurrentPreset;
             }
             const enabledPresets = getEnabledPresets(state);
+            if (state.generalSettings.debug) {
+              console.log(`[getCurrentPagePreset] 当前页面URL: ${currentUrl}`);
+              console.log(`[getCurrentPagePreset] 启用的预设: ${enabledPresets.join(", ")}`);
+            }
             for (const preset of enabledPresets) {
               const presetRule = PRESET_RULES[preset];
-              if (presetRule?.pages.some((pattern) => pattern.test(currentUrl))) {
+              const matchedPage = presetRule?.pages.find((pattern) => pattern.test(currentUrl));
+              if (matchedPage) {
+                if (state.generalSettings.debug) {
+                  console.log(`[getCurrentPagePreset] 匹配到预设: ${preset}, 匹配模式: ${matchedPage.source}`);
+                }
                 cachedUrl = currentUrl;
                 cachedCurrentPreset = preset;
                 return preset;
               }
+            }
+            if (state.generalSettings.debug) {
+              console.log(`[getCurrentPagePreset] 未匹配到任何预设`);
             }
             cachedUrl = currentUrl;
             cachedCurrentPreset = null;
@@ -22883,9 +22950,19 @@ System.register("./__entry.js", [], (function (exports, module) {
           }
           function shouldColorLink(url, state) {
             const currentPreset = getCurrentPagePreset(state);
+            if (state.generalSettings.debug) {
+              console.log(`[shouldColorLink] 当前预设: ${currentPreset ?? "无"}`);
+            }
             if (!currentPreset) return false;
             const presetRule = PRESET_RULES[currentPreset];
-            return presetRule?.patterns.some((pattern) => pattern.test(url)) ?? false;
+            const matchedPattern = presetRule?.patterns.find((pattern) => pattern.test(url));
+            const result = matchedPattern !== void 0;
+            if (state.generalSettings.debug) {
+              console.log(`[shouldColorLink] 检查URL: ${url}`);
+              console.log(`[shouldColorLink] 可用patterns: ${presetRule?.patterns.map((p2) => p2.source).join(", ")}`);
+              console.log(`[shouldColorLink] 匹配结果: ${result}${matchedPattern ? `, 匹配模式: ${matchedPattern.source}` : ""}`);
+            }
+            return result;
           }
           function onUrlChange(callback) {
             registerUrlChangeCallback(() => {
@@ -23002,14 +23079,25 @@ System.register("./__entry.js", [], (function (exports, module) {
               if (!target) return;
               const link = target.closest("a[href]");
               if (!link) return;
-              const inputUrl = getBaseUrl(link.href);
-              if (!shouldColorLink(inputUrl, state)) return;
-              if (!Object.hasOwn(visitedLinks, inputUrl)) {
+              const originalHref = link.href;
+              const inputUrl = getBaseUrl(originalHref);
+              const shouldColor = shouldColorLink(inputUrl, state);
+              if (state.generalSettings.debug) {
+                console.log(`[handleLinkClick] 原始href: ${originalHref}`);
+                console.log(`[handleLinkClick] 处理后URL: ${inputUrl}`);
+                console.log(`[handleLinkClick] shouldColorLink结果: ${shouldColor}`);
+              }
+              if (!shouldColor) return;
+              const alreadyVisited = Object.hasOwn(visitedLinks, inputUrl);
+              if (state.generalSettings.debug) {
+                console.log(`[handleLinkClick] 是否已记录: ${alreadyVisited}`);
+              }
+              if (!alreadyVisited) {
                 visitedLinks[inputUrl] = Date.now();
                 _GM_setValue("visitedLinks", visitedLinks);
-                if (state.generalSettings.debug) console.log(`${inputUrl} saved`);
+                if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} saved`);
                 link.classList.add("visited-link");
-                if (state.generalSettings.debug) console.log(`${inputUrl} class added`);
+                if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} class added`);
               }
             };
           }
