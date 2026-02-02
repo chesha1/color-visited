@@ -82,8 +82,16 @@ export function createLinkClickHandler(visitedLinks: VisitedLinks, state: Script
       visitedLinks[inputUrl] = Date.now();
       GM_setValue('visitedLinks', visitedLinks);
       if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} saved`);
-      link.classList.add('visited-link');
-      if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} class added`);
+
+      // 染色所有相同 href 的链接（包括当前点击的元素）
+      document.querySelectorAll('a[href]:not(.visited-link)').forEach((el) => {
+        const elUrl = getBaseUrl((el as HTMLAnchorElement).href);
+        if (elUrl === inputUrl) {
+          el.classList.add('visited-link');
+        }
+      });
+
+      if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} class added to all matching links`);
     }
   };
 }
