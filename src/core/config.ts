@@ -141,6 +141,15 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.hacg\.me\/wp\/\d+\.html/, // 文章页
     ],
   },
+  'hanime1': {
+    pages: [
+      /^https:\/\/hanime1\.me\/$/, // 首页
+      /^https:\/\/hanime1\.me\/search.*/, // 搜索页
+    ],
+    patterns: [
+      /^https:\/\/hanime1\.me\/watch\?v=\d+/, // 视频页
+    ],
+  },
   'Hacker News': {
     pages: [
       /^https:\/\/news\.ycombinator\.com\/.*/, // 任意内容

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.16.1
+// @version      2.17.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -34,6 +34,8 @@
 // @include      /^https:\/\/exhentai\.org\/popular/
 // @include      /^https:\/\/www\.hacg\.me\/wp\/$/
 // @include      /^https:\/\/www\.hacg\.me\/wp\/[a-zA-Z].*/
+// @include      /^https:\/\/hanime1\.me\/$/
+// @include      /^https:\/\/hanime1\.me\/search.*/
 // @include      /^https:\/\/news\.ycombinator\.com\/.*/
 // @include      /^https:\/\/news\.ycombinator\.com\/newest.*/
 // @include      /^https:\/\/news\.ycombinator\.com\/front.*/
@@ -110,7 +112,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-u71LRXZ7.js"(exports, module$1) {
+        "main-DGxev54X.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -21069,6 +21071,18 @@ System.register("./__entry.js", [], (function (exports, module) {
                 // 文章页
               ]
             },
+            "hanime1": {
+              pages: [
+                /^https:\/\/hanime1\.me\/$/,
+                // 首页
+                /^https:\/\/hanime1\.me\/search.*/
+                // 搜索页
+              ],
+              patterns: [
+                /^https:\/\/hanime1\.me\/watch\?v=\d+/
+                // 视频页
+              ]
+            },
             "Hacker News": {
               pages: [
                 /^https:\/\/news\.ycombinator\.com\/.*/,
@@ -22161,6 +22175,11 @@ System.register("./__entry.js", [], (function (exports, module) {
     /* 处理子元素的背景图 */
     a.visited-link [style*="background-image"],
     a.visited-link [style*="background:"] {
+      filter: opacity(0.1) !important;
+    }
+
+    /* 处理子元素的图片 */
+    a.visited-link img {
       filter: opacity(0.1) !important;
     }
   `;

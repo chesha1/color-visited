@@ -88,6 +88,11 @@ function generateStyleContent(linkColor: string): string {
     a.visited-link [style*="background:"] {
       filter: opacity(0.1) !important;
     }
+
+    /* 处理子元素的图片 */
+    a.visited-link img {
+      filter: opacity(0.1) !important;
+    }
   `;
 }
 
