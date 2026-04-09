@@ -75,11 +75,26 @@
             <span class="text-gray-600">最后同步时间:</span>
             <span class="text-gray-900">{{ lastSyncTimeFormatted }}</span>
           </div>
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-gray-600">gzip 支持状态:</span>
+            <el-tag :type="gzipSupportAvailable ? 'success' : 'danger'" effect="light">
+              {{ gzipSupportAvailable ? '当前浏览器已支持' : '当前浏览器不支持' }}
+            </el-tag>
+          </div>
         </div>
       </el-card>
 
+      <div class="w-full">
+        <el-alert
+          :title="gzipSupportAlertTitle"
+          :type="gzipSupportAvailable ? 'success' : 'warning'"
+          show-icon
+          :closable="false"
+        />
+      </div>
+
       <!-- 测试连接按钮 -->
-      <div class="flex justify-center">
+      <div class="flex justify-center pt-2">
         <el-button
           type="primary"
           :loading="testingConnection"
@@ -97,7 +112,7 @@
 import { ref, computed, watch } from 'vue'
 import { DEFAULT_SETTINGS } from '@/core/config'
 import type { SyncSettings } from '@/types'
-import { validateGitHubToken } from '@/core/sync'
+import { isGzipSyncSupported, validateGitHubToken } from '@/core/sync'
 import { showNotification } from '@/core/ui'
 
 interface Props {
@@ -124,6 +139,7 @@ const savedSettings = ref<SyncSettings>({ ...props.currentSettings })
 
 // 测试连接状态
 const testingConnection = ref(false)
+const gzipSupportAvailable = isGzipSyncSupported()
 
 // 计算属性：格式化最后同步时间
 const lastSyncTimeFormatted = computed(() => {
@@ -140,6 +156,14 @@ const hasChanges = computed(() => {
     formData.value.githubToken !== savedSettings.value.githubToken ||
     formData.value.gistId !== savedSettings.value.gistId
   )
+})
+
+const gzipSupportAlertTitle = computed(() => {
+  if (gzipSupportAvailable) {
+    return '当前浏览器支持 gzip，同步存储 v2 将使用单文件 gzip 压缩格式。'
+  }
+
+  return '当前浏览器不支持 gzip Compression Streams，启用同步后将无法使用同步存储 v2。请升级浏览器或切换到支持该能力的环境。'
 })
 
 

@@ -129,6 +129,19 @@ export interface SyncData {
   syncVersion?: string // 避免与其他 version 字段冲突
 }
 
+export type SyncStorageEncoding = 'gzip-base64-json' | 'zstd-base64-json'
+
+// v2 同步格式：Gist 中存的是压缩后的文本包，而不是明文 visitedLinks JSON
+export interface CompressedSyncEnvelope {
+  syncVersion: 'v2'
+  encoding: SyncStorageEncoding
+  payload: string
+  itemCount: number
+  updatedAt: number
+  originalBytes: number
+  compressedBytes: number
+}
+
 // 数据比较结果类型
 export interface DataComparison {
   hasChanged: boolean
