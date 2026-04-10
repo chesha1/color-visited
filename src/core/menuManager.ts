@@ -1,7 +1,6 @@
 // ================== 菜单管理模块 ==================
 
 import { PRESET_RULES, DEFAULT_SETTINGS } from '@/core/config';
-import { saveSyncSettings } from '@/core/sync';
 import { showSettingsDialog } from '@/core/ui';
 import { isMac } from '@/core/utils';
 import type { BatchKeySettings, GeneralSettings, ScriptState, SyncSettings } from '@/types';

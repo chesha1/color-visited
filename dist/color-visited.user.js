@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.18.0
+// @version      2.18.1
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -112,7 +112,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-BZxhYg9Z.js"(exports, module$1) {
+        "main-DXoy70qe.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -20973,80 +20973,6 @@ System.register("./__entry.js", [], (function (exports, module) {
           importCSS(elColorPickerCss);
           const elColorPickerPanelCss = ".el-color-picker-panel{background:var(--el-bg-color-overlay);box-sizing:content-box;padding:12px;width:300px}.el-color-picker-panel.is-border{border:1px solid var(--el-border-color-lighter);border-radius:4px}.el-color-picker-panel__wrapper{margin-bottom:6px}.el-color-picker-panel__footer{display:flex;justify-content:space-between;margin-top:12px;text-align:right}.el-color-picker-panel__footer .el-input{color:#000;font-size:12px;line-height:26px;width:160px}.el-color-picker-panel.is-disabled .el-color-hue-slider,.el-color-picker-panel.is-disabled .el-color-svpanel{cursor:not-allowed;opacity:.3}.el-color-picker-panel.is-disabled .el-color-hue-slider__thumb{cursor:not-allowed}.el-color-picker-panel.is-disabled .el-color-alpha-slider,.el-color-picker-panel.is-disabled .el-color-predefine .el-color-predefine__color-selector{cursor:not-allowed;opacity:.3}.el-color-predefine{display:flex;font-size:12px;margin-top:8px;width:280px}.el-color-predefine__colors{display:flex;flex:1;flex-wrap:wrap;gap:8px}.el-color-predefine__color-selector{border-radius:4px;cursor:pointer;height:20px;width:20px}.el-color-predefine__color-selector.selected{box-shadow:0 0 3px 2px var(--el-color-primary)}.el-color-predefine__color-selector>div{border-radius:3px;display:flex;height:100%}.el-color-predefine__color-selector.is-alpha{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAAGUlEQVQYV2M4gwH+YwCGIasIUwhT25BVBADtzYNYrHvv4gAAAABJRU5ErkJggg==)}.el-color-hue-slider{background-color:red;box-sizing:border-box;float:right;height:12px;padding:0 2px;position:relative;width:280px}.el-color-hue-slider__bar{background:linear-gradient(90deg,red 0,#ff0 17%,#0f0 33%,#0ff,#00f 67%,#f0f 83%,red);height:100%;position:relative}.el-color-hue-slider__thumb{background:#fff;border:1px solid var(--el-border-color-lighter);border-radius:1px;box-shadow:0 0 2px #0009;box-sizing:border-box;cursor:pointer;height:100%;left:0;position:absolute;top:0;width:4px;z-index:1}.el-color-hue-slider__thumb:focus-visible{outline:2px solid var(--el-color-primary);outline-offset:1px}.el-color-hue-slider.is-vertical{height:180px;padding:2px 0;width:12px}.el-color-hue-slider.is-vertical .el-color-hue-slider__bar{background:linear-gradient(180deg,red 0,#ff0 17%,#0f0 33%,#0ff,#00f 67%,#f0f 83%,red)}.el-color-hue-slider.is-vertical .el-color-hue-slider__thumb{height:4px;left:0;top:0;width:100%}.el-color-svpanel{height:180px;position:relative;width:280px}.el-color-svpanel__black,.el-color-svpanel__white{inset:0;position:absolute}.el-color-svpanel__white{background:linear-gradient(90deg,#fff,#fff0)}.el-color-svpanel__black{background:linear-gradient(0deg,#000,#0000)}.el-color-svpanel__cursor{position:absolute}.el-color-svpanel__cursor>div{border-radius:50%;box-shadow:0 0 0 1.5px #fff,inset 0 0 1px 1px #0000004d,0 0 1px 2px #0006;cursor:head;height:4px;transform:translate(-2px,-2px);width:4px}.el-color-alpha-slider{background-image:linear-gradient(45deg,var(--el-color-picker-alpha-bg-a) 25%,var(--el-color-picker-alpha-bg-b) 25%),linear-gradient(135deg,var(--el-color-picker-alpha-bg-a) 25%,var(--el-color-picker-alpha-bg-b) 25%),linear-gradient(45deg,var(--el-color-picker-alpha-bg-b) 75%,var(--el-color-picker-alpha-bg-a) 75%),linear-gradient(135deg,var(--el-color-picker-alpha-bg-b) 75%,var(--el-color-picker-alpha-bg-a) 75%);background-position:0 0,6px 0,6px -6px,0 6px;background-size:12px 12px;box-sizing:border-box;height:12px;position:relative;width:280px}.el-color-alpha-slider.is-disabled .el-color-alpha-slider__thumb{cursor:not-allowed}.el-color-alpha-slider__bar{background:linear-gradient(to right,rgba(255,255,255,0) 0,var(--el-bg-color) 100%);height:100%;position:relative}.el-color-alpha-slider__thumb{background:#fff;border:1px solid var(--el-border-color-lighter);border-radius:1px;box-shadow:0 0 2px #0009;box-sizing:border-box;cursor:pointer;height:100%;left:0;position:absolute;top:0;width:4px;z-index:1}.el-color-alpha-slider__thumb:focus-visible{outline:2px solid var(--el-color-primary);outline-offset:1px}.el-color-alpha-slider.is-vertical{height:180px;width:20px}.el-color-alpha-slider.is-vertical .el-color-alpha-slider__bar{background:linear-gradient(180deg,#fff0 0,#fff)}.el-color-alpha-slider.is-vertical .el-color-alpha-slider__thumb{height:4px;left:0;top:0;width:100%}.el-color-picker-panel{--el-color-picker-alpha-bg-a:#ccc;--el-color-picker-alpha-bg-b:transparent}.dark .el-color-picker-panel{--el-color-picker-alpha-bg-a:#333333}";
           importCSS(elColorPickerPanelCss);
-          const isMac = (() => {
-            if ("userAgentData" in navigator && navigator.userAgentData) {
-              return navigator.userAgentData.platform === "macOS";
-            }
-            return /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
-          })();
-          function getBaseUrl(url) {
-            const domain = new URL(url).hostname;
-            if (domain === "www.v2ex.com") return url.split("?")[0].split("#")[0];
-            if (domain === "linux.do") return url.replace(/(\/\d+)\/\d+$/, "$1");
-            if (domain === "www.bilibili.com") return url.split("?")[0];
-            if (domain === "tieba.baidu.com") return url.split("?")[0];
-            if (domain === "www.douban.com") return url.split("?")[0];
-            if (domain === "ngabbs.com") return url.split("&")[0];
-            if (domain === "bbs.nga.cn") return url.split("&")[0];
-            if (domain === "nga.178.com") return url.split("&")[0];
-            if (/^www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net$/.test(domain)) {
-              let processedUrl = url;
-              processedUrl = processedUrl.replace(/#a$/, "");
-              processedUrl = processedUrl.replace(/-fpage-\d+/, "");
-              processedUrl = processedUrl.replace(/-page-(\d+|[ea])(\.html)?$/, "$2");
-              return processedUrl;
-            }
-            return url;
-          }
-          function logStorageInfo(visitedLinks) {
-            const serializedData = JSON.stringify(visitedLinks);
-            const sizeInBytes = new TextEncoder().encode(serializedData).length;
-            const sizeInKB = (sizeInBytes / 1024).toFixed(2);
-            const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
-            let sizeText;
-            if (sizeInBytes < 1024) {
-              sizeText = `${sizeInBytes} bytes`;
-            } else if (sizeInBytes < 1024 * 1024) {
-              sizeText = `${sizeInKB} KB`;
-            } else {
-              sizeText = `${sizeInMB} MB`;
-            }
-            const itemCount = Object.keys(visitedLinks).length;
-            console.log(`visitedLinks storage size: ${itemCount} items, ${sizeText}`);
-          }
-          const DEFAULT_SETTINGS = {
-            general: {
-              color: "rgba(0,0,0,0)",
-              // 链接颜色，默认为透明色以适配暗色模式
-              expirationTime: 1e3 * 60 * 60 * 24 * 365,
-              // 链接染色的过期时间，毫秒为单位，默认为一年
-              debug: false
-              // 是否开启调试模式
-            },
-            get batchKey() {
-              return {
-                ctrlKey: !isMac,
-                // macOS 下为 false，Windows 下为 true
-                shiftKey: true,
-                altKey: false,
-                metaKey: isMac,
-                // macOS 下为 true，Windows 下为 false
-                key: "V"
-              };
-            },
-            get presetStates() {
-              return Object.keys(PRESET_RULES).reduce((acc, key) => {
-                acc[key] = true;
-                return acc;
-              }, {});
-            },
-            sync: {
-              enabled: false,
-              githubToken: "",
-              gistId: "",
-              lastSyncTime: 0
-            }
-          };
           const PRESET_RULES = {
             "36kr": {
               pages: [
@@ -21468,6 +21394,84 @@ System.register("./__entry.js", [], (function (exports, module) {
             // resources: https://rebang.today/
             // TODO: enshan 油猴脚本都加载不进去，之后再试试
             // TODO: reddit 第一次点击的时候不会变色，刷新后才会
+          };
+          const browserNavigator = typeof navigator === "undefined" ? void 0 : navigator;
+          const isMac = (() => {
+            if (!browserNavigator) {
+              return false;
+            }
+            if (browserNavigator.userAgentData) {
+              return browserNavigator.userAgentData.platform === "macOS";
+            }
+            return /Mac|iPod|iPhone|iPad/.test(browserNavigator.userAgent);
+          })();
+          function getBaseUrl(url) {
+            const domain = new URL(url).hostname;
+            if (domain === "www.v2ex.com") return url.split("?")[0].split("#")[0];
+            if (domain === "linux.do") return url.replace(/(\/\d+)\/\d+$/, "$1");
+            if (domain === "www.bilibili.com") return url.split("?")[0];
+            if (domain === "tieba.baidu.com") return url.split("?")[0];
+            if (domain === "www.douban.com") return url.split("?")[0];
+            if (domain === "ngabbs.com") return url.split("&")[0];
+            if (domain === "bbs.nga.cn") return url.split("&")[0];
+            if (domain === "nga.178.com") return url.split("&")[0];
+            if (/^www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net$/.test(domain)) {
+              let processedUrl = url;
+              processedUrl = processedUrl.replace(/#a$/, "");
+              processedUrl = processedUrl.replace(/-fpage-\d+/, "");
+              processedUrl = processedUrl.replace(/-page-(\d+|[ea])(\.html)?$/, "$2");
+              return processedUrl;
+            }
+            return url;
+          }
+          function logStorageInfo(visitedLinks) {
+            const serializedData = JSON.stringify(visitedLinks);
+            const sizeInBytes = new TextEncoder().encode(serializedData).length;
+            const sizeInKB = (sizeInBytes / 1024).toFixed(2);
+            const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+            let sizeText;
+            if (sizeInBytes < 1024) {
+              sizeText = `${sizeInBytes} bytes`;
+            } else if (sizeInBytes < 1024 * 1024) {
+              sizeText = `${sizeInKB} KB`;
+            } else {
+              sizeText = `${sizeInMB} MB`;
+            }
+            const itemCount = Object.keys(visitedLinks).length;
+            console.log(`visitedLinks storage size: ${itemCount} items, ${sizeText}`);
+          }
+          const DEFAULT_SETTINGS = {
+            general: {
+              color: "rgba(0,0,0,0)",
+              // 链接颜色，默认为透明色以适配暗色模式
+              expirationTime: 1e3 * 60 * 60 * 24 * 365,
+              // 链接染色的过期时间，毫秒为单位，默认为一年
+              debug: false
+              // 是否开启调试模式
+            },
+            get batchKey() {
+              return {
+                ctrlKey: !isMac,
+                // macOS 下为 false，Windows 下为 true
+                shiftKey: true,
+                altKey: false,
+                metaKey: isMac,
+                // macOS 下为 true，Windows 下为 false
+                key: "V"
+              };
+            },
+            get presetStates() {
+              return Object.keys(PRESET_RULES).reduce((acc, key) => {
+                acc[key] = true;
+                return acc;
+              }, {});
+            },
+            sync: {
+              enabled: false,
+              githubToken: "",
+              gistId: "",
+              lastSyncTime: 0
+            }
           };
           const _hoisted_1$4 = { class: "space-y-6" };
           const _hoisted_2$3 = { class: "flex items-center gap-3" };

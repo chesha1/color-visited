@@ -33,13 +33,7 @@ export interface SyncSettings {
 
 // ================== 配置类型 ==================
 
-export interface PresetRule {
-  pages: RegExp[]
-  patterns: RegExp[]
-  description?: string
-}
-
-export type PresetRules = Record<string, PresetRule>
+export type { PresetRule, PresetRules } from './shared/presetRules'
 
 // ================== UI 类型 ==================
 

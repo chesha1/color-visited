@@ -1,11 +1,25 @@
+type NavigatorWithUserAgentData = Navigator & {
+  userAgentData?: {
+    platform?: string
+  }
+}
+
+const browserNavigator: NavigatorWithUserAgentData | undefined =
+  typeof navigator === 'undefined' ? undefined : navigator
+
 // 检测当前操作系统
 export const isMac = (() => {
-  // 优先使用现代 API
-  if ('userAgentData' in navigator && (navigator as any).userAgentData) {
-    return (navigator as any).userAgentData.platform === 'macOS';
+  if (!browserNavigator) {
+    return false;
   }
+
+  // 优先使用现代 API
+  if (browserNavigator.userAgentData) {
+    return browserNavigator.userAgentData.platform === 'macOS';
+  }
+
   // 降级到 userAgent 检测
-  return /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
+  return /Mac|iPod|iPhone|iPad/.test(browserNavigator.userAgent);
 })();
 
 // ================== URL 处理工具 ==================

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import { PRESET_RULES } from './src/core/config';
+import { PRESET_RULES } from './src/shared/presetRules';
 import monkey from 'vite-plugin-monkey';
 import path from 'path';
 import AutoImport from 'unplugin-auto-import/vite'
@@ -32,7 +32,7 @@ export default defineConfig({
       entry: 'src/main.ts',
       userscript: {
         name: 'color-visited 对已访问过的链接染色',
-        version: '2.18.0',
+        version: '2.18.1',
         description: '把访问过的链接染色成灰色',
         author: 'chesha1',
         license: 'GPL-3.0-only',
