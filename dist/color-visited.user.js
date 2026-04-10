@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.19.0
+// @version      2.19.1
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -112,7 +112,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-7LlDNYgP.js"(exports, module$1) {
+        "main-DnsWjtcA.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22069,7 +22069,17 @@ System.register("./__entry.js", [], (function (exports, module) {
           const SYNC_STORAGE_VERSION = "v2";
           const SYNC_STORAGE_ENCODING = "gzip-base64-json";
           const textEncoder = new TextEncoder();
+          const KNOWN_SYNC_POLLUTION_KEYS = [
+            "syncVersion",
+            "encoding",
+            "payload",
+            "itemCount",
+            "updatedAt",
+            "originalBytes",
+            "compressedBytes"
+          ];
           const compressionSupportCache = /* @__PURE__ */ new Map();
+          const knownSyncPollutionKeySet = new Set(KNOWN_SYNC_POLLUTION_KEYS);
           function getDefaultUserSettings() {
             return {
               general: DEFAULT_SETTINGS.general,
@@ -22152,15 +22162,42 @@ System.register("./__entry.js", [], (function (exports, module) {
             }
             return samples;
           }
+          function getKnownSyncPollutionKeys(value, limit = KNOWN_SYNC_POLLUTION_KEYS.length) {
+            const pollutionKeys = [];
+            for (const key of Object.keys(value)) {
+              if (!knownSyncPollutionKeySet.has(key)) {
+                continue;
+              }
+              pollutionKeys.push(key);
+              if (pollutionKeys.length >= limit) {
+                break;
+              }
+            }
+            return pollutionKeys;
+          }
+          function appendRemovedSample(samples, key, value, limit = 3) {
+            if (samples.length >= limit) {
+              return;
+            }
+            samples.push(`${key}=${String(value)} (${getValueTypeLabel(value)})`);
+          }
           function describeVisitedLinksCandidate(value) {
             if (!isPlainObject(value)) {
               return `类型是 ${getValueTypeLabel(value)}，不是对象`;
             }
             const invalidSamples = getInvalidVisitedLinksSamples(value);
-            if (invalidSamples.length === 0) {
+            const knownPollutionKeys = getKnownSyncPollutionKeys(value);
+            const issues = [];
+            if (invalidSamples.length > 0) {
+              issues.push(`发现非数字时间戳示例: ${invalidSamples.join("; ")}`);
+            }
+            if (knownPollutionKeys.length > 0) {
+              issues.push(`命中疑似旧版 v2 污染键: ${knownPollutionKeys.join(", ")}`);
+            }
+            if (issues.length === 0) {
               return `对象共有 ${Object.keys(value).length} 个键，但未通过预期校验`;
             }
-            return `发现非数字时间戳示例: ${invalidSamples.join("; ")}`;
+            return issues.join("；");
           }
           function describeCompressedPayloadShape(value) {
             if (isVisitedLinksData(value)) {
@@ -22172,7 +22209,7 @@ System.register("./__entry.js", [], (function (exports, module) {
             if ("visitedLinks" in value) {
               return `检测到 visitedLinks 字段，但其内容无效: ${describeVisitedLinksCandidate(value.visitedLinks)}`;
             }
-            return `解压后对象缺少 visitedLinks 字段，当前键: ${getObjectKeyPreview(value)}`;
+            return `解压后对象未通过 visitedLinks 校验: ${describeVisitedLinksCandidate(value)}`;
           }
           function describeCompressedEnvelopeShape(value) {
             const issues = [];
@@ -22201,6 +22238,69 @@ System.register("./__entry.js", [], (function (exports, module) {
               return `键: ${getObjectKeyPreview(value)}`;
             }
             return issues.join("; ");
+          }
+          function tryRepairVisitedLinksData(value) {
+            if (!isPlainObject(value)) {
+              return null;
+            }
+            const candidateValue = "visitedLinks" in value ? value.visitedLinks : value;
+            if (!isPlainObject(candidateValue)) {
+              return null;
+            }
+            const visitedLinks = {};
+            const removedSamples = [];
+            const knownPollutionKeys = /* @__PURE__ */ new Set();
+            let removedCount = 0;
+            for (const [key, timestamp] of Object.entries(candidateValue)) {
+              if (knownSyncPollutionKeySet.has(key)) {
+                removedCount++;
+                knownPollutionKeys.add(key);
+                appendRemovedSample(removedSamples, key, timestamp);
+                continue;
+              }
+              if (typeof timestamp === "number" && Number.isFinite(timestamp)) {
+                visitedLinks[key] = timestamp;
+                continue;
+              }
+              removedCount++;
+              appendRemovedSample(removedSamples, key, timestamp);
+            }
+            if (Object.keys(visitedLinks).length === 0 && Object.keys(candidateValue).length > 0) {
+              return null;
+            }
+            return {
+              visitedLinks,
+              removedCount,
+              removedSamples,
+              knownPollutionKeys: Array.from(knownPollutionKeys)
+            };
+          }
+          function describeVisitedLinksRepairFailure(value) {
+            if (!isPlainObject(value)) {
+              return `顶层类型是 ${getValueTypeLabel(value)}，期望是对象`;
+            }
+            if ("visitedLinks" in value) {
+              return `检测到 visitedLinks 字段，但其内容无效: ${describeVisitedLinksCandidate(value.visitedLinks)}`;
+            }
+            return `对象清洗后没有可用记录: ${describeVisitedLinksCandidate(value)}`;
+          }
+          function logVisitedLinksRepair(source, result) {
+            if (result.removedCount === 0) {
+              return;
+            }
+            const sampleText = result.removedSamples.length > 0 ? result.removedSamples.join("; ") : "(没有可展示的样例)";
+            const pollutionHint = result.knownPollutionKeys.length > 0 ? ` 命中疑似旧版 v2 污染键: ${result.knownPollutionKeys.join(", ")}。仍有旧设备运行旧脚本时，污染可能再次出现，请升级旧设备。` : "";
+            console.warn(
+              `[同步自愈][${source}] 已清理 ${result.removedCount} 条无效记录，保留 ${Object.keys(result.visitedLinks).length} 条有效记录。样例: ${sampleText}.${pollutionHint}`
+            );
+          }
+          function requireVisitedLinksData(value, source) {
+            const result = tryRepairVisitedLinksData(value);
+            if (!result) {
+              throw new Error(`${source} 数据格式无效: ${describeVisitedLinksRepairFailure(value)}`);
+            }
+            logVisitedLinksRepair(source, result);
+            return result;
           }
           function supportsCompressionEncoding(encoding) {
             const cachedSupport = compressionSupportCache.get(encoding);
@@ -22279,7 +22379,7 @@ System.register("./__entry.js", [], (function (exports, module) {
             return fileName;
           }
           async function serializeVisitedLinksForGist(data) {
-            const visitedLinks = extractVisitedLinks(data);
+            const visitedLinks = requireVisitedLinksData(data, "上传前数据").visitedLinks;
             const jsonText = JSON.stringify(visitedLinks);
             const compressedBytes = await compressText(jsonText, SYNC_STORAGE_ENCODING);
             const envelope = {
@@ -22326,6 +22426,11 @@ System.register("./__entry.js", [], (function (exports, module) {
             if (visitedLinks) {
               return visitedLinks;
             }
+            const repairedVisitedLinks = tryRepairVisitedLinksData(parsed);
+            if (repairedVisitedLinks) {
+              logVisitedLinksRepair("云端 v2 解压负载", repairedVisitedLinks);
+              return repairedVisitedLinks.visitedLinks;
+            }
             const reason = describeCompressedPayloadShape(parsed);
             console.warn("同步存储 v2 数据结构无效:", envelopeMeta, reason);
             throw new Error(`同步存储 v2 数据格式无效: ${reason}`);
@@ -22336,7 +22441,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               parsed = JSON.parse(contentText);
             } catch (error) {
               console.warn("解析 Gist 内容失败:", error);
-              return {};
+              throw new Error("同步存储内容不是合法 JSON");
             }
             if (isCompressedSyncEnvelope(parsed)) {
               return await deserializeCompressedSyncEnvelope(parsed);
@@ -22346,15 +22451,12 @@ System.register("./__entry.js", [], (function (exports, module) {
               console.warn("同步存储 v2 外层包结构无效:", reason);
               throw new Error(`同步存储 v2 外层包格式无效: ${reason}`);
             }
-            if (isSyncData(parsed) || isVisitedLinksData(parsed)) {
-              return parsed;
+            const repairedLegacyVisitedLinks = tryRepairVisitedLinksData(parsed);
+            if (repairedLegacyVisitedLinks) {
+              logVisitedLinksRepair("云端旧版明文数据", repairedLegacyVisitedLinks);
+              return repairedLegacyVisitedLinks.visitedLinks;
             }
-            const legacyVisitedLinks = extractVisitedLinksFromUnknown(parsed);
-            if (legacyVisitedLinks) {
-              console.warn("读取到元信息异常的旧版同步数据，已仅提取 visitedLinks 继续兼容");
-              return legacyVisitedLinks;
-            }
-            return {};
+            throw new Error(`同步存储旧版数据格式无效: ${describeVisitedLinksRepairFailure(parsed)}`);
           }
           function areVisitedLinksEqual(left, right) {
             let leftCount = 0;
@@ -22499,11 +22601,25 @@ System.register("./__entry.js", [], (function (exports, module) {
           async function syncOnStartup() {
             try {
               console.log("开始同步数据...");
-              const localLinksSnapshot = _GM_getValue("visitedLinks", {});
+              const localLinksSnapshotResult = requireVisitedLinksData(
+                _GM_getValue("visitedLinks", {}),
+                "本地启动快照"
+              );
+              const localLinksSnapshot = localLinksSnapshotResult.visitedLinks;
+              if (localLinksSnapshotResult.removedCount > 0) {
+                _GM_setValue("visitedLinks", localLinksSnapshot);
+              }
               const cloudData = await downloadFromCloud();
               const cloudLinks = extractVisitedLinks(cloudData);
               let mergedLinks = mergeVisitedLinks(localLinksSnapshot, cloudLinks);
-              const currentLocalLinks = _GM_getValue("visitedLinks", {});
+              const currentLocalLinksResult = requireVisitedLinksData(
+                _GM_getValue("visitedLinks", {}),
+                "本地同步期快照"
+              );
+              const currentLocalLinks = currentLocalLinksResult.visitedLinks;
+              if (currentLocalLinksResult.removedCount > 0) {
+                _GM_setValue("visitedLinks", currentLocalLinks);
+              }
               mergedLinks = mergeVisitedLinks(mergedLinks, currentLocalLinks);
               _GM_setValue("visitedLinks", mergedLinks);
               const localChanged = hasDataChanged(localLinksSnapshot, mergedLinks);

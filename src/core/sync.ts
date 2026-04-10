@@ -7,7 +7,8 @@ import type {
   SyncData,
   SyncStorageEncoding,
   SyncSettings,
-  VisitedLinksData
+  VisitedLinksData,
+  VisitedLinksRepairResult
 } from '@/types';
 import { DEFAULT_SETTINGS } from '@/core/config';
 import { eventBus } from '@/core/eventBus';
@@ -17,8 +18,18 @@ const GITHUB_ACCEPT_HEADER = 'application/vnd.github.v3+json';
 const SYNC_STORAGE_VERSION = 'v2';
 const SYNC_STORAGE_ENCODING: SyncStorageEncoding = 'gzip-base64-json';
 const textEncoder = new TextEncoder();
+const KNOWN_SYNC_POLLUTION_KEYS = [
+  'syncVersion',
+  'encoding',
+  'payload',
+  'itemCount',
+  'updatedAt',
+  'originalBytes',
+  'compressedBytes'
+] as const;
 
 const compressionSupportCache = new Map<SyncStorageEncoding, boolean>();
+const knownSyncPollutionKeySet = new Set<string>(KNOWN_SYNC_POLLUTION_KEYS);
 
 function getDefaultUserSettings() {
   return {
@@ -135,19 +146,59 @@ function getInvalidVisitedLinksSamples(value: Record<string, unknown>, limit = 3
   return samples;
 }
 
+// 从对象中提取常见的 v2 污染键，帮助日志快速判断是否是旧脚本误读导致的污染。
+function getKnownSyncPollutionKeys(value: Record<string, unknown>, limit = KNOWN_SYNC_POLLUTION_KEYS.length): string[] {
+  const pollutionKeys: string[] = [];
+
+  for (const key of Object.keys(value)) {
+    if (!knownSyncPollutionKeySet.has(key)) {
+      continue;
+    }
+
+    pollutionKeys.push(key);
+    if (pollutionKeys.length >= limit) {
+      break;
+    }
+  }
+
+  return pollutionKeys;
+}
+
+// 统一收集被清理掉的键值样例，避免每个恢复分支都手写一套日志拼接逻辑。
+function appendRemovedSample(samples: string[], key: string, value: unknown, limit = 3): void {
+  if (samples.length >= limit) {
+    return;
+  }
+
+  samples.push(`${key}=${String(value)} (${getValueTypeLabel(value)})`);
+}
+
+// 把候选对象描述成人类可读的诊断文本，优先给出无效值和旧版污染键样例。
 function describeVisitedLinksCandidate(value: unknown): string {
   if (!isPlainObject(value)) {
     return `类型是 ${getValueTypeLabel(value)}，不是对象`;
   }
 
   const invalidSamples = getInvalidVisitedLinksSamples(value);
-  if (invalidSamples.length === 0) {
+  const knownPollutionKeys = getKnownSyncPollutionKeys(value);
+  const issues: string[] = [];
+
+  if (invalidSamples.length > 0) {
+    issues.push(`发现非数字时间戳示例: ${invalidSamples.join('; ')}`);
+  }
+
+  if (knownPollutionKeys.length > 0) {
+    issues.push(`命中疑似旧版 v2 污染键: ${knownPollutionKeys.join(', ')}`);
+  }
+
+  if (issues.length === 0) {
     return `对象共有 ${Object.keys(value).length} 个键，但未通过预期校验`;
   }
 
-  return `发现非数字时间戳示例: ${invalidSamples.join('; ')}`;
+  return issues.join('；');
 }
 
+// 描述 v2 解压后的内容长什么样，便于在报错时区分是“完全不是对象”还是“对象被污染”。
 function describeCompressedPayloadShape(value: unknown): string {
   if (isVisitedLinksData(value)) {
     return `已解析为 visitedLinks，共 ${Object.keys(value).length} 条记录`;
@@ -161,7 +212,7 @@ function describeCompressedPayloadShape(value: unknown): string {
     return `检测到 visitedLinks 字段，但其内容无效: ${describeVisitedLinksCandidate((value as Record<string, unknown>).visitedLinks)}`;
   }
 
-  return `解压后对象缺少 visitedLinks 字段，当前键: ${getObjectKeyPreview(value)}`;
+  return `解压后对象未通过 visitedLinks 校验: ${describeVisitedLinksCandidate(value)}`;
 }
 
 function describeCompressedEnvelopeShape(value: Record<string, unknown>): string {
@@ -200,6 +251,98 @@ function describeCompressedEnvelopeShape(value: Record<string, unknown>): string
   }
 
   return issues.join('; ');
+}
+
+// 尝试把未知输入修复成可信的 visitedLinks：
+// 只保留有限数字时间戳，同时剔除旧脚本可能混入的 v2 元信息键。
+function tryRepairVisitedLinksData(value: unknown): VisitedLinksRepairResult | null {
+  if (!isPlainObject(value)) {
+    return null;
+  }
+
+  const candidateValue = 'visitedLinks' in value
+    ? (value as Record<string, unknown>).visitedLinks
+    : value;
+
+  if (!isPlainObject(candidateValue)) {
+    return null;
+  }
+
+  const visitedLinks: VisitedLinksData = {};
+  const removedSamples: string[] = [];
+  const knownPollutionKeys = new Set<string>();
+  let removedCount = 0;
+
+  for (const [key, timestamp] of Object.entries(candidateValue)) {
+    if (knownSyncPollutionKeySet.has(key)) {
+      removedCount++;
+      knownPollutionKeys.add(key);
+      appendRemovedSample(removedSamples, key, timestamp);
+      continue;
+    }
+
+    if (typeof timestamp === 'number' && Number.isFinite(timestamp)) {
+      visitedLinks[key] = timestamp;
+      continue;
+    }
+
+    removedCount++;
+    appendRemovedSample(removedSamples, key, timestamp);
+  }
+
+  if (Object.keys(visitedLinks).length === 0 && Object.keys(candidateValue).length > 0) {
+    return null;
+  }
+
+  return {
+    visitedLinks,
+    removedCount,
+    removedSamples,
+    knownPollutionKeys: Array.from(knownPollutionKeys)
+  };
+}
+
+// 在无法恢复时生成统一错误说明，避免不同入口抛出的错误语义不一致。
+function describeVisitedLinksRepairFailure(value: unknown): string {
+  if (!isPlainObject(value)) {
+    return `顶层类型是 ${getValueTypeLabel(value)}，期望是对象`;
+  }
+
+  if ('visitedLinks' in value) {
+    return `检测到 visitedLinks 字段，但其内容无效: ${describeVisitedLinksCandidate((value as Record<string, unknown>).visitedLinks)}`;
+  }
+
+  return `对象清洗后没有可用记录: ${describeVisitedLinksCandidate(value)}`;
+}
+
+// 只有实际删掉脏数据时才记录自愈日志，日志里带来源、数量和样例，方便排查多设备污染。
+function logVisitedLinksRepair(source: string, result: VisitedLinksRepairResult): void {
+  if (result.removedCount === 0) {
+    return;
+  }
+
+  const sampleText = result.removedSamples.length > 0
+    ? result.removedSamples.join('; ')
+    : '(没有可展示的样例)';
+  const pollutionHint = result.knownPollutionKeys.length > 0
+    ? ` 命中疑似旧版 v2 污染键: ${result.knownPollutionKeys.join(', ')}。仍有旧设备运行旧脚本时，污染可能再次出现，请升级旧设备。`
+    : '';
+
+  console.warn(
+    `[同步自愈][${source}] 已清理 ${result.removedCount} 条无效记录，保留 ${Object.keys(result.visitedLinks).length} 条有效记录。样例: ${sampleText}.${pollutionHint}`
+  );
+}
+
+// 需要“必须拿到可用 visitedLinks”的入口统一走这里：
+// 成功则返回清洗结果，失败则抛出带上下文的错误。
+function requireVisitedLinksData(value: unknown, source: string): VisitedLinksRepairResult {
+  const result = tryRepairVisitedLinksData(value);
+  if (!result) {
+    throw new Error(`${source} 数据格式无效: ${describeVisitedLinksRepairFailure(value)}`);
+  }
+
+  logVisitedLinksRepair(source, result);
+  return result;
 }
 
 function supportsCompressionEncoding(encoding: SyncStorageEncoding): boolean {
@@ -305,8 +448,9 @@ function getFirstGistFileName(gist: GitHubGist): string {
   return fileName;
 }
 
+// 上传前统一把输入收敛成干净的 visitedLinks，再编码成当前 v2 压缩包格式。
 async function serializeVisitedLinksForGist(data: SyncData | VisitedLinksData): Promise<string> {
-  const visitedLinks = extractVisitedLinks(data);
+  const visitedLinks = requireVisitedLinksData(data, '上传前数据').visitedLinks;
   const jsonText = JSON.stringify(visitedLinks);
   const compressedBytes = await compressText(jsonText, SYNC_STORAGE_ENCODING);
 
@@ -324,6 +468,7 @@ async function serializeVisitedLinksForGist(data: SyncData | VisitedLinksData): 
   return JSON.stringify(envelope);
 }
 
+// 按 v2 包装格式完成 base64 解码、解压、JSON 解析，并在“仅数据层污染”时尝试自动恢复。
 async function deserializeCompressedSyncEnvelope(envelope: CompressedSyncEnvelope): Promise<VisitedLinksData> {
   const envelopeMeta = {
     encoding: envelope.encoding,
@@ -365,12 +510,19 @@ async function deserializeCompressedSyncEnvelope(envelope: CompressedSyncEnvelop
     return visitedLinks;
   }
 
+  const repairedVisitedLinks = tryRepairVisitedLinksData(parsed);
+  if (repairedVisitedLinks) {
+    logVisitedLinksRepair('云端 v2 解压负载', repairedVisitedLinks);
+    return repairedVisitedLinks.visitedLinks;
+  }
+
   const reason = describeCompressedPayloadShape(parsed);
   console.warn('同步存储 v2 数据结构无效:', envelopeMeta, reason);
 
   throw new Error(`同步存储 v2 数据格式无效: ${reason}`);
 }
 
+// 读取 Gist 文本内容时同时兼容 v2 压缩包和旧版明文 JSON，并把恢复逻辑统一收口在这里。
 async function deserializeGistContent(contentText: string): Promise<SyncData | VisitedLinksData> {
   let parsed: unknown;
 
@@ -379,7 +531,7 @@ async function deserializeGistContent(contentText: string): Promise<SyncData | V
   }
   catch (error) {
     console.warn('解析 Gist 内容失败:', error);
-    return {};
+    throw new Error('同步存储内容不是合法 JSON');
   }
 
   if (isCompressedSyncEnvelope(parsed)) {
@@ -392,18 +544,13 @@ async function deserializeGistContent(contentText: string): Promise<SyncData | V
     throw new Error(`同步存储 v2 外层包格式无效: ${reason}`);
   }
 
-  // 继续兼容旧版明文 Gist；下一次成功上传时会自动升级成 v2 单文件 gzip 压缩包。
-  if (isSyncData(parsed) || isVisitedLinksData(parsed)) {
-    return parsed;
+  const repairedLegacyVisitedLinks = tryRepairVisitedLinksData(parsed);
+  if (repairedLegacyVisitedLinks) {
+    logVisitedLinksRepair('云端旧版明文数据', repairedLegacyVisitedLinks);
+    return repairedLegacyVisitedLinks.visitedLinks;
   }
 
-  const legacyVisitedLinks = extractVisitedLinksFromUnknown(parsed);
-  if (legacyVisitedLinks) {
-    console.warn('读取到元信息异常的旧版同步数据，已仅提取 visitedLinks 继续兼容');
-    return legacyVisitedLinks;
-  }
-
-  return {};
+  throw new Error(`同步存储旧版数据格式无效: ${describeVisitedLinksRepairFailure(parsed)}`);
 }
 
 function areVisitedLinksEqual(left: VisitedLinksData, right: VisitedLinksData): boolean {
@@ -607,7 +754,14 @@ export async function syncOnStartup(): Promise<void> {
     console.log('开始同步数据...');
 
     // 1. 获取本地数据快照（同步开始时）
-    const localLinksSnapshot = GM_getValue('visitedLinks', {}) as VisitedLinksData;
+    const localLinksSnapshotResult = requireVisitedLinksData(
+      GM_getValue('visitedLinks', {}) as unknown,
+      '本地启动快照'
+    );
+    const localLinksSnapshot = localLinksSnapshotResult.visitedLinks;
+    if (localLinksSnapshotResult.removedCount > 0) {
+      GM_setValue('visitedLinks', localLinksSnapshot);
+    }
 
     // 2. 从云端获取数据（这个过程可能较慢）
     const cloudData = await downloadFromCloud();
@@ -618,7 +772,14 @@ export async function syncOnStartup(): Promise<void> {
 
     // 4. 重新获取本地数据，合并同步期间用户可能新增的链接
     // 这是为了防止在网络请求期间用户点击的链接被覆盖丢失
-    const currentLocalLinks = GM_getValue('visitedLinks', {}) as VisitedLinksData;
+    const currentLocalLinksResult = requireVisitedLinksData(
+      GM_getValue('visitedLinks', {}) as unknown,
+      '本地同步期快照'
+    );
+    const currentLocalLinks = currentLocalLinksResult.visitedLinks;
+    if (currentLocalLinksResult.removedCount > 0) {
+      GM_setValue('visitedLinks', currentLocalLinks);
+    }
     mergedLinks = mergeVisitedLinks(mergedLinks, currentLocalLinks);
 
     // 5. 保存到本地

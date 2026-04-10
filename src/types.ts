@@ -136,6 +136,15 @@ export interface CompressedSyncEnvelope {
   compressedBytes: number
 }
 
+// visitedLinks 自愈清洗结果：
+// 保存过滤后的有效记录，以及被移除条目的统计和诊断样例。
+export interface VisitedLinksRepairResult {
+  visitedLinks: VisitedLinksData
+  removedCount: number
+  removedSamples: string[]
+  knownPollutionKeys: string[]
+}
+
 // 数据比较结果类型
 export interface DataComparison {
   hasChanged: boolean
