@@ -41,6 +41,19 @@ function isVisitedLinksData(value: unknown): value is VisitedLinksData {
   return Object.values(value).every(timestamp => typeof timestamp === 'number' && Number.isFinite(timestamp));
 }
 
+function extractVisitedLinksFromUnknown(value: unknown): VisitedLinksData | null {
+  if (isVisitedLinksData(value)) {
+    return value;
+  }
+
+  if (!isPlainObject(value) || !('visitedLinks' in value)) {
+    return null;
+  }
+
+  const { visitedLinks } = value as Record<string, unknown>;
+  return isVisitedLinksData(visitedLinks) ? visitedLinks : null;
+}
+
 function isSyncData(value: unknown): value is SyncData {
   if (!isPlainObject(value) || !('visitedLinks' in value)) {
     return false;
@@ -77,6 +90,116 @@ function getCompressionFormat(encoding: SyncStorageEncoding): CompressionFormat 
 
 function getEncodingDisplayName(encoding: SyncStorageEncoding): string {
   return encoding === 'gzip-base64-json' ? 'gzip' : 'Zstandard（zstd）';
+}
+
+function getValueTypeLabel(value: unknown): string {
+  if (value === null) {
+    return 'null';
+  }
+
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+
+  return typeof value;
+}
+
+function getObjectKeyPreview(value: Record<string, unknown>, limit = 5): string {
+  const keys = Object.keys(value);
+
+  if (keys.length === 0) {
+    return '(empty)';
+  }
+
+  if (keys.length <= limit) {
+    return keys.join(', ');
+  }
+
+  return `${keys.slice(0, limit).join(', ')} 等 ${keys.length} 个键`;
+}
+
+function getInvalidVisitedLinksSamples(value: Record<string, unknown>, limit = 3): string[] {
+  const samples: string[] = [];
+
+  for (const [url, timestamp] of Object.entries(value)) {
+    if (typeof timestamp === 'number' && Number.isFinite(timestamp)) {
+      continue;
+    }
+
+    samples.push(`${url}=${String(timestamp)} (${getValueTypeLabel(timestamp)})`);
+    if (samples.length >= limit) {
+      break;
+    }
+  }
+
+  return samples;
+}
+
+function describeVisitedLinksCandidate(value: unknown): string {
+  if (!isPlainObject(value)) {
+    return `类型是 ${getValueTypeLabel(value)}，不是对象`;
+  }
+
+  const invalidSamples = getInvalidVisitedLinksSamples(value);
+  if (invalidSamples.length === 0) {
+    return `对象共有 ${Object.keys(value).length} 个键，但未通过预期校验`;
+  }
+
+  return `发现非数字时间戳示例: ${invalidSamples.join('; ')}`;
+}
+
+function describeCompressedPayloadShape(value: unknown): string {
+  if (isVisitedLinksData(value)) {
+    return `已解析为 visitedLinks，共 ${Object.keys(value).length} 条记录`;
+  }
+
+  if (!isPlainObject(value)) {
+    return `解压后顶层类型是 ${getValueTypeLabel(value)}，期望是 visitedLinks 对象或包含 visitedLinks 的对象`;
+  }
+
+  if ('visitedLinks' in value) {
+    return `检测到 visitedLinks 字段，但其内容无效: ${describeVisitedLinksCandidate((value as Record<string, unknown>).visitedLinks)}`;
+  }
+
+  return `解压后对象缺少 visitedLinks 字段，当前键: ${getObjectKeyPreview(value)}`;
+}
+
+function describeCompressedEnvelopeShape(value: Record<string, unknown>): string {
+  const issues: string[] = [];
+
+  if (value.syncVersion !== SYNC_STORAGE_VERSION) {
+    issues.push(`syncVersion=${String(value.syncVersion)}`);
+  }
+
+  if (value.encoding !== 'gzip-base64-json' && value.encoding !== 'zstd-base64-json') {
+    issues.push(`encoding=${String(value.encoding)}`);
+  }
+
+  if (typeof value.payload !== 'string') {
+    issues.push(`payload 类型为 ${getValueTypeLabel(value.payload)}`);
+  }
+
+  if (typeof value.itemCount !== 'number') {
+    issues.push(`itemCount 类型为 ${getValueTypeLabel(value.itemCount)}`);
+  }
+
+  if (typeof value.updatedAt !== 'number') {
+    issues.push(`updatedAt 类型为 ${getValueTypeLabel(value.updatedAt)}`);
+  }
+
+  if (typeof value.originalBytes !== 'number') {
+    issues.push(`originalBytes 类型为 ${getValueTypeLabel(value.originalBytes)}`);
+  }
+
+  if (typeof value.compressedBytes !== 'number') {
+    issues.push(`compressedBytes 类型为 ${getValueTypeLabel(value.compressedBytes)}`);
+  }
+
+  if (issues.length === 0) {
+    return `键: ${getObjectKeyPreview(value)}`;
+  }
+
+  return issues.join('; ');
 }
 
 function supportsCompressionEncoding(encoding: SyncStorageEncoding): boolean {
@@ -202,20 +325,50 @@ async function serializeVisitedLinksForGist(data: SyncData | VisitedLinksData): 
 }
 
 async function deserializeCompressedSyncEnvelope(envelope: CompressedSyncEnvelope): Promise<VisitedLinksData> {
-  const compressedBytes = base64ToBytes(envelope.payload);
-  const decompressedText = await decompressText(compressedBytes, envelope.encoding);
-  const parsed = JSON.parse(decompressedText) as unknown;
+  const envelopeMeta = {
+    encoding: envelope.encoding,
+    itemCount: envelope.itemCount,
+    updatedAt: envelope.updatedAt,
+    originalBytes: envelope.originalBytes,
+    compressedBytes: envelope.compressedBytes
+  };
 
-  // 兼容早期试验格式：如果压缩包里包的是 SyncData，只提取 visitedLinks。
-  if (isSyncData(parsed)) {
-    return parsed.visitedLinks;
+  let compressedBytes: Uint8Array;
+  try {
+    compressedBytes = base64ToBytes(envelope.payload);
+  }
+  catch (error) {
+    console.warn('同步存储 v2 base64 解码失败:', envelopeMeta, error);
+    throw new Error('同步存储 v2 payload 不是合法 Base64');
   }
 
-  if (isVisitedLinksData(parsed)) {
-    return parsed;
+  let decompressedText = '';
+  try {
+    decompressedText = await decompressText(compressedBytes, envelope.encoding);
+  }
+  catch (error) {
+    console.warn('同步存储 v2 解压失败:', envelopeMeta, error);
+    throw new Error(`同步存储 v2 ${getEncodingDisplayName(envelope.encoding)} 解压失败`);
   }
 
-  throw new Error('同步存储 v2 数据格式无效');
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(decompressedText) as unknown;
+  }
+  catch (error) {
+    console.warn('同步存储 v2 JSON 解析失败:', envelopeMeta, error);
+    throw new Error('同步存储 v2 解压后的内容不是合法 JSON');
+  }
+
+  const visitedLinks = extractVisitedLinksFromUnknown(parsed);
+  if (visitedLinks) {
+    return visitedLinks;
+  }
+
+  const reason = describeCompressedPayloadShape(parsed);
+  console.warn('同步存储 v2 数据结构无效:', envelopeMeta, reason);
+
+  throw new Error(`同步存储 v2 数据格式无效: ${reason}`);
 }
 
 async function deserializeGistContent(contentText: string): Promise<SyncData | VisitedLinksData> {
@@ -233,9 +386,21 @@ async function deserializeGistContent(contentText: string): Promise<SyncData | V
     return await deserializeCompressedSyncEnvelope(parsed);
   }
 
+  if (isPlainObject(parsed) && parsed.syncVersion === SYNC_STORAGE_VERSION) {
+    const reason = describeCompressedEnvelopeShape(parsed);
+    console.warn('同步存储 v2 外层包结构无效:', reason);
+    throw new Error(`同步存储 v2 外层包格式无效: ${reason}`);
+  }
+
   // 继续兼容旧版明文 Gist；下一次成功上传时会自动升级成 v2 单文件 gzip 压缩包。
   if (isSyncData(parsed) || isVisitedLinksData(parsed)) {
     return parsed;
+  }
+
+  const legacyVisitedLinks = extractVisitedLinksFromUnknown(parsed);
+  if (legacyVisitedLinks) {
+    console.warn('读取到元信息异常的旧版同步数据，已仅提取 visitedLinks 继续兼容');
+    return legacyVisitedLinks;
   }
 
   return {};

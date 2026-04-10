@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.18.1
+// @version      2.19.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -112,7 +112,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-DXoy70qe.js"(exports, module$1) {
+        "main-7LlDNYgP.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22087,6 +22087,16 @@ System.register("./__entry.js", [], (function (exports, module) {
             }
             return Object.values(value).every((timestamp) => typeof timestamp === "number" && Number.isFinite(timestamp));
           }
+          function extractVisitedLinksFromUnknown(value) {
+            if (isVisitedLinksData(value)) {
+              return value;
+            }
+            if (!isPlainObject(value) || !("visitedLinks" in value)) {
+              return null;
+            }
+            const { visitedLinks } = value;
+            return isVisitedLinksData(visitedLinks) ? visitedLinks : null;
+          }
           function isSyncData(value) {
             if (!isPlainObject(value) || !("visitedLinks" in value)) {
               return false;
@@ -22109,6 +22119,88 @@ System.register("./__entry.js", [], (function (exports, module) {
           }
           function getEncodingDisplayName(encoding) {
             return encoding === "gzip-base64-json" ? "gzip" : "Zstandard（zstd）";
+          }
+          function getValueTypeLabel(value) {
+            if (value === null) {
+              return "null";
+            }
+            if (Array.isArray(value)) {
+              return "array";
+            }
+            return typeof value;
+          }
+          function getObjectKeyPreview(value, limit = 5) {
+            const keys2 = Object.keys(value);
+            if (keys2.length === 0) {
+              return "(empty)";
+            }
+            if (keys2.length <= limit) {
+              return keys2.join(", ");
+            }
+            return `${keys2.slice(0, limit).join(", ")} 等 ${keys2.length} 个键`;
+          }
+          function getInvalidVisitedLinksSamples(value, limit = 3) {
+            const samples = [];
+            for (const [url, timestamp] of Object.entries(value)) {
+              if (typeof timestamp === "number" && Number.isFinite(timestamp)) {
+                continue;
+              }
+              samples.push(`${url}=${String(timestamp)} (${getValueTypeLabel(timestamp)})`);
+              if (samples.length >= limit) {
+                break;
+              }
+            }
+            return samples;
+          }
+          function describeVisitedLinksCandidate(value) {
+            if (!isPlainObject(value)) {
+              return `类型是 ${getValueTypeLabel(value)}，不是对象`;
+            }
+            const invalidSamples = getInvalidVisitedLinksSamples(value);
+            if (invalidSamples.length === 0) {
+              return `对象共有 ${Object.keys(value).length} 个键，但未通过预期校验`;
+            }
+            return `发现非数字时间戳示例: ${invalidSamples.join("; ")}`;
+          }
+          function describeCompressedPayloadShape(value) {
+            if (isVisitedLinksData(value)) {
+              return `已解析为 visitedLinks，共 ${Object.keys(value).length} 条记录`;
+            }
+            if (!isPlainObject(value)) {
+              return `解压后顶层类型是 ${getValueTypeLabel(value)}，期望是 visitedLinks 对象或包含 visitedLinks 的对象`;
+            }
+            if ("visitedLinks" in value) {
+              return `检测到 visitedLinks 字段，但其内容无效: ${describeVisitedLinksCandidate(value.visitedLinks)}`;
+            }
+            return `解压后对象缺少 visitedLinks 字段，当前键: ${getObjectKeyPreview(value)}`;
+          }
+          function describeCompressedEnvelopeShape(value) {
+            const issues = [];
+            if (value.syncVersion !== SYNC_STORAGE_VERSION) {
+              issues.push(`syncVersion=${String(value.syncVersion)}`);
+            }
+            if (value.encoding !== "gzip-base64-json" && value.encoding !== "zstd-base64-json") {
+              issues.push(`encoding=${String(value.encoding)}`);
+            }
+            if (typeof value.payload !== "string") {
+              issues.push(`payload 类型为 ${getValueTypeLabel(value.payload)}`);
+            }
+            if (typeof value.itemCount !== "number") {
+              issues.push(`itemCount 类型为 ${getValueTypeLabel(value.itemCount)}`);
+            }
+            if (typeof value.updatedAt !== "number") {
+              issues.push(`updatedAt 类型为 ${getValueTypeLabel(value.updatedAt)}`);
+            }
+            if (typeof value.originalBytes !== "number") {
+              issues.push(`originalBytes 类型为 ${getValueTypeLabel(value.originalBytes)}`);
+            }
+            if (typeof value.compressedBytes !== "number") {
+              issues.push(`compressedBytes 类型为 ${getValueTypeLabel(value.compressedBytes)}`);
+            }
+            if (issues.length === 0) {
+              return `键: ${getObjectKeyPreview(value)}`;
+            }
+            return issues.join("; ");
           }
           function supportsCompressionEncoding(encoding) {
             const cachedSupport = compressionSupportCache.get(encoding);
@@ -22202,16 +22294,41 @@ System.register("./__entry.js", [], (function (exports, module) {
             return JSON.stringify(envelope);
           }
           async function deserializeCompressedSyncEnvelope(envelope) {
-            const compressedBytes = base64ToBytes(envelope.payload);
-            const decompressedText = await decompressText(compressedBytes, envelope.encoding);
-            const parsed = JSON.parse(decompressedText);
-            if (isSyncData(parsed)) {
-              return parsed.visitedLinks;
+            const envelopeMeta = {
+              encoding: envelope.encoding,
+              itemCount: envelope.itemCount,
+              updatedAt: envelope.updatedAt,
+              originalBytes: envelope.originalBytes,
+              compressedBytes: envelope.compressedBytes
+            };
+            let compressedBytes;
+            try {
+              compressedBytes = base64ToBytes(envelope.payload);
+            } catch (error) {
+              console.warn("同步存储 v2 base64 解码失败:", envelopeMeta, error);
+              throw new Error("同步存储 v2 payload 不是合法 Base64");
             }
-            if (isVisitedLinksData(parsed)) {
-              return parsed;
+            let decompressedText = "";
+            try {
+              decompressedText = await decompressText(compressedBytes, envelope.encoding);
+            } catch (error) {
+              console.warn("同步存储 v2 解压失败:", envelopeMeta, error);
+              throw new Error(`同步存储 v2 ${getEncodingDisplayName(envelope.encoding)} 解压失败`);
             }
-            throw new Error("同步存储 v2 数据格式无效");
+            let parsed;
+            try {
+              parsed = JSON.parse(decompressedText);
+            } catch (error) {
+              console.warn("同步存储 v2 JSON 解析失败:", envelopeMeta, error);
+              throw new Error("同步存储 v2 解压后的内容不是合法 JSON");
+            }
+            const visitedLinks = extractVisitedLinksFromUnknown(parsed);
+            if (visitedLinks) {
+              return visitedLinks;
+            }
+            const reason = describeCompressedPayloadShape(parsed);
+            console.warn("同步存储 v2 数据结构无效:", envelopeMeta, reason);
+            throw new Error(`同步存储 v2 数据格式无效: ${reason}`);
           }
           async function deserializeGistContent(contentText) {
             let parsed;
@@ -22224,8 +22341,18 @@ System.register("./__entry.js", [], (function (exports, module) {
             if (isCompressedSyncEnvelope(parsed)) {
               return await deserializeCompressedSyncEnvelope(parsed);
             }
+            if (isPlainObject(parsed) && parsed.syncVersion === SYNC_STORAGE_VERSION) {
+              const reason = describeCompressedEnvelopeShape(parsed);
+              console.warn("同步存储 v2 外层包结构无效:", reason);
+              throw new Error(`同步存储 v2 外层包格式无效: ${reason}`);
+            }
             if (isSyncData(parsed) || isVisitedLinksData(parsed)) {
               return parsed;
+            }
+            const legacyVisitedLinks = extractVisitedLinksFromUnknown(parsed);
+            if (legacyVisitedLinks) {
+              console.warn("读取到元信息异常的旧版同步数据，已仅提取 visitedLinks 继续兼容");
+              return legacyVisitedLinks;
             }
             return {};
           }
