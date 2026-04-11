@@ -123,11 +123,12 @@ export interface SyncData {
   syncVersion?: string // 避免与其他 version 字段冲突
 }
 
+export type SyncStorageVersion = 'v2' | 'v3'
+
 export type SyncStorageEncoding = 'gzip-base64-json' | 'zstd-base64-json'
 
-// v2 同步格式：Gist 中存的是压缩后的文本包，而不是明文 visitedLinks JSON
-export interface CompressedSyncEnvelope {
-  syncVersion: 'v2'
+export interface CompressedSyncEnvelopeBase {
+  syncVersion: SyncStorageVersion
   encoding: SyncStorageEncoding
   payload: string
   itemCount: number
@@ -135,6 +136,23 @@ export interface CompressedSyncEnvelope {
   originalBytes: number
   compressedBytes: number
 }
+
+// v2 同步格式：payload 直接压缩 visitedLinks 平铺对象
+export interface CompressedSyncEnvelopeV2 extends CompressedSyncEnvelopeBase {
+  syncVersion: 'v2'
+}
+
+// v3 payload：按 host 分组后，对组内路径文本做前缀差分编码
+export type V3PathRecord = [prefixLength: number, suffix: string, timestamp: number]
+
+export type V3GroupedPayload = Record<string, V3PathRecord[]>
+
+// v3 同步格式：payload 压缩 host 分组 + 前缀差分结构
+export interface CompressedSyncEnvelopeV3 extends CompressedSyncEnvelopeBase {
+  syncVersion: 'v3'
+}
+
+export type CompressedSyncEnvelope = CompressedSyncEnvelopeV2 | CompressedSyncEnvelopeV3
 
 // visitedLinks 自愈清洗结果：
 // 保存过滤后的有效记录，以及被移除条目的统计和诊断样例。
