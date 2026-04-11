@@ -11,6 +11,11 @@
 - 安装依赖、运行脚本、添加或移除依赖时，统一使用 `pnpm`，不要使用 `npm`、`yarn` 或其他包管理器。
 - 常见示例：`pnpm install`、`pnpm build`、`pnpm add xxx`
 
+## 版本号
+
+- 发版或“把版本号加一”时，默认只修改 userscript 里的版本号，例如 `vite.config.ts` 中 `userscript.version`。
+- `package.json` 的 `version` 默认不需要修改，除非用户明确要求。
+
 ## Git Commit Message
 
 根据现有历史，仓库主流格式是：

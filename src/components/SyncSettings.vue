@@ -160,10 +160,10 @@ const hasChanges = computed(() => {
 
 const gzipSupportAlertTitle = computed(() => {
   if (gzipSupportAvailable) {
-    return '当前浏览器支持 gzip，同步存储 v2 将使用单文件 gzip 压缩格式。'
+    return '当前浏览器支持 gzip，同步存储 v3 将使用 host 分组 + 前缀差分 + 单文件 gzip 压缩格式。'
   }
 
-  return '当前浏览器不支持 gzip Compression Streams，启用同步后将无法使用同步存储 v2。请升级浏览器或切换到支持该能力的环境。'
+  return '当前浏览器不支持 gzip Compression Streams，启用同步后将无法使用同步存储 v3。请升级浏览器或切换到支持该能力的环境。'
 })
 
 

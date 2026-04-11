@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.19.1
+// @version      2.19.2
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -112,7 +112,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-DnsWjtcA.js"(exports, module$1) {
+        "main-BaS4ZiyP.js"(exports, module$1) {
           const scriptRel = /* @__PURE__ */ function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22066,8 +22066,9 @@ System.register("./__entry.js", [], (function (exports, module) {
           var _GM_registerMenuCommand = /* @__PURE__ */ (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
           var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
           const GITHUB_ACCEPT_HEADER = "application/vnd.github.v3+json";
-          const SYNC_STORAGE_VERSION = "v2";
+          const SYNC_STORAGE_VERSION = "v3";
           const SYNC_STORAGE_ENCODING = "gzip-base64-json";
+          const V3_RAW_GROUP_KEY = "@raw";
           const textEncoder = new TextEncoder();
           const KNOWN_SYNC_POLLUTION_KEYS = [
             "syncVersion",
@@ -22114,12 +22115,15 @@ System.register("./__entry.js", [], (function (exports, module) {
             const { visitedLinks, lastSyncTime } = value;
             return isVisitedLinksData(visitedLinks) && (!("lastSyncTime" in value) || typeof lastSyncTime === "number" && Number.isFinite(lastSyncTime));
           }
+          function isSyncStorageVersion(value) {
+            return value === "v2" || value === "v3";
+          }
           function isCompressedSyncEnvelope(value) {
             if (!isPlainObject(value)) {
               return false;
             }
             const isKnownEncoding = value.encoding === "gzip-base64-json" || value.encoding === "zstd-base64-json";
-            return value.syncVersion === SYNC_STORAGE_VERSION && isKnownEncoding && typeof value.payload === "string" && typeof value.itemCount === "number" && typeof value.updatedAt === "number" && typeof value.originalBytes === "number" && typeof value.compressedBytes === "number";
+            return isSyncStorageVersion(value.syncVersion) && isKnownEncoding && typeof value.payload === "string" && typeof value.itemCount === "number" && typeof value.updatedAt === "number" && typeof value.originalBytes === "number" && typeof value.compressedBytes === "number";
           }
           function getCompressionFormat(encoding) {
             if (encoding === "gzip-base64-json") {
@@ -22192,14 +22196,59 @@ System.register("./__entry.js", [], (function (exports, module) {
               issues.push(`发现非数字时间戳示例: ${invalidSamples.join("; ")}`);
             }
             if (knownPollutionKeys.length > 0) {
-              issues.push(`命中疑似旧版 v2 污染键: ${knownPollutionKeys.join(", ")}`);
+              issues.push(`命中疑似同步包污染键: ${knownPollutionKeys.join(", ")}`);
             }
             if (issues.length === 0) {
               return `对象共有 ${Object.keys(value).length} 个键，但未通过预期校验`;
             }
             return issues.join("；");
           }
-          function describeCompressedPayloadShape(value) {
+          function describeV3PathRecord(value) {
+            if (!Array.isArray(value)) {
+              return `类型是 ${getValueTypeLabel(value)}，不是数组`;
+            }
+            if (value.length !== 3) {
+              return `数组长度为 ${value.length}，期望为 3`;
+            }
+            const [prefixLength, suffix, timestamp] = value;
+            const issues = [];
+            if (typeof prefixLength !== "number" || !Number.isInteger(prefixLength) || prefixLength < 0) {
+              issues.push(`prefixLength=${String(prefixLength)}`);
+            }
+            if (typeof suffix !== "string") {
+              issues.push(`suffix 类型为 ${getValueTypeLabel(suffix)}`);
+            }
+            if (typeof timestamp !== "number" || !Number.isFinite(timestamp)) {
+              issues.push(`timestamp=${String(timestamp)}`);
+            }
+            if (issues.length === 0) {
+              return "[prefixLength, suffix, timestamp]";
+            }
+            return issues.join("; ");
+          }
+          function describeV3GroupedPayloadCandidate(value) {
+            if (!isPlainObject(value)) {
+              return `解压后顶层类型是 ${getValueTypeLabel(value)}，期望是 host 分组对象`;
+            }
+            const groups = Object.entries(value);
+            for (const [groupKey, records] of groups) {
+              if (!Array.isArray(records)) {
+                return `分组 ${groupKey} 的类型是 ${getValueTypeLabel(records)}，期望是数组`;
+              }
+              for (let index = 0; index < records.length; index++) {
+                const record = records[index];
+                const reason = describeV3PathRecord(record);
+                if (reason !== "[prefixLength, suffix, timestamp]") {
+                  return `分组 ${groupKey} 的第 ${index + 1} 条记录无效: ${reason}`;
+                }
+              }
+            }
+            return `对象共有 ${groups.length} 个分组，但未通过 v3 payload 校验`;
+          }
+          function describeCompressedPayloadShape(value, syncVersion) {
+            if (syncVersion === "v3") {
+              return describeV3GroupedPayloadCandidate(value);
+            }
             if (isVisitedLinksData(value)) {
               return `已解析为 visitedLinks，共 ${Object.keys(value).length} 条记录`;
             }
@@ -22211,9 +22260,9 @@ System.register("./__entry.js", [], (function (exports, module) {
             }
             return `解压后对象未通过 visitedLinks 校验: ${describeVisitedLinksCandidate(value)}`;
           }
-          function describeCompressedEnvelopeShape(value) {
+          function describeCompressedEnvelopeShape(value, syncVersion) {
             const issues = [];
-            if (value.syncVersion !== SYNC_STORAGE_VERSION) {
+            if (value.syncVersion !== syncVersion) {
               issues.push(`syncVersion=${String(value.syncVersion)}`);
             }
             if (value.encoding !== "gzip-base64-json" && value.encoding !== "zstd-base64-json") {
@@ -22289,7 +22338,7 @@ System.register("./__entry.js", [], (function (exports, module) {
               return;
             }
             const sampleText = result.removedSamples.length > 0 ? result.removedSamples.join("; ") : "(没有可展示的样例)";
-            const pollutionHint = result.knownPollutionKeys.length > 0 ? ` 命中疑似旧版 v2 污染键: ${result.knownPollutionKeys.join(", ")}。仍有旧设备运行旧脚本时，污染可能再次出现，请升级旧设备。` : "";
+            const pollutionHint = result.knownPollutionKeys.length > 0 ? ` 命中疑似同步包污染键: ${result.knownPollutionKeys.join(", ")}。仍有旧设备运行旧脚本时，污染可能再次出现，请升级旧设备。` : "";
             console.warn(
               `[同步自愈][${source}] 已清理 ${result.removedCount} 条无效记录，保留 ${Object.keys(result.visitedLinks).length} 条有效记录。样例: ${sampleText}.${pollutionHint}`
             );
@@ -22364,6 +22413,100 @@ System.register("./__entry.js", [], (function (exports, module) {
             const decompressedStream = new Blob([toBlobCompatibleBytes(compressedBytes)]).stream().pipeThrough(new DecompressionStream(format2));
             return await new Response(decompressedStream).text();
           }
+          function compareTextAscending(left, right) {
+            if (left < right) {
+              return -1;
+            }
+            if (left > right) {
+              return 1;
+            }
+            return 0;
+          }
+          function getCommonPrefixLength(left, right) {
+            const maxLength = Math.min(left.length, right.length);
+            let index = 0;
+            while (index < maxLength && left.charCodeAt(index) === right.charCodeAt(index)) {
+              index++;
+            }
+            return index;
+          }
+          function getV3GroupDescriptor(url) {
+            try {
+              const parsedUrl = new URL(url);
+              const text = `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+              const groupKey = parsedUrl.protocol === "https:" ? parsedUrl.host : `${parsedUrl.protocol}//${parsedUrl.host}`;
+              return { groupKey, text };
+            } catch {
+              return {
+                groupKey: V3_RAW_GROUP_KEY,
+                text: url
+              };
+            }
+          }
+          function getOriginFromV3GroupKey(groupKey) {
+            return groupKey.includes("://") ? groupKey : `https://${groupKey}`;
+          }
+          function isV3PathRecordValue(value) {
+            return Array.isArray(value) && value.length === 3 && typeof value[0] === "number" && Number.isInteger(value[0]) && value[0] >= 0 && typeof value[1] === "string" && typeof value[2] === "number" && Number.isFinite(value[2]);
+          }
+          function encodeV3GroupedPayload(visitedLinks) {
+            const groupedEntries = /* @__PURE__ */ new Map();
+            for (const [url, timestamp] of Object.entries(visitedLinks)) {
+              const { groupKey, text } = getV3GroupDescriptor(url);
+              const groupEntries = groupedEntries.get(groupKey);
+              if (groupEntries) {
+                groupEntries.push({ text, timestamp });
+                continue;
+              }
+              groupedEntries.set(groupKey, [{ text, timestamp }]);
+            }
+            const payload = {};
+            for (const groupKey of Array.from(groupedEntries.keys()).sort(compareTextAscending)) {
+              const sortedEntries = groupedEntries.get(groupKey);
+              sortedEntries.sort((left, right) => compareTextAscending(left.text, right.text));
+              let previousText = "";
+              payload[groupKey] = sortedEntries.map(({ text, timestamp }) => {
+                const prefixLength = getCommonPrefixLength(previousText, text);
+                const record = [prefixLength, text.slice(prefixLength), timestamp];
+                previousText = text;
+                return record;
+              });
+            }
+            return payload;
+          }
+          function decodeV3GroupedPayload(payload) {
+            if (!isPlainObject(payload)) {
+              throw new Error(`同步存储 v3 数据格式无效: ${describeV3GroupedPayloadCandidate(payload)}`);
+            }
+            const visitedLinks = {};
+            for (const [groupKey, records] of Object.entries(payload)) {
+              if (!Array.isArray(records)) {
+                throw new Error(`同步存储 v3 数据格式无效: 分组 ${groupKey} 的类型是 ${getValueTypeLabel(records)}，期望是数组`);
+              }
+              let previousText = "";
+              for (let index = 0; index < records.length; index++) {
+                const record = records[index];
+                if (!isV3PathRecordValue(record)) {
+                  throw new Error(`同步存储 v3 数据格式无效: 分组 ${groupKey} 的第 ${index + 1} 条记录无效: ${describeV3PathRecord(record)}`);
+                }
+                const [prefixLength, suffix, timestamp] = record;
+                if (prefixLength > previousText.length) {
+                  throw new Error(`同步存储 v3 数据格式无效: 分组 ${groupKey} 的第 ${index + 1} 条记录前缀长度越界`);
+                }
+                const text = `${previousText.slice(0, prefixLength)}${suffix}`;
+                previousText = text;
+                if (groupKey === V3_RAW_GROUP_KEY) {
+                  visitedLinks[text] = timestamp;
+                  continue;
+                }
+                if (!text.startsWith("/")) {
+                  throw new Error(`同步存储 v3 数据格式无效: 分组 ${groupKey} 的第 ${index + 1} 条记录恢复出的路径不是以 / 开头`);
+                }
+                visitedLinks[`${getOriginFromV3GroupKey(groupKey)}${text}`] = timestamp;
+              }
+            }
+            return visitedLinks;
+          }
           function getFirstGistFile(gist) {
             const firstFile = Object.values(gist.files)[0];
             if (!firstFile) {
@@ -22380,7 +22523,8 @@ System.register("./__entry.js", [], (function (exports, module) {
           }
           async function serializeVisitedLinksForGist(data) {
             const visitedLinks = requireVisitedLinksData(data, "上传前数据").visitedLinks;
-            const jsonText = JSON.stringify(visitedLinks);
+            const v3Payload = encodeV3GroupedPayload(visitedLinks);
+            const jsonText = JSON.stringify(v3Payload);
             const compressedBytes = await compressText(jsonText, SYNC_STORAGE_ENCODING);
             const envelope = {
               syncVersion: SYNC_STORAGE_VERSION,
@@ -22393,35 +22537,17 @@ System.register("./__entry.js", [], (function (exports, module) {
             };
             return JSON.stringify(envelope);
           }
-          async function deserializeCompressedSyncEnvelope(envelope) {
-            const envelopeMeta = {
+          function getCompressedEnvelopeMeta(envelope) {
+            return {
+              syncVersion: envelope.syncVersion,
               encoding: envelope.encoding,
               itemCount: envelope.itemCount,
               updatedAt: envelope.updatedAt,
               originalBytes: envelope.originalBytes,
               compressedBytes: envelope.compressedBytes
             };
-            let compressedBytes;
-            try {
-              compressedBytes = base64ToBytes(envelope.payload);
-            } catch (error) {
-              console.warn("同步存储 v2 base64 解码失败:", envelopeMeta, error);
-              throw new Error("同步存储 v2 payload 不是合法 Base64");
-            }
-            let decompressedText = "";
-            try {
-              decompressedText = await decompressText(compressedBytes, envelope.encoding);
-            } catch (error) {
-              console.warn("同步存储 v2 解压失败:", envelopeMeta, error);
-              throw new Error(`同步存储 v2 ${getEncodingDisplayName(envelope.encoding)} 解压失败`);
-            }
-            let parsed;
-            try {
-              parsed = JSON.parse(decompressedText);
-            } catch (error) {
-              console.warn("同步存储 v2 JSON 解析失败:", envelopeMeta, error);
-              throw new Error("同步存储 v2 解压后的内容不是合法 JSON");
-            }
+          }
+          function extractVisitedLinksFromV2Payload(parsed) {
             const visitedLinks = extractVisitedLinksFromUnknown(parsed);
             if (visitedLinks) {
               return visitedLinks;
@@ -22431,9 +22557,44 @@ System.register("./__entry.js", [], (function (exports, module) {
               logVisitedLinksRepair("云端 v2 解压负载", repairedVisitedLinks);
               return repairedVisitedLinks.visitedLinks;
             }
-            const reason = describeCompressedPayloadShape(parsed);
-            console.warn("同步存储 v2 数据结构无效:", envelopeMeta, reason);
-            throw new Error(`同步存储 v2 数据格式无效: ${reason}`);
+            throw new Error(`同步存储 v2 数据格式无效: ${describeCompressedPayloadShape(parsed, "v2")}`);
+          }
+          function extractVisitedLinksFromV3Payload(parsed) {
+            return decodeV3GroupedPayload(parsed);
+          }
+          async function deserializeCompressedSyncEnvelope(envelope) {
+            const envelopeMeta = getCompressedEnvelopeMeta(envelope);
+            let compressedBytes;
+            try {
+              compressedBytes = base64ToBytes(envelope.payload);
+            } catch (error) {
+              console.warn(`同步存储 ${envelope.syncVersion} base64 解码失败:`, envelopeMeta, error);
+              throw new Error(`同步存储 ${envelope.syncVersion} payload 不是合法 Base64`);
+            }
+            let decompressedText = "";
+            try {
+              decompressedText = await decompressText(compressedBytes, envelope.encoding);
+            } catch (error) {
+              console.warn(`同步存储 ${envelope.syncVersion} 解压失败:`, envelopeMeta, error);
+              throw new Error(`同步存储 ${envelope.syncVersion} ${getEncodingDisplayName(envelope.encoding)} 解压失败`);
+            }
+            let parsed;
+            try {
+              parsed = JSON.parse(decompressedText);
+            } catch (error) {
+              console.warn(`同步存储 ${envelope.syncVersion} JSON 解析失败:`, envelopeMeta, error);
+              throw new Error(`同步存储 ${envelope.syncVersion} 解压后的内容不是合法 JSON`);
+            }
+            try {
+              if (envelope.syncVersion === "v2") {
+                return extractVisitedLinksFromV2Payload(parsed);
+              }
+              return extractVisitedLinksFromV3Payload(parsed);
+            } catch (error) {
+              const reason = error instanceof Error ? error.message : `同步存储 ${envelope.syncVersion} 数据格式无效: ${describeCompressedPayloadShape(parsed, envelope.syncVersion)}`;
+              console.warn(`同步存储 ${envelope.syncVersion} 数据结构无效:`, envelopeMeta, reason);
+              throw error instanceof Error ? error : new Error(reason);
+            }
           }
           async function deserializeGistContent(contentText) {
             let parsed;
@@ -22446,10 +22607,10 @@ System.register("./__entry.js", [], (function (exports, module) {
             if (isCompressedSyncEnvelope(parsed)) {
               return await deserializeCompressedSyncEnvelope(parsed);
             }
-            if (isPlainObject(parsed) && parsed.syncVersion === SYNC_STORAGE_VERSION) {
-              const reason = describeCompressedEnvelopeShape(parsed);
-              console.warn("同步存储 v2 外层包结构无效:", reason);
-              throw new Error(`同步存储 v2 外层包格式无效: ${reason}`);
+            if (isPlainObject(parsed) && isSyncStorageVersion(parsed.syncVersion)) {
+              const reason = describeCompressedEnvelopeShape(parsed, parsed.syncVersion);
+              console.warn(`同步存储 ${parsed.syncVersion} 外层包结构无效:`, reason);
+              throw new Error(`同步存储 ${parsed.syncVersion} 外层包格式无效: ${reason}`);
             }
             const repairedLegacyVisitedLinks = tryRepairVisitedLinksData(parsed);
             if (repairedLegacyVisitedLinks) {
@@ -22800,9 +22961,9 @@ System.register("./__entry.js", [], (function (exports, module) {
               });
               const gzipSupportAlertTitle = computed(() => {
                 if (gzipSupportAvailable) {
-                  return "当前浏览器支持 gzip，同步存储 v2 将使用单文件 gzip 压缩格式。";
+                  return "当前浏览器支持 gzip，同步存储 v3 将使用 host 分组 + 前缀差分 + 单文件 gzip 压缩格式。";
                 }
-                return "当前浏览器不支持 gzip Compression Streams，启用同步后将无法使用同步存储 v2。请升级浏览器或切换到支持该能力的环境。";
+                return "当前浏览器不支持 gzip Compression Streams，启用同步后将无法使用同步存储 v3。请升级浏览器或切换到支持该能力的环境。";
               });
               const testConnection = async () => {
                 if (!formData.value.githubToken) {

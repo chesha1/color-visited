@@ -2,11 +2,15 @@
 
 import type {
   CompressedSyncEnvelope,
+  CompressedSyncEnvelopeV3,
   GitHubGist,
   GitHubGistFile,
   SyncData,
   SyncStorageEncoding,
+  SyncStorageVersion,
   SyncSettings,
+  V3GroupedPayload,
+  V3PathRecord,
   VisitedLinksData,
   VisitedLinksRepairResult
 } from '@/types';
@@ -15,8 +19,9 @@ import { eventBus } from '@/core/eventBus';
 import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
 
 const GITHUB_ACCEPT_HEADER = 'application/vnd.github.v3+json';
-const SYNC_STORAGE_VERSION = 'v2';
+const SYNC_STORAGE_VERSION = 'v3' as const;
 const SYNC_STORAGE_ENCODING: SyncStorageEncoding = 'gzip-base64-json';
+const V3_RAW_GROUP_KEY = '@raw';
 const textEncoder = new TextEncoder();
 const KNOWN_SYNC_POLLUTION_KEYS = [
   'syncVersion',
@@ -75,6 +80,10 @@ function isSyncData(value: unknown): value is SyncData {
     && (!('lastSyncTime' in value) || (typeof lastSyncTime === 'number' && Number.isFinite(lastSyncTime)));
 }
 
+function isSyncStorageVersion(value: unknown): value is SyncStorageVersion {
+  return value === 'v2' || value === 'v3';
+}
+
 function isCompressedSyncEnvelope(value: unknown): value is CompressedSyncEnvelope {
   if (!isPlainObject(value)) {
     return false;
@@ -82,7 +91,7 @@ function isCompressedSyncEnvelope(value: unknown): value is CompressedSyncEnvelo
 
   const isKnownEncoding = value.encoding === 'gzip-base64-json' || value.encoding === 'zstd-base64-json';
 
-  return value.syncVersion === SYNC_STORAGE_VERSION
+  return isSyncStorageVersion(value.syncVersion)
     && isKnownEncoding
     && typeof value.payload === 'string'
     && typeof value.itemCount === 'number'
@@ -146,7 +155,7 @@ function getInvalidVisitedLinksSamples(value: Record<string, unknown>, limit = 3
   return samples;
 }
 
-// 从对象中提取常见的 v2 污染键，帮助日志快速判断是否是旧脚本误读导致的污染。
+// 从对象中提取常见的同步包元信息键，帮助日志快速判断是否是旧脚本误读导致的污染。
 function getKnownSyncPollutionKeys(value: Record<string, unknown>, limit = KNOWN_SYNC_POLLUTION_KEYS.length): string[] {
   const pollutionKeys: string[] = [];
 
@@ -173,7 +182,7 @@ function appendRemovedSample(samples: string[], key: string, value: unknown, lim
   samples.push(`${key}=${String(value)} (${getValueTypeLabel(value)})`);
 }
 
-// 把候选对象描述成人类可读的诊断文本，优先给出无效值和旧版污染键样例。
+// 把候选对象描述成人类可读的诊断文本，优先给出无效值和同步包污染键样例。
 function describeVisitedLinksCandidate(value: unknown): string {
   if (!isPlainObject(value)) {
     return `类型是 ${getValueTypeLabel(value)}，不是对象`;
@@ -188,7 +197,7 @@ function describeVisitedLinksCandidate(value: unknown): string {
   }
 
   if (knownPollutionKeys.length > 0) {
-    issues.push(`命中疑似旧版 v2 污染键: ${knownPollutionKeys.join(', ')}`);
+    issues.push(`命中疑似同步包污染键: ${knownPollutionKeys.join(', ')}`);
   }
 
   if (issues.length === 0) {
@@ -198,8 +207,68 @@ function describeVisitedLinksCandidate(value: unknown): string {
   return issues.join('；');
 }
 
-// 描述 v2 解压后的内容长什么样，便于在报错时区分是“完全不是对象”还是“对象被污染”。
-function describeCompressedPayloadShape(value: unknown): string {
+// 把单条 v3 路径记录的结构问题转成人类可读文本，供校验和报错复用。
+function describeV3PathRecord(value: unknown): string {
+  if (!Array.isArray(value)) {
+    return `类型是 ${getValueTypeLabel(value)}，不是数组`;
+  }
+
+  if (value.length !== 3) {
+    return `数组长度为 ${value.length}，期望为 3`;
+  }
+
+  const [prefixLength, suffix, timestamp] = value;
+  const issues: string[] = [];
+
+  if (typeof prefixLength !== 'number' || !Number.isInteger(prefixLength) || prefixLength < 0) {
+    issues.push(`prefixLength=${String(prefixLength)}`);
+  }
+
+  if (typeof suffix !== 'string') {
+    issues.push(`suffix 类型为 ${getValueTypeLabel(suffix)}`);
+  }
+
+  if (typeof timestamp !== 'number' || !Number.isFinite(timestamp)) {
+    issues.push(`timestamp=${String(timestamp)}`);
+  }
+
+  if (issues.length === 0) {
+    return '[prefixLength, suffix, timestamp]';
+  }
+
+  return issues.join('; ');
+}
+
+// 扫描整个 v3 payload，尽量定位到首个出问题的分组和记录，方便排查云端坏数据。
+function describeV3GroupedPayloadCandidate(value: unknown): string {
+  if (!isPlainObject(value)) {
+    return `解压后顶层类型是 ${getValueTypeLabel(value)}，期望是 host 分组对象`;
+  }
+
+  const groups = Object.entries(value);
+  for (const [groupKey, records] of groups) {
+    if (!Array.isArray(records)) {
+      return `分组 ${groupKey} 的类型是 ${getValueTypeLabel(records)}，期望是数组`;
+    }
+
+    for (let index = 0; index < records.length; index++) {
+      const record = records[index];
+      const reason = describeV3PathRecord(record);
+      if (reason !== '[prefixLength, suffix, timestamp]') {
+        return `分组 ${groupKey} 的第 ${index + 1} 条记录无效: ${reason}`;
+      }
+    }
+  }
+
+  return `对象共有 ${groups.length} 个分组，但未通过 v3 payload 校验`;
+}
+
+// 描述压缩负载长什么样，便于在报错时区分是“完全不是对象”还是“对象被污染”。
+function describeCompressedPayloadShape(value: unknown, syncVersion: SyncStorageVersion): string {
+  if (syncVersion === 'v3') {
+    return describeV3GroupedPayloadCandidate(value);
+  }
+
   if (isVisitedLinksData(value)) {
     return `已解析为 visitedLinks，共 ${Object.keys(value).length} 条记录`;
   }
@@ -215,10 +284,11 @@ function describeCompressedPayloadShape(value: unknown): string {
   return `解压后对象未通过 visitedLinks 校验: ${describeVisitedLinksCandidate(value)}`;
 }
 
-function describeCompressedEnvelopeShape(value: Record<string, unknown>): string {
+// 当外层对象看起来像同步包，但字段不完整或类型不对时，统一输出诊断文本。
+function describeCompressedEnvelopeShape(value: Record<string, unknown>, syncVersion: SyncStorageVersion): string {
   const issues: string[] = [];
 
-  if (value.syncVersion !== SYNC_STORAGE_VERSION) {
+  if (value.syncVersion !== syncVersion) {
     issues.push(`syncVersion=${String(value.syncVersion)}`);
   }
 
@@ -254,7 +324,7 @@ function describeCompressedEnvelopeShape(value: Record<string, unknown>): string
 }
 
 // 尝试把未知输入修复成可信的 visitedLinks：
-// 只保留有限数字时间戳，同时剔除旧脚本可能混入的 v2 元信息键。
+// 只保留有限数字时间戳，同时剔除旧脚本可能混入的同步包元信息键。
 function tryRepairVisitedLinksData(value: unknown): VisitedLinksRepairResult | null {
   if (!isPlainObject(value)) {
     return null;
@@ -325,7 +395,7 @@ function logVisitedLinksRepair(source: string, result: VisitedLinksRepairResult)
     ? result.removedSamples.join('; ')
     : '(没有可展示的样例)';
   const pollutionHint = result.knownPollutionKeys.length > 0
-    ? ` 命中疑似旧版 v2 污染键: ${result.knownPollutionKeys.join(', ')}。仍有旧设备运行旧脚本时，污染可能再次出现，请升级旧设备。`
+    ? ` 命中疑似同步包污染键: ${result.knownPollutionKeys.join(', ')}。仍有旧设备运行旧脚本时，污染可能再次出现，请升级旧设备。`
     : '';
 
   console.warn(
@@ -351,7 +421,7 @@ function supportsCompressionEncoding(encoding: SyncStorageEncoding): boolean {
     return cachedSupport;
   }
 
-  // v2 直接依赖浏览器原生 Compression Streams，避免额外引入额外的压缩运行时。
+  // 同步压缩直接依赖浏览器原生 Compression Streams，避免额外引入压缩运行时。
   if (typeof CompressionStream === 'undefined' || typeof DecompressionStream === 'undefined') {
     compressionSupportCache.set(encoding, false);
     return false;
@@ -432,6 +502,144 @@ async function decompressText(compressedBytes: Uint8Array, encoding: SyncStorage
   return await new Response(decompressedStream).text();
 }
 
+function compareTextAscending(left: string, right: string): number {
+  if (left < right) {
+    return -1;
+  }
+
+  if (left > right) {
+    return 1;
+  }
+
+  return 0;
+}
+
+function getCommonPrefixLength(left: string, right: string): number {
+  const maxLength = Math.min(left.length, right.length);
+  let index = 0;
+
+  while (index < maxLength && left.charCodeAt(index) === right.charCodeAt(index)) {
+    index++;
+  }
+
+  return index;
+}
+
+// 把完整 URL 拆成“分组键 + 可差分文本”；解析失败时退回 raw 分组，避免单条脏数据阻断整批同步。
+function getV3GroupDescriptor(url: string): { groupKey: string; text: string } {
+  try {
+    const parsedUrl = new URL(url);
+    const text = `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+    const groupKey = parsedUrl.protocol === 'https:'
+      ? parsedUrl.host
+      : `${parsedUrl.protocol}//${parsedUrl.host}`;
+
+    return { groupKey, text };
+  }
+  catch {
+    return {
+      groupKey: V3_RAW_GROUP_KEY,
+      text: url
+    };
+  }
+}
+
+// 把 v3 分组键还原成完整 origin，供解码阶段重建平铺 URL。
+function getOriginFromV3GroupKey(groupKey: string): string {
+  return groupKey.includes('://') ? groupKey : `https://${groupKey}`;
+}
+
+// 类型守卫：确认记录确实符合 [prefixLength, suffix, timestamp] 形状。
+function isV3PathRecordValue(value: unknown): value is V3PathRecord {
+  return Array.isArray(value)
+    && value.length === 3
+    && typeof value[0] === 'number'
+    && Number.isInteger(value[0])
+    && value[0] >= 0
+    && typeof value[1] === 'string'
+    && typeof value[2] === 'number'
+    && Number.isFinite(value[2]);
+}
+
+// 把平铺 visitedLinks 编码成 v3 payload：先按 host 分组，再对组内路径做排序和前缀差分。
+function encodeV3GroupedPayload(visitedLinks: VisitedLinksData): V3GroupedPayload {
+  const groupedEntries = new Map<string, Array<{ text: string; timestamp: number }>>();
+
+  for (const [url, timestamp] of Object.entries(visitedLinks)) {
+    const { groupKey, text } = getV3GroupDescriptor(url);
+    const groupEntries = groupedEntries.get(groupKey);
+
+    if (groupEntries) {
+      groupEntries.push({ text, timestamp });
+      continue;
+    }
+
+    groupedEntries.set(groupKey, [{ text, timestamp }]);
+  }
+
+  const payload: V3GroupedPayload = {};
+
+  for (const groupKey of Array.from(groupedEntries.keys()).sort(compareTextAscending)) {
+    const sortedEntries = groupedEntries.get(groupKey)!;
+    sortedEntries.sort((left, right) => compareTextAscending(left.text, right.text));
+
+    let previousText = '';
+    payload[groupKey] = sortedEntries.map(({ text, timestamp }) => {
+      const prefixLength = getCommonPrefixLength(previousText, text);
+      const record: V3PathRecord = [prefixLength, text.slice(prefixLength), timestamp];
+      previousText = text;
+      return record;
+    });
+  }
+
+  return payload;
+}
+
+// 把 v3 payload 顺序重建回平铺 visitedLinks，保证现有运行时和合并逻辑无需感知云端格式变化。
+function decodeV3GroupedPayload(payload: unknown): VisitedLinksData {
+  if (!isPlainObject(payload)) {
+    throw new Error(`同步存储 v3 数据格式无效: ${describeV3GroupedPayloadCandidate(payload)}`);
+  }
+
+  const visitedLinks: VisitedLinksData = {};
+
+  for (const [groupKey, records] of Object.entries(payload)) {
+    if (!Array.isArray(records)) {
+      throw new Error(`同步存储 v3 数据格式无效: 分组 ${groupKey} 的类型是 ${getValueTypeLabel(records)}，期望是数组`);
+    }
+
+    let previousText = '';
+    for (let index = 0; index < records.length; index++) {
+      const record = records[index];
+
+      if (!isV3PathRecordValue(record)) {
+        throw new Error(`同步存储 v3 数据格式无效: 分组 ${groupKey} 的第 ${index + 1} 条记录无效: ${describeV3PathRecord(record)}`);
+      }
+
+      const [prefixLength, suffix, timestamp] = record;
+      if (prefixLength > previousText.length) {
+        throw new Error(`同步存储 v3 数据格式无效: 分组 ${groupKey} 的第 ${index + 1} 条记录前缀长度越界`);
+      }
+
+      const text = `${previousText.slice(0, prefixLength)}${suffix}`;
+      previousText = text;
+
+      if (groupKey === V3_RAW_GROUP_KEY) {
+        visitedLinks[text] = timestamp;
+        continue;
+      }
+
+      if (!text.startsWith('/')) {
+        throw new Error(`同步存储 v3 数据格式无效: 分组 ${groupKey} 的第 ${index + 1} 条记录恢复出的路径不是以 / 开头`);
+      }
+
+      visitedLinks[`${getOriginFromV3GroupKey(groupKey)}${text}`] = timestamp;
+    }
+  }
+
+  return visitedLinks;
+}
+
 function getFirstGistFile(gist: GitHubGist): GitHubGistFile {
   const firstFile = Object.values(gist.files)[0];
   if (!firstFile) {
@@ -448,14 +656,15 @@ function getFirstGistFileName(gist: GitHubGist): string {
   return fileName;
 }
 
-// 上传前统一把输入收敛成干净的 visitedLinks，再编码成当前 v2 压缩包格式。
+// 上传前统一把输入收敛成干净的 visitedLinks，再编码成当前 v3 压缩包格式。
 async function serializeVisitedLinksForGist(data: SyncData | VisitedLinksData): Promise<string> {
   const visitedLinks = requireVisitedLinksData(data, '上传前数据').visitedLinks;
-  const jsonText = JSON.stringify(visitedLinks);
+  const v3Payload = encodeV3GroupedPayload(visitedLinks);
+  const jsonText = JSON.stringify(v3Payload);
   const compressedBytes = await compressText(jsonText, SYNC_STORAGE_ENCODING);
 
-  // v2 只压缩 visitedLinks 本体；Gist 里保留少量元信息，便于调试和后续迁移。
-  const envelope: CompressedSyncEnvelope = {
+  // v3 只重构云端 payload，页面内运行时仍继续使用平铺 visitedLinks。
+  const envelope: CompressedSyncEnvelopeV3 = {
     syncVersion: SYNC_STORAGE_VERSION,
     encoding: SYNC_STORAGE_ENCODING,
     payload: bytesToBase64(compressedBytes),
@@ -468,43 +677,20 @@ async function serializeVisitedLinksForGist(data: SyncData | VisitedLinksData): 
   return JSON.stringify(envelope);
 }
 
-// 按 v2 包装格式完成 base64 解码、解压、JSON 解析，并在“仅数据层污染”时尝试自动恢复。
-async function deserializeCompressedSyncEnvelope(envelope: CompressedSyncEnvelope): Promise<VisitedLinksData> {
-  const envelopeMeta = {
+// 统一抽出同步包的日志元信息，避免每个失败分支重复手写同一份调试对象。
+function getCompressedEnvelopeMeta(envelope: CompressedSyncEnvelope) {
+  return {
+    syncVersion: envelope.syncVersion,
     encoding: envelope.encoding,
     itemCount: envelope.itemCount,
     updatedAt: envelope.updatedAt,
     originalBytes: envelope.originalBytes,
     compressedBytes: envelope.compressedBytes
   };
+}
 
-  let compressedBytes: Uint8Array;
-  try {
-    compressedBytes = base64ToBytes(envelope.payload);
-  }
-  catch (error) {
-    console.warn('同步存储 v2 base64 解码失败:', envelopeMeta, error);
-    throw new Error('同步存储 v2 payload 不是合法 Base64');
-  }
-
-  let decompressedText = '';
-  try {
-    decompressedText = await decompressText(compressedBytes, envelope.encoding);
-  }
-  catch (error) {
-    console.warn('同步存储 v2 解压失败:', envelopeMeta, error);
-    throw new Error(`同步存储 v2 ${getEncodingDisplayName(envelope.encoding)} 解压失败`);
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(decompressedText) as unknown;
-  }
-  catch (error) {
-    console.warn('同步存储 v2 JSON 解析失败:', envelopeMeta, error);
-    throw new Error('同步存储 v2 解压后的内容不是合法 JSON');
-  }
-
+// v2 payload 解压后仍应当是平铺 visitedLinks；这里只负责 v2 自身的数据层兼容和自愈。
+function extractVisitedLinksFromV2Payload(parsed: unknown): VisitedLinksData {
   const visitedLinks = extractVisitedLinksFromUnknown(parsed);
   if (visitedLinks) {
     return visitedLinks;
@@ -516,13 +702,62 @@ async function deserializeCompressedSyncEnvelope(envelope: CompressedSyncEnvelop
     return repairedVisitedLinks.visitedLinks;
   }
 
-  const reason = describeCompressedPayloadShape(parsed);
-  console.warn('同步存储 v2 数据结构无效:', envelopeMeta, reason);
-
-  throw new Error(`同步存储 v2 数据格式无效: ${reason}`);
+  throw new Error(`同步存储 v2 数据格式无效: ${describeCompressedPayloadShape(parsed, 'v2')}`);
 }
 
-// 读取 Gist 文本内容时同时兼容 v2 压缩包和旧版明文 JSON，并把恢复逻辑统一收口在这里。
+// v3 payload 先走结构化解码，再恢复成平铺 visitedLinks。
+function extractVisitedLinksFromV3Payload(parsed: unknown): VisitedLinksData {
+  return decodeV3GroupedPayload(parsed);
+}
+
+// 按压缩包装格式完成 base64 解码、解压、JSON 解析，并恢复出平铺 visitedLinks。
+async function deserializeCompressedSyncEnvelope(envelope: CompressedSyncEnvelope): Promise<VisitedLinksData> {
+  const envelopeMeta = getCompressedEnvelopeMeta(envelope);
+
+  let compressedBytes: Uint8Array;
+  try {
+    compressedBytes = base64ToBytes(envelope.payload);
+  }
+  catch (error) {
+    console.warn(`同步存储 ${envelope.syncVersion} base64 解码失败:`, envelopeMeta, error);
+    throw new Error(`同步存储 ${envelope.syncVersion} payload 不是合法 Base64`);
+  }
+
+  let decompressedText = '';
+  try {
+    decompressedText = await decompressText(compressedBytes, envelope.encoding);
+  }
+  catch (error) {
+    console.warn(`同步存储 ${envelope.syncVersion} 解压失败:`, envelopeMeta, error);
+    throw new Error(`同步存储 ${envelope.syncVersion} ${getEncodingDisplayName(envelope.encoding)} 解压失败`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(decompressedText) as unknown;
+  }
+  catch (error) {
+    console.warn(`同步存储 ${envelope.syncVersion} JSON 解析失败:`, envelopeMeta, error);
+    throw new Error(`同步存储 ${envelope.syncVersion} 解压后的内容不是合法 JSON`);
+  }
+
+  try {
+    if (envelope.syncVersion === 'v2') {
+      return extractVisitedLinksFromV2Payload(parsed);
+    }
+
+    return extractVisitedLinksFromV3Payload(parsed);
+  }
+  catch (error) {
+    const reason = error instanceof Error
+      ? error.message
+      : `同步存储 ${envelope.syncVersion} 数据格式无效: ${describeCompressedPayloadShape(parsed, envelope.syncVersion)}`;
+    console.warn(`同步存储 ${envelope.syncVersion} 数据结构无效:`, envelopeMeta, reason);
+    throw error instanceof Error ? error : new Error(reason);
+  }
+}
+
+// 读取 Gist 文本内容时同时兼容 v2/v3 压缩包和旧版明文 JSON，并把恢复逻辑统一收口在这里。
 async function deserializeGistContent(contentText: string): Promise<SyncData | VisitedLinksData> {
   let parsed: unknown;
 
@@ -538,10 +773,10 @@ async function deserializeGistContent(contentText: string): Promise<SyncData | V
     return await deserializeCompressedSyncEnvelope(parsed);
   }
 
-  if (isPlainObject(parsed) && parsed.syncVersion === SYNC_STORAGE_VERSION) {
-    const reason = describeCompressedEnvelopeShape(parsed);
-    console.warn('同步存储 v2 外层包结构无效:', reason);
-    throw new Error(`同步存储 v2 外层包格式无效: ${reason}`);
+  if (isPlainObject(parsed) && isSyncStorageVersion(parsed.syncVersion)) {
+    const reason = describeCompressedEnvelopeShape(parsed, parsed.syncVersion);
+    console.warn(`同步存储 ${parsed.syncVersion} 外层包结构无效:`, reason);
+    throw new Error(`同步存储 ${parsed.syncVersion} 外层包格式无效: ${reason}`);
   }
 
   const repairedLegacyVisitedLinks = tryRepairVisitedLinksData(parsed);
@@ -621,7 +856,7 @@ export async function updateGist(token: string, gistId: string, data: SyncData |
 
     const gistData = await gistInfo.json() as GitHubGist;
     const fileName = getFirstGistFileName(gistData);
-    // 从 v2 开始，上传内容始终写成压缩包格式，旧明文格式只负责读取兼容。
+    // 上传内容统一写成当前压缩包格式，旧明文格式只负责读取兼容。
     const serializedContent = await serializeVisitedLinksForGist(data);
 
     const response = await fetch(`https://api.github.com/gists/${gistId}`, {
