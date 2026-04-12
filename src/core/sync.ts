@@ -720,16 +720,16 @@ async function deserializeCompressedSyncEnvelope(envelope: CompressedSyncEnvelop
   }
   catch (error) {
     console.warn(`同步存储 ${envelope.syncVersion} base64 解码失败:`, envelopeMeta, error);
-    throw new Error(`同步存储 ${envelope.syncVersion} payload 不是合法 Base64`);
+    throw new Error(`同步存储 ${envelope.syncVersion} payload 不是合法 Base64`, { cause: error });
   }
 
-  let decompressedText = '';
+  let decompressedText: string;
   try {
     decompressedText = await decompressText(compressedBytes, envelope.encoding);
   }
   catch (error) {
     console.warn(`同步存储 ${envelope.syncVersion} 解压失败:`, envelopeMeta, error);
-    throw new Error(`同步存储 ${envelope.syncVersion} ${getEncodingDisplayName(envelope.encoding)} 解压失败`);
+    throw new Error(`同步存储 ${envelope.syncVersion} ${getEncodingDisplayName(envelope.encoding)} 解压失败`, { cause: error });
   }
 
   let parsed: unknown;
@@ -738,7 +738,7 @@ async function deserializeCompressedSyncEnvelope(envelope: CompressedSyncEnvelop
   }
   catch (error) {
     console.warn(`同步存储 ${envelope.syncVersion} JSON 解析失败:`, envelopeMeta, error);
-    throw new Error(`同步存储 ${envelope.syncVersion} 解压后的内容不是合法 JSON`);
+    throw new Error(`同步存储 ${envelope.syncVersion} 解压后的内容不是合法 JSON`, { cause: error });
   }
 
   try {
@@ -753,7 +753,7 @@ async function deserializeCompressedSyncEnvelope(envelope: CompressedSyncEnvelop
       ? error.message
       : `同步存储 ${envelope.syncVersion} 数据格式无效: ${describeCompressedPayloadShape(parsed, envelope.syncVersion)}`;
     console.warn(`同步存储 ${envelope.syncVersion} 数据结构无效:`, envelopeMeta, reason);
-    throw error instanceof Error ? error : new Error(reason);
+    throw error instanceof Error ? error : new Error(reason, { cause: error });
   }
 }
 
@@ -766,7 +766,7 @@ async function deserializeGistContent(contentText: string): Promise<SyncData | V
   }
   catch (error) {
     console.warn('解析 Gist 内容失败:', error);
-    throw new Error('同步存储内容不是合法 JSON');
+    throw new Error('同步存储内容不是合法 JSON', { cause: error });
   }
 
   if (isCompressedSyncEnvelope(parsed)) {

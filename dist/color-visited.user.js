@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.19.2
+// @version      2.19.3
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -112,7 +112,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-EDkG-0_-.js"(exports$1, module$1) {
+        "main-VMWpVkmX.js"(exports$1, module$1) {
           const scriptRel = (function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22593,21 +22593,21 @@ key: "V"
               compressedBytes = base64ToBytes(envelope.payload);
             } catch (error) {
               console.warn(`同步存储 ${envelope.syncVersion} base64 解码失败:`, envelopeMeta, error);
-              throw new Error(`同步存储 ${envelope.syncVersion} payload 不是合法 Base64`);
+              throw new Error(`同步存储 ${envelope.syncVersion} payload 不是合法 Base64`, { cause: error });
             }
-            let decompressedText = "";
+            let decompressedText;
             try {
               decompressedText = await decompressText(compressedBytes, envelope.encoding);
             } catch (error) {
               console.warn(`同步存储 ${envelope.syncVersion} 解压失败:`, envelopeMeta, error);
-              throw new Error(`同步存储 ${envelope.syncVersion} ${getEncodingDisplayName(envelope.encoding)} 解压失败`);
+              throw new Error(`同步存储 ${envelope.syncVersion} ${getEncodingDisplayName(envelope.encoding)} 解压失败`, { cause: error });
             }
             let parsed;
             try {
               parsed = JSON.parse(decompressedText);
             } catch (error) {
               console.warn(`同步存储 ${envelope.syncVersion} JSON 解析失败:`, envelopeMeta, error);
-              throw new Error(`同步存储 ${envelope.syncVersion} 解压后的内容不是合法 JSON`);
+              throw new Error(`同步存储 ${envelope.syncVersion} 解压后的内容不是合法 JSON`, { cause: error });
             }
             try {
               if (envelope.syncVersion === "v2") {
@@ -22617,7 +22617,7 @@ key: "V"
             } catch (error) {
               const reason = error instanceof Error ? error.message : `同步存储 ${envelope.syncVersion} 数据格式无效: ${describeCompressedPayloadShape(parsed, envelope.syncVersion)}`;
               console.warn(`同步存储 ${envelope.syncVersion} 数据结构无效:`, envelopeMeta, reason);
-              throw error instanceof Error ? error : new Error(reason);
+              throw error instanceof Error ? error : new Error(reason, { cause: error });
             }
           }
           async function deserializeGistContent(contentText) {
@@ -22626,7 +22626,7 @@ key: "V"
               parsed = JSON.parse(contentText);
             } catch (error) {
               console.warn("解析 Gist 内容失败:", error);
-              throw new Error("同步存储内容不是合法 JSON");
+              throw new Error("同步存储内容不是合法 JSON", { cause: error });
             }
             if (isCompressedSyncEnvelope(parsed)) {
               return await deserializeCompressedSyncEnvelope(parsed);
@@ -23446,6 +23446,7 @@ appendTo: appendTarget
               batch: DEFAULT_SETTINGS.batchKey,
               sync: DEFAULT_SETTINGS.sync
             });
+            const visitedLinks = _GM_getValue("visitedLinks", {});
             let needsSave = false;
             Object.keys(PRESET_RULES).forEach((key) => {
               if (!(key in userSettings.preset)) {
@@ -23462,7 +23463,8 @@ appendTo: appendTarget
               batchKeySettings: userSettings.batch,
               syncSettings: userSettings.sync,
               batchKeyHandler: null,
-              linkClickHandler: null
+              linkClickHandler: null,
+              visitedLinks
             };
           }
           function saveUserSettings(state) {
@@ -23487,6 +23489,7 @@ appendTo: appendTarget
           function batchAddLinks(state) {
             const startTime = performance.now();
             const visitedLinks = _GM_getValue("visitedLinks", {});
+            state.visitedLinks = visitedLinks;
             const now2 = Date.now();
             let addedCount = 0;
             const links = document.querySelectorAll("a[href]:not(.visited-link)");
@@ -23504,9 +23507,11 @@ appendTo: appendTarget
             });
             if (linksToUpdate.length > 0) {
               _GM_setValue("visitedLinks", visitedLinks);
+              state.visitedLinks = visitedLinks;
               if (linksToUpdate.length > 1e3) {
                 batchProcessWithTimeSlicing(linksToUpdate, () => {
                   const refreshedVisitedLinks = _GM_getValue("visitedLinks", {});
+                  state.visitedLinks = refreshedVisitedLinks;
                   updateAllLinksStatus(refreshedVisitedLinks, state);
                   const endTime = performance.now();
                   const processingTime = endTime - startTime;
@@ -23520,6 +23525,7 @@ appendTo: appendTarget
                   link.classList.add("visited-link");
                 });
                 const refreshedVisitedLinks = _GM_getValue("visitedLinks", {});
+                state.visitedLinks = refreshedVisitedLinks;
                 updateAllLinksStatus(refreshedVisitedLinks, state);
                 const endTime = performance.now();
                 const processingTime = endTime - startTime;
@@ -23599,17 +23605,18 @@ appendTo: appendTarget
           function activateLinkFeatures(state, setupDOMObserver2, setupLinkEventListeners2) {
             deleteExpiredLinks(state.generalSettings.expirationTime);
             const visitedLinks = _GM_getValue("visitedLinks", {});
-            logStorageInfo(visitedLinks);
-            updateAllLinksStatus(visitedLinks, state);
-            setupDOMObserver2(visitedLinks, state);
-            state.linkClickHandler = setupLinkEventListeners2(visitedLinks, state);
+            state.visitedLinks = visitedLinks;
+            logStorageInfo(state.visitedLinks);
+            updateAllLinksStatus(state.visitedLinks, state);
+            setupDOMObserver2(state);
+            state.linkClickHandler = setupLinkEventListeners2(state);
           }
           let globalObserver = null;
           let linkContext = null;
           const urlChangeCallbacks = new Set();
           let lastHref = location.href;
-          function provideLinkContext(visitedLinks, state) {
-            linkContext = { visitedLinks, state };
+          function provideLinkContext(state) {
+            linkContext = state;
           }
           function registerUrlChangeCallback(callback) {
             urlChangeCallbacks.add(callback);
@@ -23617,7 +23624,8 @@ appendTo: appendTarget
           function ensureDOMObserver() {
             if (globalObserver) return globalObserver;
             globalObserver = new MutationObserver((mutations) => {
-              if (linkContext) {
+              const state = linkContext;
+              if (state) {
                 let newLinksCount = 0;
                 let attrLinksCount = 0;
                 mutations.forEach((mutation) => {
@@ -23626,32 +23634,32 @@ appendTo: appendTarget
                       if (node.nodeType !== Node.ELEMENT_NODE) return;
                       const element = node;
                       if (element.tagName === "A" && element.hasAttribute("href") && !element.classList.contains("visited-link")) {
-                        updateLinkStatus(element, linkContext.visitedLinks, linkContext.state);
+                        updateLinkStatus(element, state.visitedLinks, state);
                         newLinksCount++;
                       }
                       const newLinks = element.querySelectorAll("a[href]:not(.visited-link)");
                       newLinksCount += newLinks.length;
                       newLinks.forEach((link) => {
-                        updateLinkStatus(link, linkContext.visitedLinks, linkContext.state);
+                        updateLinkStatus(link, state.visitedLinks, state);
                       });
                     });
                   } else if (mutation.type === "attributes" && mutation.attributeName === "href") {
                     const target = mutation.target;
                     if (target.tagName === "A" && !target.classList.contains("visited-link")) {
-                      updateLinkStatus(target, linkContext.visitedLinks, linkContext.state);
+                      updateLinkStatus(target, state.visitedLinks, state);
                       attrLinksCount++;
                     }
                   }
                 });
-                if (linkContext.state.generalSettings.debug && newLinksCount > 0) {
+                if (state.generalSettings.debug && newLinksCount > 0) {
                   console.log(`[DOMObserver] 检测到 ${newLinksCount} 个新链接`);
                 }
-                if (linkContext.state.generalSettings.debug && attrLinksCount > 0) {
+                if (state.generalSettings.debug && attrLinksCount > 0) {
                   console.log(`[DOMObserver] 检测到 ${attrLinksCount} 个链接 href 属性变化`);
                 }
               }
               if (lastHref !== location.href) {
-                if (linkContext?.state.generalSettings.debug) {
+                if (linkContext?.generalSettings.debug) {
                   console.log(`[DOMObserver] URL变化: ${lastHref} -> ${location.href}`);
                 }
                 lastHref = location.href;
@@ -23829,11 +23837,11 @@ registerMenuCommand() {
             };
             document.addEventListener("keydown", state.batchKeyHandler);
           }
-          function setupDOMObserver(visitedLinks, state) {
-            provideLinkContext(visitedLinks, state);
+          function setupDOMObserver(state) {
+            provideLinkContext(state);
             return ensureDOMObserver();
           }
-          function createLinkClickHandler(visitedLinks, state) {
+          function createLinkClickHandler(state) {
             return function handleLinkClick(event) {
               const target = event.target;
               if (!target) return;
@@ -23848,13 +23856,13 @@ registerMenuCommand() {
                 console.log(`[handleLinkClick] shouldColorLink结果: ${shouldColor}`);
               }
               if (!shouldColor) return;
-              const alreadyVisited = Object.hasOwn(visitedLinks, inputUrl);
+              const alreadyVisited = Object.hasOwn(state.visitedLinks, inputUrl);
               if (state.generalSettings.debug) {
                 console.log(`[handleLinkClick] 是否已记录: ${alreadyVisited}`);
               }
               if (!alreadyVisited) {
-                visitedLinks[inputUrl] = Date.now();
-                _GM_setValue("visitedLinks", visitedLinks);
+                state.visitedLinks[inputUrl] = Date.now();
+                _GM_setValue("visitedLinks", state.visitedLinks);
                 if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} saved`);
                 document.querySelectorAll("a[href]:not(.visited-link)").forEach((el) => {
                   const elUrl = getBaseUrl(el.href);
@@ -23866,8 +23874,8 @@ registerMenuCommand() {
               }
             };
           }
-          function setupLinkEventListeners(visitedLinks, state) {
-            const handleLinkClick = createLinkClickHandler(visitedLinks, state);
+          function setupLinkEventListeners(state) {
+            const handleLinkClick = createLinkClickHandler(state);
             document.addEventListener("click", handleLinkClick, true);
             document.addEventListener("auxclick", handleLinkClick, true);
             return handleLinkClick;
@@ -23893,9 +23901,9 @@ registerMenuCommand() {
             });
             eventBus.on("sync:completed", () => {
               console.log("同步完成，增量更新链接状态...");
+              state.visitedLinks = _GM_getValue("visitedLinks", {});
               if (isPageActive(state)) {
-                const visitedLinks = _GM_getValue("visitedLinks", {});
-                updateAllLinksStatus(visitedLinks, state);
+                updateAllLinksStatus(state.visitedLinks, state);
               }
             });
           }

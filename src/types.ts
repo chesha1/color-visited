@@ -8,6 +8,8 @@ export interface ScriptState {
   batchKeyHandler: ((event: KeyboardEvent) => void) | null;
   /** 全局链接点击/中键点击事件处理器 */
   linkClickHandler: ((event: Event) => void) | null;
+  /** 当前运行时使用的 visitedLinks 引用，需要和存储保持同步 */
+  visitedLinks: VisitedLinks;
 }
 
 export interface GeneralSettings {

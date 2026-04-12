@@ -1,11 +1,11 @@
 import { updateLinkStatus } from '@/core/linkManager';
-import type { VisitedLinks, ScriptState } from '@/types';
+import type { ScriptState } from '@/types';
 
 // 全局 MutationObserver（单例）
 let globalObserver: MutationObserver | null = null;
 
 // 链接染色所需的上下文，在页面激活时注入
-let linkContext: { visitedLinks: VisitedLinks; state: ScriptState } | null = null;
+let linkContext: ScriptState | null = null;
 
 // URL 变化回调集合
 const urlChangeCallbacks: Set<() => void> = new Set();
@@ -14,11 +14,11 @@ const urlChangeCallbacks: Set<() => void> = new Set();
 let lastHref: string = location.href;
 
 /**
- * 提供链接染色所需的上下文（visitedLinks 与脚本状态）。
- * 每当页面重新初始化时都会注入最新的引用。
+ * 提供链接染色所需的脚本状态。
+ * Observer 在运行时始终从 state 上读取最新的 visitedLinks 引用。
  */
-export function provideLinkContext(visitedLinks: VisitedLinks, state: ScriptState): void {
-    linkContext = { visitedLinks, state };
+export function provideLinkContext(state: ScriptState): void {
+    linkContext = state;
 }
 
 /**
@@ -35,8 +35,10 @@ export function ensureDOMObserver(): MutationObserver {
     if (globalObserver) return globalObserver;
 
     globalObserver = new MutationObserver((mutations: MutationRecord[]): void => {
+        const state = linkContext;
+
         // 1. 处理新增节点中的链接染色
-        if (linkContext) {
+        if (state) {
             let newLinksCount = 0;
             let attrLinksCount = 0;
             mutations.forEach((mutation: MutationRecord): void => {
@@ -47,14 +49,14 @@ export function ensureDOMObserver(): MutationObserver {
                         const element = node as Element;
                         // 检查节点本身是否是链接
                         if (element.tagName === 'A' && element.hasAttribute('href') && !element.classList.contains('visited-link')) {
-                            updateLinkStatus(element, linkContext!.visitedLinks, linkContext!.state);
+                            updateLinkStatus(element, state.visitedLinks, state);
                             newLinksCount++;
                         }
                         // 检查子节点中的链接
                         const newLinks = element.querySelectorAll('a[href]:not(.visited-link)');
                         newLinksCount += newLinks.length;
                         newLinks.forEach((link: Element): void => {
-                            updateLinkStatus(link, linkContext!.visitedLinks, linkContext!.state);
+                            updateLinkStatus(link, state.visitedLinks, state);
                         });
                     });
                 }
@@ -62,22 +64,22 @@ export function ensureDOMObserver(): MutationObserver {
                 else if (mutation.type === 'attributes' && mutation.attributeName === 'href') {
                     const target = mutation.target as Element;
                     if (target.tagName === 'A' && !target.classList.contains('visited-link')) {
-                        updateLinkStatus(target, linkContext!.visitedLinks, linkContext!.state);
+                        updateLinkStatus(target, state.visitedLinks, state);
                         attrLinksCount++;
                     }
                 }
             });
-            if (linkContext.state.generalSettings.debug && newLinksCount > 0) {
+            if (state.generalSettings.debug && newLinksCount > 0) {
                 console.log(`[DOMObserver] 检测到 ${newLinksCount} 个新链接`);
             }
-            if (linkContext.state.generalSettings.debug && attrLinksCount > 0) {
+            if (state.generalSettings.debug && attrLinksCount > 0) {
                 console.log(`[DOMObserver] 检测到 ${attrLinksCount} 个链接 href 属性变化`);
             }
         }
 
         // 2. 检测 URL 变化（针对 SPA 页面）
         if (lastHref !== location.href) {
-            if (linkContext?.state.generalSettings.debug) {
+            if (linkContext?.generalSettings.debug) {
                 console.log(`[DOMObserver] URL变化: ${lastHref} -> ${location.href}`);
             }
             lastHref = location.href;

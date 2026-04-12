@@ -4,7 +4,7 @@ import { shouldColorLink } from '@/core/pageDetector';
 import { batchAddLinks } from '@/core/linkManager';
 import { provideLinkContext, ensureDOMObserver } from '@/core/domObserver';
 import { getBaseUrl } from '@/core/utils';
-import type { ScriptState, VisitedLinks } from '@/types';
+import type { ScriptState } from '@/types';
 import { GM_setValue } from 'vite-plugin-monkey/dist/client';
 
 // ================== 快捷键管理 ==================
@@ -41,9 +41,9 @@ export function setupBatchKeyListener(state: ScriptState): void {
 // ================== DOM观察器 ==================
 
 // 设置DOM变化监听器
-export function setupDOMObserver(visitedLinks: VisitedLinks, state: ScriptState): MutationObserver {
+export function setupDOMObserver(state: ScriptState): MutationObserver {
   // 注入上下文供全局 Observer 使用
-  provideLinkContext(visitedLinks, state);
+  provideLinkContext(state);
   // 确保全局 Observer 已创建
   return ensureDOMObserver();
 }
@@ -51,7 +51,7 @@ export function setupDOMObserver(visitedLinks: VisitedLinks, state: ScriptState)
 // ================== 链接点击事件 ==================
 
 // 处理链接点击事件
-export function createLinkClickHandler(visitedLinks: VisitedLinks, state: ScriptState): (event: Event) => void {
+export function createLinkClickHandler(state: ScriptState): (event: Event) => void {
   return function handleLinkClick(event: Event): void {
     // 使用 event.target.closest 来获取被点击的链接元素
     const target = event.target as Element | null;
@@ -72,15 +72,15 @@ export function createLinkClickHandler(visitedLinks: VisitedLinks, state: Script
 
     if (!shouldColor) return; // 如果链接不符合匹配规则，返回
 
-    const alreadyVisited = Object.hasOwn(visitedLinks, inputUrl);
+    const alreadyVisited = Object.hasOwn(state.visitedLinks, inputUrl);
     if (state.generalSettings.debug) {
       console.log(`[handleLinkClick] 是否已记录: ${alreadyVisited}`);
     }
 
     if (!alreadyVisited) {
       // 如果是第一次点击该链接，记录到 visitedLinks 并更新存储
-      visitedLinks[inputUrl] = Date.now();
-      GM_setValue('visitedLinks', visitedLinks);
+      state.visitedLinks[inputUrl] = Date.now();
+      GM_setValue('visitedLinks', state.visitedLinks);
       if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} saved`);
 
       // 染色所有相同 href 的链接（包括当前点击的元素）
@@ -96,9 +96,8 @@ export function createLinkClickHandler(visitedLinks: VisitedLinks, state: Script
   };
 }
 
-// 设置链接点击事件监听器
-export function setupLinkEventListeners(visitedLinks: VisitedLinks, state: ScriptState): ((event: Event) => void) {
-  const handleLinkClick = createLinkClickHandler(visitedLinks, state);
+export function setupLinkEventListeners(state: ScriptState): ((event: Event) => void) {
+  const handleLinkClick = createLinkClickHandler(state);
 
   // 添加事件委托的点击事件监听器
   document.addEventListener('click', handleLinkClick, true);
