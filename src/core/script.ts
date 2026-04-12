@@ -2,7 +2,7 @@
 import { syncOnStartup } from '@/core/sync';
 import { showNotification, injectCustomStyles } from '@/core/ui';
 import { initializeScriptState } from '@/core/state';
-import type { ScriptState, VisitedLinks } from '@/types';
+import type { ScriptState } from '@/types';
 import { isPageActive, onUrlChange } from '@/core/pageDetector';
 import { createMenuManager } from '@/core/menuManager';
 import { activateLinkFeatures, removeScript, updateAllLinksStatus } from '@/core/linkManager';
@@ -46,10 +46,10 @@ function setupGlobalEventListeners(state: ScriptState): void {
   // 使用增量更新而非重置页面，避免清除同步期间用户点击产生的染色
   eventBus.on('sync:completed', () => {
     console.log('同步完成，增量更新链接状态...');
+    state.visitedLinks = GM_getValue('visitedLinks', {});
     if (isPageActive(state)) {
       // 直接获取最新的 visitedLinks 并增量更新，不调用 setupPage 避免 removeScript 清除染色
-      const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
-      updateAllLinksStatus(visitedLinks, state);
+      updateAllLinksStatus(state.visitedLinks, state);
     }
   });
 }
@@ -90,4 +90,3 @@ export function startColorVisitedScript(): void {
   // 执行脚本启动流程
   startScript(state);
 }
-

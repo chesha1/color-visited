@@ -27,6 +27,7 @@ export function batchAddLinks(state: ScriptState): void {
   const startTime = performance.now();
 
   const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
+  state.visitedLinks = visitedLinks;
   const now = Date.now();
   let addedCount = 0;
 
@@ -55,6 +56,7 @@ export function batchAddLinks(state: ScriptState): void {
   if (linksToUpdate.length > 0) {
     // 保存更新后的访问链接记录
     GM_setValue('visitedLinks', visitedLinks);
+    state.visitedLinks = visitedLinks;
 
     // 对于大量链接，使用 DocumentFragment 或分时处理
     if (linksToUpdate.length > 1000) {
@@ -62,6 +64,7 @@ export function batchAddLinks(state: ScriptState): void {
       batchProcessWithTimeSlicing(linksToUpdate, () => {
         // 处理完成后重新应用所有链接状态，模拟页面刷新的效果
         const refreshedVisitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
+        state.visitedLinks = refreshedVisitedLinks;
         updateAllLinksStatus(refreshedVisitedLinks, state);
 
         // 处理完成后显示通知
@@ -82,6 +85,7 @@ export function batchAddLinks(state: ScriptState): void {
 
       // 批量添加完成后，重新应用所有链接状态，模拟页面刷新的效果
       const refreshedVisitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
+      state.visitedLinks = refreshedVisitedLinks;
       updateAllLinksStatus(refreshedVisitedLinks, state);
 
       // 性能监控：计算处理时间
@@ -210,19 +214,20 @@ export function removeScript(state: ScriptState): void {
 // 激活链接功能 - 启动存储管理、状态更新、DOM监听、事件处理
 export function activateLinkFeatures(
   state: ScriptState,
-  setupDOMObserver: (visitedLinks: VisitedLinks, state: ScriptState) => MutationObserver,
-  setupLinkEventListeners: (visitedLinks: VisitedLinks, state: ScriptState) => ((event: Event) => void)
+  setupDOMObserver: (state: ScriptState) => MutationObserver,
+  setupLinkEventListeners: (state: ScriptState) => ((event: Event) => void)
 ): void {
   deleteExpiredLinks(state.generalSettings.expirationTime); // 删除过期的链接
 
   const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
+  state.visitedLinks = visitedLinks;
 
-  logStorageInfo(visitedLinks); // 显示存储信息
-  updateAllLinksStatus(visitedLinks, state); // 更新链接状态
+  logStorageInfo(state.visitedLinks); // 显示存储信息
+  updateAllLinksStatus(state.visitedLinks, state); // 更新链接状态
 
   // 设置全局 DOM 观察器（仅首次创建）
-  setupDOMObserver(visitedLinks, state);
+  setupDOMObserver(state);
 
   // 设置点击事件监听器并保存引用，便于后续清理
-  state.linkClickHandler = setupLinkEventListeners(visitedLinks, state);
+  state.linkClickHandler = setupLinkEventListeners(state);
 }

@@ -1,5 +1,5 @@
 import { DEFAULT_SETTINGS, PRESET_RULES } from '@/core/config';
-import type { ScriptState, UserSettings } from '@/types';
+import type { ScriptState, UserSettings, VisitedLinks } from '@/types';
 import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
 
 // 获取当前启用的预设列表
@@ -15,6 +15,7 @@ export function initializeScriptState(): ScriptState {
     batch: DEFAULT_SETTINGS.batchKey,
     sync: DEFAULT_SETTINGS.sync
   });
+  const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
 
   // 数据迁移：确保所有 PRESET_RULES 中的键都存在于 presetSettings 中
   // 当新增预设网站时，老用户的存储数据不包含新键，需要补充默认值
@@ -37,7 +38,8 @@ export function initializeScriptState(): ScriptState {
     batchKeySettings: userSettings.batch,
     syncSettings: userSettings.sync,
     batchKeyHandler: null,
-    linkClickHandler: null
+    linkClickHandler: null,
+    visitedLinks,
   };
 }
 
@@ -51,4 +53,3 @@ export function saveUserSettings(state: ScriptState): void {
   };
   GM_setValue('userSettings', userSettings);
 }
-
