@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.19.3
+// @version      2.19.4
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -112,7 +112,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-VMWpVkmX.js"(exports$1, module$1) {
+        "main-DiEzM-Fe.js"(exports$1, module$1) {
           const scriptRel = (function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -23595,7 +23595,7 @@ appendTo: appendTarget
               document.removeEventListener("keydown", state.batchKeyHandler);
               state.batchKeyHandler = null;
             }
-            disconnectDOMObserver();
+            clearLinkContext();
             if (state.linkClickHandler) {
               document.removeEventListener("click", state.linkClickHandler, true);
               document.removeEventListener("auxclick", state.linkClickHandler, true);
@@ -23618,11 +23618,15 @@ appendTo: appendTarget
           function provideLinkContext(state) {
             linkContext = state;
           }
+          function clearLinkContext() {
+            linkContext = null;
+          }
           function registerUrlChangeCallback(callback) {
             urlChangeCallbacks.add(callback);
           }
           function ensureDOMObserver() {
             if (globalObserver) return globalObserver;
+            lastHref = location.href;
             globalObserver = new MutationObserver((mutations) => {
               const state = linkContext;
               if (state) {
@@ -23668,13 +23672,6 @@ appendTo: appendTarget
             });
             globalObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["href"] });
             return globalObserver;
-          }
-          function disconnectDOMObserver() {
-            if (globalObserver) {
-              globalObserver.disconnect();
-              globalObserver = null;
-            }
-            linkContext = null;
           }
           let cachedCurrentPreset = null;
           let cachedUrl = null;
