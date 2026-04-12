@@ -3,7 +3,7 @@
 import { shouldColorLink } from '@/core/pageDetector';
 import { showNotification, removeCustomStyles } from '@/core/ui';
 import { getBaseUrl, logStorageInfo } from '@/core/utils';
-import { disconnectDOMObserver } from '@/core/domObserver';
+import { clearLinkContext } from '@/core/domObserver';
 import type { ScriptState, VisitedLinks } from '@/types';
 import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
 
@@ -198,8 +198,8 @@ export function removeScript(state: ScriptState): void {
     state.batchKeyHandler = null;
   }
 
-  // 断开 DOM 观察器
-  disconnectDOMObserver();
+  // 清空链接处理上下文，但保留全局 DOM 观察器继续监听 SPA URL 变化
+  clearLinkContext();
 
   // 移除全局链接点击 / 中键点击事件监听器
   if (state.linkClickHandler) {

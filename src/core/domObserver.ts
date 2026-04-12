@@ -22,6 +22,13 @@ export function provideLinkContext(state: ScriptState): void {
 }
 
 /**
+ * 清空链接染色上下文，但保留全局 Observer 继续监听 URL 变化。
+ */
+export function clearLinkContext(): void {
+    linkContext = null;
+}
+
+/**
  * 注册 URL 变化回调。多次调用会自动去重。
  */
 export function registerUrlChangeCallback(callback: () => void): void {
@@ -33,6 +40,9 @@ export function registerUrlChangeCallback(callback: () => void): void {
  */
 export function ensureDOMObserver(): MutationObserver {
     if (globalObserver) return globalObserver;
+
+    // 新建 observer 时以当前 URL 作为基线，避免重建后误报“补发”的路由变化。
+    lastHref = location.href;
 
     globalObserver = new MutationObserver((mutations: MutationRecord[]): void => {
         const state = linkContext;
@@ -92,13 +102,13 @@ export function ensureDOMObserver(): MutationObserver {
 }
 
 /**
- * 断开并重置全局 DOM 观察器，清空链接上下文。
- * 下次调用 ensureDOMObserver 时会重新创建。
+ * 完整销毁全局 DOM 观察器。
+ * 仅用于需要彻底停止 DOM / URL 监听的场景；普通页面切换应优先使用 clearLinkContext。
  */
 export function disconnectDOMObserver(): void {
     if (globalObserver) {
         globalObserver.disconnect();
         globalObserver = null;
     }
-    linkContext = null;
+    clearLinkContext();
 } 
