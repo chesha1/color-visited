@@ -95,6 +95,10 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/exhentai\.org\/\?f_search=.*/, // 首页搜索页
       /^https:\/\/e-hentai\.org\/popular/, // 热门页面
       /^https:\/\/exhentai\.org\/popular/, // 热门页面
+      /^https:\/\/e-hentai\.org\/watched\/.*/, // 关注页面
+      /^https:\/\/exhentai\.org\/watched\/.*/, // 关注页面
+      /^https:\/\/e-hentai\.org\/tag\/.*/, // 标签页面
+      /^https:\/\/exhentai\.org\/tag\/.*/, // 标签页面
     ],
     patterns: [
       /^https:\/\/e-hentai\.org\/g\/\d+\/\w+\//, // 画廊页面
