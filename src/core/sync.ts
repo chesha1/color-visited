@@ -16,7 +16,7 @@ import type {
 } from '@/types';
 import { DEFAULT_SETTINGS } from '@/core/config';
 import { eventBus } from '@/core/eventBus';
-import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
+import { GM_getValue, GM_setValue, GM_xmlhttpRequest } from 'vite-plugin-monkey/dist/client';
 
 const GITHUB_ACCEPT_HEADER = 'application/vnd.github.v3+json';
 const SYNC_STORAGE_VERSION = 'v3' as const;
@@ -656,6 +656,33 @@ function getFirstGistFileName(gist: GitHubGist): string {
   return fileName;
 }
 
+function fetchGistRawContent(token: string, rawUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    GM_xmlhttpRequest({
+      method: 'GET',
+      url: rawUrl,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      responseType: 'text',
+      onload: (response) => {
+        if (response.status < 200 || response.status >= 300) {
+          reject(new Error(`获取 Gist 原始内容失败: ${response.status}`));
+          return;
+        }
+
+        resolve(response.responseText);
+      },
+      onerror: () => {
+        reject(new Error('获取 Gist 原始内容失败: 网络错误'));
+      },
+      ontimeout: () => {
+        reject(new Error('获取 Gist 原始内容失败: 请求超时'));
+      },
+    });
+  });
+}
+
 // 上传前统一把输入收敛成干净的 visitedLinks，再编码成当前 v3 压缩包格式。
 async function serializeVisitedLinksForGist(data: SyncData | VisitedLinksData): Promise<string> {
   const visitedLinks = requireVisitedLinksData(data, '上传前数据').visitedLinks;
@@ -905,11 +932,7 @@ export async function getGist(token: string, gistId: string): Promise<SyncData |
 
     if (file.truncated) {
       // Gist API 只会内联部分大文件内容，被截断时必须转 raw_url 取完整文本。
-      const rawResp = await fetch(file.raw_url);
-      if (!rawResp.ok) {
-        throw new Error(`获取 Gist 原始内容失败: ${rawResp.status}`);
-      }
-      contentText = await rawResp.text();
+      contentText = await fetchGistRawContent(token, file.raw_url);
     }
     else {
       contentText = file.content;

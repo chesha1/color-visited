@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.20.1
+// @version      2.20.2
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -95,10 +95,12 @@
 // @require      https://cdn.jsdelivr.net/npm/systemjs@6.15.1/dist/system.min.js
 // @require      https://cdn.jsdelivr.net/npm/systemjs@6.15.1/dist/extras/named-register.min.js
 // @require      data:application/javascript,%3B(typeof%20System!%3D'undefined')%26%26(System%3Dnew%20System.constructor())%3B
+// @connect      gist.githubusercontent.com
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_registerMenuCommand
 // @grant        GM_setValue
+// @grant        GM_xmlhttpRequest
 // @run-at       document-idle
 // @noframes
 // ==/UserScript==
@@ -116,7 +118,7 @@ System.register("./__entry.js", [], (function (exports, module) {
         return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
       };
       var require_main_001 = __commonJS({
-        "main-DfPlPFCh.js"(exports$1, module$1) {
+        "main-DYTDWYMg.js"(exports$1, module$1) {
           const scriptRel = (function detectScriptRel() {
             const relList = typeof document !== "undefined" && document.createElement("link").relList;
             return relList && relList.supports && relList.supports("modulepreload") ? "modulepreload" : "preload";
@@ -22097,6 +22099,7 @@ key: "V"
           var _GM_getValue = (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
           var _GM_registerMenuCommand = (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
           var _GM_setValue = (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
+          var _GM_xmlhttpRequest = (() => typeof GM_xmlhttpRequest != "undefined" ? GM_xmlhttpRequest : void 0)();
           const GITHUB_ACCEPT_HEADER = "application/vnd.github.v3+json";
           const SYNC_STORAGE_VERSION = "v3";
           const SYNC_STORAGE_ENCODING = "gzip-base64-json";
@@ -22553,6 +22556,31 @@ key: "V"
             }
             return fileName;
           }
+          function fetchGistRawContent(token, rawUrl) {
+            return new Promise((resolve2, reject) => {
+              _GM_xmlhttpRequest({
+                method: "GET",
+                url: rawUrl,
+                headers: {
+                  Authorization: `Bearer ${token}`
+                },
+                responseType: "text",
+                onload: (response) => {
+                  if (response.status < 200 || response.status >= 300) {
+                    reject(new Error(`获取 Gist 原始内容失败: ${response.status}`));
+                    return;
+                  }
+                  resolve2(response.responseText);
+                },
+                onerror: () => {
+                  reject(new Error("获取 Gist 原始内容失败: 网络错误"));
+                },
+                ontimeout: () => {
+                  reject(new Error("获取 Gist 原始内容失败: 请求超时"));
+                }
+              });
+            });
+          }
           async function serializeVisitedLinksForGist(data) {
             const visitedLinks = requireVisitedLinksData(data, "上传前数据").visitedLinks;
             const v3Payload = encodeV3GroupedPayload(visitedLinks);
@@ -22740,11 +22768,7 @@ key: "V"
               const file = getFirstGistFile(result);
               let contentText = "";
               if (file.truncated) {
-                const rawResp = await fetch(file.raw_url);
-                if (!rawResp.ok) {
-                  throw new Error(`获取 Gist 原始内容失败: ${rawResp.status}`);
-                }
-                contentText = await rawResp.text();
+                contentText = await fetchGistRawContent(token, file.raw_url);
               } else {
                 contentText = file.content;
               }
