@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.20.3
+// @version      2.20.4
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -11768,7 +11768,7 @@ var arrow_default = /* @__PURE__ */ defineComponent({
 		onBeforeUnmount(() => {
 			arrowRef.value = void 0;
 		});
-		__expose({
+		__expose({ 
 		/**
 		* @description Arrow element
 		*/
@@ -11927,7 +11927,7 @@ var trigger_default$1 = /* @__PURE__ */ defineComponent({
 				triggerRef.value = void 0;
 			}
 		});
-		__expose({
+		__expose({ 
 		/**
 		* @description trigger element
 		*/
@@ -14520,7 +14520,7 @@ var trigger_default = /* @__PURE__ */ defineComponent({
 				onToggle(e);
 			}
 		});
-		__expose({
+		__expose({ 
 		/**
 		* @description trigger element
 		*/
@@ -15323,10 +15323,10 @@ var ElInput = withInstall(/* @__PURE__ */ defineComponent({
 			const { width } = entries[0].target.getBoundingClientRect();
 			const updateStyle = () => {
 				rAFId = void 0;
-				countStyle.value = {
+				countStyle.value = { 
 				/** right: 100% - (width - right(10)) */
 right: `calc(100% - ${width - 10}px)` };
-				clearIconStyle.value = {
+				clearIconStyle.value = { 
 				/** right: 100% - (width - right(11)) */
 right: `calc(100% - ${width - 11}px)` };
 			};
@@ -15830,7 +15830,7 @@ var ElBadge = withInstall(/* @__PURE__ */ defineComponent({
 				marginTop: addUnit(props.offset[1])
 			}, props.badgeStyle ?? {}];
 		});
-		__expose({
+		__expose({ 
 		/** @description badge content */
 content });
 		return (_ctx, _cache) => {
@@ -18628,7 +18628,7 @@ var sv_panel_default = /* @__PURE__ */ defineComponent({
 				color: props.color.value
 			});
 		});
-		__expose({
+		__expose({ 
 		/**
 		* @description update sv panel manually
 		*/
@@ -22502,6 +22502,11 @@ var KNOWN_SYNC_POLLUTION_KEYS = [
 	"originalBytes",
 	"compressedBytes"
 ];
+var GITHUB_HTTP_STATUS_HINTS = {
+	401: "令牌无效或已过期",
+	403: "令牌权限不足，或触发了 GitHub API 限流",
+	404: "Gist 不存在、ID 填写有误，或令牌无权访问"
+};
 var compressionSupportCache = /* @__PURE__ */ new Map();
 var knownSyncPollutionKeySet = new Set(KNOWN_SYNC_POLLUTION_KEYS);
 function getDefaultUserSettings() {
@@ -22544,6 +22549,9 @@ function getCompressionFormat(encoding) {
 }
 function getEncodingDisplayName(encoding) {
 	return encoding === "gzip-base64-json" ? "gzip" : "Zstandard（zstd）";
+}
+function getErrorMessage(error) {
+	return error instanceof Error ? error.message : String(error);
 }
 function getValueTypeLabel(value) {
 	if (value === null) return "null";
@@ -22857,6 +22865,17 @@ function fetchGistRawContent(token, rawUrl) {
 		});
 	});
 }
+async function readFirstGistFileContent(token, gist) {
+	const file = getFirstGistFile(gist);
+	if (file.truncated) return {
+		contentText: await fetchGistRawContent(token, file.raw_url),
+		truncated: true
+	};
+	return {
+		contentText: file.content ?? "",
+		truncated: false
+	};
+}
 async function serializeVisitedLinksForGist(data) {
 	const visitedLinks = requireVisitedLinksData(data, "上传前数据").visitedLinks;
 	const v3Payload = encodeV3GroupedPayload(visitedLinks);
@@ -22928,26 +22947,55 @@ async function deserializeCompressedSyncEnvelope(envelope) {
 		throw error instanceof Error ? error : new Error(reason, { cause: error });
 	}
 }
-async function deserializeGistContent(contentText) {
+function hasLegacyVisitedLinkRecord(value) {
+	for (const key in value) {
+		const timestamp = value[key];
+		if ((key.startsWith("http://") || key.startsWith("https://")) && typeof timestamp === "number" && Number.isFinite(timestamp)) return true;
+	}
+	return false;
+}
+function createUninitializedSnapshot(emptyReason, truncated) {
+	if (truncated) {
+		console.warn("截断的 Gist 文件内容无法识别:", emptyReason);
+		throw new Error(`Gist 文件超过 1MB，通过 raw_url 获取的完整内容无法识别（${emptyReason}），为避免误覆盖，云端数据保持不变`);
+	}
+	return {
+		visitedLinks: {},
+		needsInitialization: true,
+		emptyReason
+	};
+}
+async function deserializeGistContent(contentText, truncated) {
+	if (contentText.trim() === "") return createUninitializedSnapshot("内容为空", truncated);
 	let parsed;
 	try {
 		parsed = JSON.parse(contentText);
-	} catch (error) {
-		console.warn("解析 Gist 内容失败:", error);
-		throw new Error("同步存储内容不是合法 JSON", { cause: error });
+	} catch {
+		return createUninitializedSnapshot("内容不是合法 JSON", truncated);
 	}
-	if (isCompressedSyncEnvelope(parsed)) return await deserializeCompressedSyncEnvelope(parsed);
-	if (isPlainObject(parsed) && isSyncStorageVersion(parsed.syncVersion)) {
-		const reason = describeCompressedEnvelopeShape(parsed, parsed.syncVersion);
-		console.warn(`同步存储 ${parsed.syncVersion} 外层包结构无效:`, reason);
-		throw new Error(`同步存储 ${parsed.syncVersion} 外层包格式无效: ${reason}`);
+	if (!isPlainObject(parsed)) return createUninitializedSnapshot(`JSON 顶层类型是 ${getValueTypeLabel(parsed)}`, truncated);
+	if ("syncVersion" in parsed) {
+		if (isCompressedSyncEnvelope(parsed)) return {
+			visitedLinks: await deserializeCompressedSyncEnvelope(parsed),
+			needsInitialization: false
+		};
+		if (isSyncStorageVersion(parsed.syncVersion)) {
+			const reason = describeCompressedEnvelopeShape(parsed, parsed.syncVersion);
+			console.warn(`同步存储 ${parsed.syncVersion} 外层包结构无效:`, reason);
+			throw new Error(`同步存储 ${parsed.syncVersion} 外层包格式无效: ${reason}`);
+		}
+		throw new Error(`云端数据来自更新版本的脚本（syncVersion=${String(parsed.syncVersion)}），请升级脚本后再同步`);
 	}
-	const repairedLegacyVisitedLinks = tryRepairVisitedLinksData(parsed);
-	if (repairedLegacyVisitedLinks) {
+	if ("visitedLinks" in parsed || hasLegacyVisitedLinkRecord(parsed)) {
+		const repairedLegacyVisitedLinks = tryRepairVisitedLinksData(parsed);
+		if (!repairedLegacyVisitedLinks) throw new Error(`同步存储旧版数据格式无效: ${describeVisitedLinksRepairFailure(parsed)}`);
 		logVisitedLinksRepair("云端旧版明文数据", repairedLegacyVisitedLinks);
-		return repairedLegacyVisitedLinks.visitedLinks;
+		return {
+			visitedLinks: repairedLegacyVisitedLinks.visitedLinks,
+			needsInitialization: false
+		};
 	}
-	throw new Error(`同步存储旧版数据格式无效: ${describeVisitedLinksRepairFailure(parsed)}`);
+	return createUninitializedSnapshot(Object.keys(parsed).length === 0 ? "内容是空对象" : `对象中没有同步数据特征，键: ${getObjectKeyPreview(parsed)}`, truncated);
 }
 function areVisitedLinksEqual(left, right) {
 	let leftCount = 0;
@@ -22967,15 +23015,70 @@ function saveSyncSettings(settings) {
 	userSettings.sync = settings;
 	_GM_setValue("userSettings", userSettings);
 }
-async function validateGitHubToken(token) {
+function formatGitHubHttpError(action, status) {
+	const hint = GITHUB_HTTP_STATUS_HINTS[status];
+	return hint ? `${action}: ${status}（${hint}）` : `${action}: ${status}`;
+}
+function normalizeGistId(input) {
+	return (input.trim().split(/[?#]/)[0].split("/").filter((segment) => segment !== "").pop() ?? "").replace(/\.git$/, "");
+}
+async function testSyncConnection(token, gistId) {
 	try {
-		return (await fetch("https://api.github.com/user", { headers: {
+		const userResponse = await fetch("https://api.github.com/user", { headers: {
 			Authorization: `token ${token}`,
 			Accept: GITHUB_ACCEPT_HEADER
-		} })).ok;
+		} });
+		if (!userResponse.ok) return {
+			level: "error",
+			message: formatGitHubHttpError("令牌验证失败", userResponse.status)
+		};
+		const oauthScopes = userResponse.headers.get("X-OAuth-Scopes");
+		if (oauthScopes !== null && !oauthScopes.split(",").map((scope) => scope.trim()).includes("gist")) return {
+			level: "error",
+			message: "令牌缺少 gist 权限，请重新创建令牌并勾选 \"gist\""
+		};
+		if (!gistId) return {
+			level: "warning",
+			message: "令牌有效，还需要填写 Gist ID"
+		};
+		const user = await userResponse.json();
+		const gistResponse = await fetch(`https://api.github.com/gists/${gistId}`, { headers: {
+			Authorization: `token ${token}`,
+			Accept: GITHUB_ACCEPT_HEADER
+		} });
+		if (!gistResponse.ok) return {
+			level: "error",
+			message: formatGitHubHttpError("获取 Gist 失败", gistResponse.status)
+		};
+		const gist = await gistResponse.json();
+		if (gist.owner && gist.owner.login.toLowerCase() !== user.login.toLowerCase()) return {
+			level: "error",
+			message: `这不是当前令牌账号的 Gist（所有者为 ${gist.owner.login}，当前账号为 ${user.login}），无法写入`
+		};
+		const { contentText, truncated } = await readFirstGistFileContent(token, gist);
+		let snapshot;
+		try {
+			snapshot = await deserializeGistContent(contentText, truncated);
+		} catch (error) {
+			return {
+				level: "error",
+				message: `云端同步数据无法解析：${getErrorMessage(error)}`
+			};
+		}
+		if (snapshot.needsInitialization) return {
+			level: "warning",
+			message: `连接成功。Gist 当前内容不是同步数据（${snapshot.emptyReason}），首次同步时会被替换为同步格式`
+		};
+		return {
+			level: "success",
+			message: `连接成功，云端已有 ${Object.keys(snapshot.visitedLinks).length} 条同步数据`
+		};
 	} catch (error) {
-		console.warn("验证 GitHub 令牌失败:", error);
-		return false;
+		console.warn("测试同步连接失败:", error);
+		return {
+			level: "error",
+			message: `连接失败: ${getErrorMessage(error)}`
+		};
 	}
 }
 async function updateGist(token, gistId, data) {
@@ -22984,7 +23087,7 @@ async function updateGist(token, gistId, data) {
 			Authorization: `token ${token}`,
 			Accept: GITHUB_ACCEPT_HEADER
 		} });
-		if (!gistInfo.ok) throw new Error(`获取 Gist 信息失败: ${gistInfo.status}`);
+		if (!gistInfo.ok) throw new Error(formatGitHubHttpError("获取 Gist 信息失败", gistInfo.status));
 		const fileName = getFirstGistFileName(await gistInfo.json());
 		const serializedContent = await serializeVisitedLinksForGist(data);
 		const response = await fetch(`https://api.github.com/gists/${gistId}`, {
@@ -22996,7 +23099,7 @@ async function updateGist(token, gistId, data) {
 			},
 			body: JSON.stringify({ files: { [fileName]: { content: serializedContent } } })
 		});
-		if (!response.ok) throw new Error(`更新 Gist 失败: ${response.status}`);
+		if (!response.ok) throw new Error(formatGitHubHttpError("更新 Gist 失败", response.status));
 	} catch (error) {
 		console.warn("更新 Gist 失败:", error);
 		throw error;
@@ -23008,26 +23111,30 @@ async function getGist(token, gistId) {
 			Authorization: `token ${token}`,
 			Accept: GITHUB_ACCEPT_HEADER
 		} });
-		if (!response.ok) throw new Error(`获取 Gist 失败: ${response.status}`);
-		const file = getFirstGistFile(await response.json());
-		let contentText = "";
-		if (file.truncated) contentText = await fetchGistRawContent(token, file.raw_url);
-		else contentText = file.content;
-		return contentText ? await deserializeGistContent(contentText) : {};
+		if (!response.ok) throw new Error(formatGitHubHttpError("获取 Gist 失败", response.status));
+		const { contentText, truncated } = await readFirstGistFileContent(token, await response.json());
+		return await deserializeGistContent(contentText, truncated);
 	} catch (error) {
 		console.warn("获取 Gist 失败:", error);
 		throw error;
 	}
 }
 async function uploadToCloud(data) {
-	const { githubToken, gistId } = getSyncSettings();
+	const syncSettings = getSyncSettings();
+	const { githubToken } = syncSettings;
+	const gistId = normalizeGistId(syncSettings.gistId);
 	if (!githubToken) throw new Error("GitHub 令牌未设置");
 	if (!gistId) throw new Error("Gist ID 未设置，请先创建 Gist 并在设置中填入 ID");
 	await updateGist(githubToken, gistId, data);
 }
 async function downloadFromCloud() {
-	const { githubToken, gistId } = getSyncSettings();
-	if (!githubToken || !gistId) return {};
+	const syncSettings = getSyncSettings();
+	const { githubToken } = syncSettings;
+	const gistId = normalizeGistId(syncSettings.gistId);
+	if (!githubToken || !gistId) return {
+		visitedLinks: {},
+		needsInitialization: false
+	};
 	return await getGist(githubToken, gistId);
 }
 function extractVisitedLinks(data) {
@@ -23050,7 +23157,9 @@ async function syncOnStartup() {
 		const localLinksSnapshotResult = requireVisitedLinksData(_GM_getValue("visitedLinks", {}), "本地启动快照");
 		const localLinksSnapshot = localLinksSnapshotResult.visitedLinks;
 		if (localLinksSnapshotResult.removedCount > 0) _GM_setValue("visitedLinks", localLinksSnapshot);
-		const cloudLinks = extractVisitedLinks(await downloadFromCloud());
+		const cloud = await downloadFromCloud();
+		const cloudLinks = cloud.visitedLinks;
+		if (cloud.needsInitialization) console.log(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`);
 		let mergedLinks = mergeVisitedLinks(localLinksSnapshot, cloudLinks);
 		const currentLocalLinksResult = requireVisitedLinksData(_GM_getValue("visitedLinks", {}), "本地同步期快照");
 		const currentLocalLinks = currentLocalLinksResult.visitedLinks;
@@ -23059,14 +23168,15 @@ async function syncOnStartup() {
 		_GM_setValue("visitedLinks", mergedLinks);
 		const localChanged = hasDataChanged(localLinksSnapshot, mergedLinks);
 		const cloudChanged = hasDataChanged(cloudLinks, mergedLinks);
-		if (localChanged || cloudChanged) {
+		if (cloud.needsInitialization || localChanged || cloudChanged) {
 			await uploadToCloud(mergedLinks);
-			console.log("数据已同步并上传到云端");
+			console.log(cloud.needsInitialization ? "已初始化云端同步数据" : "数据已同步并上传到云端");
 		} else console.log("数据已同步，无需上传");
 		const syncSettings = getSyncSettings();
 		syncSettings.lastSyncTime = Date.now();
 		saveSyncSettings(syncSettings);
 		eventBus.emit("sync:completed");
+		return { initialized: cloud.needsInitialization };
 	} catch (error) {
 		console.warn("同步失败，使用本地数据:", error.message);
 		throw error;
@@ -23108,7 +23218,7 @@ function generateStyleContent(linkColor) {
     a.visited-link *::after {
       color: ${linkColor} !important;
     }
-
+    
     /* 高特异性选择器，覆盖可能的网站样式 */
     html a.visited-link,
     body a.visited-link,
@@ -23118,7 +23228,7 @@ function generateStyleContent(linkColor) {
     html body a.visited-link div {
       color: ${linkColor} !important;
     }
-
+    
     /* 处理常见的论坛结构 */
     .topic-list a.visited-link,
     .post-list a.visited-link,
@@ -23221,8 +23331,8 @@ var SyncSettings_default = /* @__PURE__ */ defineComponent({
 			}
 			testingConnection.value = true;
 			try {
-				if (await validateGitHubToken(formData.value.githubToken)) showNotification("连接成功！", "success");
-				else showNotification("连接失败，请检查令牌是否正确", "error");
+				const result = await testSyncConnection(formData.value.githubToken, normalizeGistId(formData.value.gistId));
+				showNotification(result.message, result.level);
 			} catch (error) {
 				showNotification("连接失败: " + error.message, "error");
 			} finally {
@@ -23233,6 +23343,7 @@ var SyncSettings_default = /* @__PURE__ */ defineComponent({
 			return { ...formData.value };
 		};
 		const handleSave = () => {
+			formData.value.gistId = normalizeGistId(formData.value.gistId);
 			emit("save", { ...formData.value });
 			savedSettings.value = { ...formData.value };
 		};
@@ -23286,10 +23397,10 @@ var SyncSettings_default = /* @__PURE__ */ defineComponent({
 					createVNode(_component_el_input, {
 						modelValue: formData.value.gistId,
 						"onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => formData.value.gistId = $event),
-						placeholder: "请输入现有 Gist 的 ID",
+						placeholder: "请输入 Gist ID，或直接粘贴 Gist 网址",
 						disabled: !formData.value.enabled
 					}, null, 8, ["modelValue", "disabled"]),
-					_cache[7] || (_cache[7] = createBaseVNode("p", { class: "text-xs text-gray-500 mt-1" }, " 手动创建一个 Gist，然后输入其 ID ", -1))
+					_cache[7] || (_cache[7] = createBaseVNode("p", { class: "text-xs text-gray-500 mt-1" }, " 新建一个 Gist，文件名和内容随意，首次同步时内容会被替换为同步数据 ", -1))
 				]),
 				createVNode(_component_el_card, {
 					class: "bg-blue-50",
@@ -23298,7 +23409,7 @@ var SyncSettings_default = /* @__PURE__ */ defineComponent({
 					header: withCtx(() => [..._cache[8] || (_cache[8] = [createBaseVNode("span", { class: "text-sm font-medium text-blue-800" }, "设置步骤", -1)])]),
 					default: withCtx(() => [_cache[9] || (_cache[9] = createBaseVNode("ol", { class: "text-xs text-blue-700 space-y-1 list-decimal list-inside" }, [
 						createBaseVNode("li", null, "到 GitHub > Settings > Developer settings > Personal access tokens > Tokens (classic) 创建令牌，权限选择 \"gist\""),
-						createBaseVNode("li", null, "手动创建一个 Gist（任意文件名和内容），复制 URL 中的 ID 部分"),
+						createBaseVNode("li", null, "新建一个专用的 Gist（文件名和内容随意，首次同步时会被替换为同步数据），复制网址中的 ID 部分，或直接粘贴整个网址"),
 						createBaseVNode("li", null, "将令牌和 Gist ID 填入上方输入框")
 					], -1))]),
 					_: 1
@@ -23989,7 +24100,9 @@ function setupLinkEventListeners(state) {
 	return handleLinkClick;
 }
 function initializeSync(state) {
-	if (state.syncSettings.enabled) syncOnStartup().catch((error) => {
+	if (state.syncSettings.enabled) syncOnStartup().then(({ initialized }) => {
+		if (initialized) showNotification("已初始化云端同步数据", "success");
+	}).catch((error) => {
 		console.warn("后台同步失败:", error.message);
 		showNotification(`同步失败: ${error.message}`);
 	});

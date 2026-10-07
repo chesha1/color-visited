@@ -110,13 +110,32 @@ export interface GitHubGist {
   id: string
   description: string
   public: boolean
+  owner?: { login: string }
   files: Record<string, GitHubGistFile>
   created_at: string
   updated_at: string
 }
 
+export interface GitHubUser {
+  login: string
+}
+
 // 访问链接数据类型
 export type VisitedLinksData = Record<string, number>
+
+// 云端读取结果：needsInitialization 表示云端内容不是同步数据，本次同步需要强制写入一次
+export interface CloudSnapshot {
+  visitedLinks: VisitedLinksData
+  needsInitialization: boolean
+  /** 判为空的原因，用于日志和测试连接提示 */
+  emptyReason?: string
+}
+
+// 测试连接结果：level 决定提示样式
+export interface SyncConnectionTestResult {
+  level: 'success' | 'warning' | 'error'
+  message: string
+}
 
 // 同步数据类型
 export interface SyncData {

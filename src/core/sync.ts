@@ -1,10 +1,13 @@
 // ================== 同步模块 ==================
 
 import type {
+  CloudSnapshot,
   CompressedSyncEnvelope,
   CompressedSyncEnvelopeV3,
   GitHubGist,
   GitHubGistFile,
+  GitHubUser,
+  SyncConnectionTestResult,
   SyncData,
   SyncStorageEncoding,
   SyncStorageVersion,
@@ -32,6 +35,13 @@ const KNOWN_SYNC_POLLUTION_KEYS = [
   'originalBytes',
   'compressedBytes'
 ] as const;
+
+// 常见 GitHub API 错误状态码的原因说明，getGist、updateGist 和测试连接共用
+const GITHUB_HTTP_STATUS_HINTS: Partial<Record<number, string>> = {
+  401: '令牌无效或已过期',
+  403: '令牌权限不足，或触发了 GitHub API 限流',
+  404: 'Gist 不存在、ID 填写有误，或令牌无权访问'
+};
 
 const compressionSupportCache = new Map<SyncStorageEncoding, boolean>();
 const knownSyncPollutionKeySet = new Set<string>(KNOWN_SYNC_POLLUTION_KEYS);
@@ -110,6 +120,10 @@ function getCompressionFormat(encoding: SyncStorageEncoding): CompressionFormat 
 
 function getEncodingDisplayName(encoding: SyncStorageEncoding): string {
   return encoding === 'gzip-base64-json' ? 'gzip' : 'Zstandard（zstd）';
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function getValueTypeLabel(value: unknown): string {
@@ -683,6 +697,18 @@ function fetchGistRawContent(token: string, rawUrl: string): Promise<string> {
   });
 }
 
+// 读取 Gist 第一个文件的完整文本，并带上是否截断，供内容判定使用。
+async function readFirstGistFileContent(token: string, gist: GitHubGist): Promise<{ contentText: string; truncated: boolean }> {
+  const file = getFirstGistFile(gist);
+
+  if (file.truncated) {
+    // Gist API 只会内联部分大文件内容，被截断时必须转 raw_url 取完整文本。
+    return { contentText: await fetchGistRawContent(token, file.raw_url), truncated: true };
+  }
+
+  return { contentText: file.content ?? '', truncated: false };
+}
+
 // 上传前统一把输入收敛成干净的 visitedLinks，再编码成当前 v3 压缩包格式。
 async function serializeVisitedLinksForGist(data: SyncData | VisitedLinksData): Promise<string> {
   const visitedLinks = requireVisitedLinksData(data, '上传前数据').visitedLinks;
@@ -784,35 +810,82 @@ async function deserializeCompressedSyncEnvelope(envelope: CompressedSyncEnvelop
   }
 }
 
-// 读取 Gist 文本内容时同时兼容 v2/v3 压缩包和旧版明文 JSON，并把恢复逻辑统一收口在这里。
-async function deserializeGistContent(contentText: string): Promise<SyncData | VisitedLinksData> {
-  let parsed: unknown;
+// 旧版明文数据的特征：至少一条记录的键是完整网址、值是有限数字。
+// 本地记录的键都由 getBaseUrl(link.href) 生成，{"count": 5} 这类普通对象不会命中。
+function hasLegacyVisitedLinkRecord(value: Record<string, unknown>): boolean {
+  for (const key in value) {
+    const timestamp = value[key];
+    if ((key.startsWith('http://') || key.startsWith('https://'))
+      && typeof timestamp === 'number'
+      && Number.isFinite(timestamp)) {
+      return true;
+    }
+  }
 
+  return false;
+}
+
+// 认不出来的内容一律当作空，并标记需要初始化。
+// 截断文件的完整内容来自 raw_url，可能被代理、限流换成了 HTML 页面，不允许判为空。
+function createUninitializedSnapshot(emptyReason: string, truncated: boolean): CloudSnapshot {
+  if (truncated) {
+    console.warn('截断的 Gist 文件内容无法识别:', emptyReason);
+    throw new Error(`Gist 文件超过 1MB，通过 raw_url 获取的完整内容无法识别（${emptyReason}），为避免误覆盖，云端数据保持不变`);
+  }
+
+  return { visitedLinks: {}, needsInitialization: true, emptyReason };
+}
+
+// 读取 Gist 文本内容：只认我们写过的格式（v2/v3 压缩包和旧版明文），认出来就正常读，读坏了就报错且不动云端；
+// 其他内容都不是同步数据，交给 createUninitializedSnapshot 当作空处理。
+async function deserializeGistContent(contentText: string, truncated: boolean): Promise<CloudSnapshot> {
+  if (contentText.trim() === '') {
+    return createUninitializedSnapshot('内容为空', truncated);
+  }
+
+  let parsed: unknown;
   try {
     parsed = JSON.parse(contentText);
   }
-  catch (error) {
-    console.warn('解析 Gist 内容失败:', error);
-    throw new Error('同步存储内容不是合法 JSON', { cause: error });
+  catch {
+    return createUninitializedSnapshot('内容不是合法 JSON', truncated);
   }
 
-  if (isCompressedSyncEnvelope(parsed)) {
-    return await deserializeCompressedSyncEnvelope(parsed);
+  if (!isPlainObject(parsed)) {
+    return createUninitializedSnapshot(`JSON 顶层类型是 ${getValueTypeLabel(parsed)}`, truncated);
   }
 
-  if (isPlainObject(parsed) && isSyncStorageVersion(parsed.syncVersion)) {
-    const reason = describeCompressedEnvelopeShape(parsed, parsed.syncVersion);
-    console.warn(`同步存储 ${parsed.syncVersion} 外层包结构无效:`, reason);
-    throw new Error(`同步存储 ${parsed.syncVersion} 外层包格式无效: ${reason}`);
+  // 1. 有 syncVersion 字段：v2/v3 压缩包，或更新版本脚本写入的数据。版本不认识也要报错，不能当作空覆盖
+  if ('syncVersion' in parsed) {
+    if (isCompressedSyncEnvelope(parsed)) {
+      return { visitedLinks: await deserializeCompressedSyncEnvelope(parsed), needsInitialization: false };
+    }
+
+    if (isSyncStorageVersion(parsed.syncVersion)) {
+      const reason = describeCompressedEnvelopeShape(parsed, parsed.syncVersion);
+      console.warn(`同步存储 ${parsed.syncVersion} 外层包结构无效:`, reason);
+      throw new Error(`同步存储 ${parsed.syncVersion} 外层包格式无效: ${reason}`);
+    }
+
+    throw new Error(`云端数据来自更新版本的脚本（syncVersion=${String(parsed.syncVersion)}），请升级脚本后再同步`);
   }
 
-  const repairedLegacyVisitedLinks = tryRepairVisitedLinksData(parsed);
-  if (repairedLegacyVisitedLinks) {
+  // 2. 有 visitedLinks 字段的旧版同步数据；3. 键是网址的旧版明文数据。两者都走现有修复逻辑
+  if ('visitedLinks' in parsed || hasLegacyVisitedLinkRecord(parsed)) {
+    const repairedLegacyVisitedLinks = tryRepairVisitedLinksData(parsed);
+    if (!repairedLegacyVisitedLinks) {
+      throw new Error(`同步存储旧版数据格式无效: ${describeVisitedLinksRepairFailure(parsed)}`);
+    }
+
     logVisitedLinksRepair('云端旧版明文数据', repairedLegacyVisitedLinks);
-    return repairedLegacyVisitedLinks.visitedLinks;
+    return { visitedLinks: repairedLegacyVisitedLinks.visitedLinks, needsInitialization: false };
   }
 
-  throw new Error(`同步存储旧版数据格式无效: ${describeVisitedLinksRepairFailure(parsed)}`);
+  // 4. 其他对象（包括 {}）都不是同步数据
+  const emptyReason = Object.keys(parsed).length === 0
+    ? '内容是空对象'
+    : `对象中没有同步数据特征，键: ${getObjectKeyPreview(parsed)}`;
+  return createUninitializedSnapshot(emptyReason, truncated);
 }
 
 function areVisitedLinksEqual(left: VisitedLinksData, right: VisitedLinksData): boolean {
@@ -849,20 +922,90 @@ export function saveSyncSettings(settings: SyncSettings): void {
 
 // ================== GitHub API 模块 ==================
 
-// 验证 GitHub 令牌
-export async function validateGitHubToken(token: string): Promise<boolean> {
+// 拼出带原因说明的 HTTP 错误文本，如「获取 Gist 失败: 404（Gist 不存在、ID 填写有误，或令牌无权访问）」
+function formatGitHubHttpError(action: string, status: number): string {
+  const hint = GITHUB_HTTP_STATUS_HINTS[status];
+  return hint ? `${action}: ${status}（${hint}）` : `${action}: ${status}`;
+}
+
+// 把用户填写的 Gist ID 或 Gist 网址统一成纯 ID；对纯 ID 输入没有影响，可以重复调用
+export function normalizeGistId(input: string): string {
+  // 先去掉查询参数和锚点，避免其中的 / 干扰路径段提取
+  const path = input.trim().split(/[?#]/)[0];
+  // 网址取最后一个非空路径段，兼容末尾带 / 的写法；纯 ID 只有一段
+  const lastSegment = path.split('/').filter(segment => segment !== '').pop() ?? '';
+  return lastSegment.replace(/\.git$/, '');
+}
+
+// 测试同步连接：依次检查令牌、Gist 归属和云端内容，只读不写
+export async function testSyncConnection(token: string, gistId: string): Promise<SyncConnectionTestResult> {
   try {
-    const response = await fetch('https://api.github.com/user', {
+    // 1. 检查令牌
+    const userResponse = await fetch('https://api.github.com/user', {
       headers: {
         Authorization: `token ${token}`,
         Accept: GITHUB_ACCEPT_HEADER,
       },
     });
-    return response.ok;
+
+    if (!userResponse.ok) {
+      return { level: 'error', message: formatGitHubHttpError('令牌验证失败', userResponse.status) };
+    }
+
+    // classic token 会在 X-OAuth-Scopes 中列出权限；fine-grained token 不返回这个头，跳过检查
+    const oauthScopes = userResponse.headers.get('X-OAuth-Scopes');
+    if (oauthScopes !== null && !oauthScopes.split(',').map(scope => scope.trim()).includes('gist')) {
+      return { level: 'error', message: '令牌缺少 gist 权限，请重新创建令牌并勾选 "gist"' };
+    }
+
+    if (!gistId) {
+      return { level: 'warning', message: '令牌有效，还需要填写 Gist ID' };
+    }
+
+    const user = await userResponse.json() as GitHubUser;
+
+    // 2. 检查 Gist 是否存在、是否属于当前令牌账号
+    const gistResponse = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: {
+        Authorization: `token ${token}`,
+        Accept: GITHUB_ACCEPT_HEADER,
+      },
+    });
+
+    if (!gistResponse.ok) {
+      return { level: 'error', message: formatGitHubHttpError('获取 Gist 失败', gistResponse.status) };
+    }
+
+    const gist = await gistResponse.json() as GitHubGist;
+    if (gist.owner && gist.owner.login.toLowerCase() !== user.login.toLowerCase()) {
+      return {
+        level: 'error',
+        message: `这不是当前令牌账号的 Gist（所有者为 ${gist.owner.login}，当前账号为 ${user.login}），无法写入`
+      };
+    }
+
+    // 3. 用同步时的判定规则检查内容
+    const { contentText, truncated } = await readFirstGistFileContent(token, gist);
+    let snapshot: CloudSnapshot;
+    try {
+      snapshot = await deserializeGistContent(contentText, truncated);
+    }
+    catch (error) {
+      return { level: 'error', message: `云端同步数据无法解析：${getErrorMessage(error)}` };
+    }
+
+    if (snapshot.needsInitialization) {
+      return {
+        level: 'warning',
+        message: `连接成功。Gist 当前内容不是同步数据（${snapshot.emptyReason}），首次同步时会被替换为同步格式`
+      };
+    }
+
+    return { level: 'success', message: `连接成功，云端已有 ${Object.keys(snapshot.visitedLinks).length} 条同步数据` };
   }
   catch (error) {
-    console.warn('验证 GitHub 令牌失败:', error);
-    return false;
+    console.warn('测试同步连接失败:', error);
+    return { level: 'error', message: `连接失败: ${getErrorMessage(error)}` };
   }
 }
 
@@ -878,7 +1021,7 @@ export async function updateGist(token: string, gistId: string, data: SyncData |
     });
 
     if (!gistInfo.ok) {
-      throw new Error(`获取 Gist 信息失败: ${gistInfo.status}`);
+      throw new Error(formatGitHubHttpError('获取 Gist 信息失败', gistInfo.status));
     }
 
     const gistData = await gistInfo.json() as GitHubGist;
@@ -903,7 +1046,7 @@ export async function updateGist(token: string, gistId: string, data: SyncData |
     });
 
     if (!response.ok) {
-      throw new Error(`更新 Gist 失败: ${response.status}`);
+      throw new Error(formatGitHubHttpError('更新 Gist 失败', response.status));
     }
   }
   catch (error) {
@@ -912,8 +1055,8 @@ export async function updateGist(token: string, gistId: string, data: SyncData |
   }
 }
 
-// 获取 Gist 内容
-export async function getGist(token: string, gistId: string): Promise<SyncData | VisitedLinksData> {
+// 获取 Gist 内容，并按判定规则识别第一个文件
+export async function getGist(token: string, gistId: string): Promise<CloudSnapshot> {
   try {
     const response = await fetch(`https://api.github.com/gists/${gistId}`, {
       headers: {
@@ -922,23 +1065,14 @@ export async function getGist(token: string, gistId: string): Promise<SyncData |
       },
     });
 
+    // 请求失败必须抛错，不能当作空内容，否则紧接着会用本地数据覆盖云端
     if (!response.ok) {
-      throw new Error(`获取 Gist 失败: ${response.status}`);
+      throw new Error(formatGitHubHttpError('获取 Gist 失败', response.status));
     }
 
     const result = await response.json() as GitHubGist;
-    const file = getFirstGistFile(result);
-    let contentText = '';
-
-    if (file.truncated) {
-      // Gist API 只会内联部分大文件内容，被截断时必须转 raw_url 取完整文本。
-      contentText = await fetchGistRawContent(token, file.raw_url);
-    }
-    else {
-      contentText = file.content;
-    }
-
-    return contentText ? await deserializeGistContent(contentText) : {};
+    const { contentText, truncated } = await readFirstGistFileContent(token, result);
+    return await deserializeGistContent(contentText, truncated);
   }
   catch (error) {
     console.warn('获取 Gist 失败:', error);
@@ -951,7 +1085,8 @@ export async function getGist(token: string, gistId: string): Promise<SyncData |
 // 上传数据到云端
 export async function uploadToCloud(data: SyncData | VisitedLinksData): Promise<void> {
   const syncSettings = getSyncSettings();
-  const { githubToken, gistId } = syncSettings;
+  const { githubToken } = syncSettings;
+  const gistId = normalizeGistId(syncSettings.gistId);
 
   if (!githubToken) {
     throw new Error('GitHub 令牌未设置');
@@ -965,12 +1100,14 @@ export async function uploadToCloud(data: SyncData | VisitedLinksData): Promise<
 }
 
 // 从云端下载数据
-export async function downloadFromCloud(): Promise<SyncData | VisitedLinksData> {
+export async function downloadFromCloud(): Promise<CloudSnapshot> {
   const syncSettings = getSyncSettings();
-  const { githubToken, gistId } = syncSettings;
+  const { githubToken } = syncSettings;
+  const gistId = normalizeGistId(syncSettings.gistId);
 
+  // 未设置时不判定云端内容，之后由 uploadToCloud 报「未设置」
   if (!githubToken || !gistId) {
-    return {};
+    return { visitedLinks: {}, needsInitialization: false };
   }
 
   return await getGist(githubToken, gistId);
@@ -1006,8 +1143,8 @@ export function hasDataChanged(oldData: VisitedLinksData | SyncData, newData: Vi
   return !areVisitedLinksEqual(extractVisitedLinks(oldData), extractVisitedLinks(newData));
 }
 
-// 启动时同步
-export async function syncOnStartup(): Promise<void> {
+// 启动时同步；initialized 表示本次把云端内容初始化成了同步格式，由调用方决定是否提示
+export async function syncOnStartup(): Promise<{ initialized: boolean }> {
   try {
     console.log('开始同步数据...');
 
@@ -1022,8 +1159,11 @@ export async function syncOnStartup(): Promise<void> {
     }
 
     // 2. 从云端获取数据（这个过程可能较慢）
-    const cloudData = await downloadFromCloud();
-    const cloudLinks = extractVisitedLinks(cloudData);
+    const cloud = await downloadFromCloud();
+    const cloudLinks = cloud.visitedLinks;
+    if (cloud.needsInitialization) {
+      console.log(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`);
+    }
 
     // 3. 合并数据（以最新时间戳为准）
     let mergedLinks = mergeVisitedLinks(localLinksSnapshot, cloudLinks);
@@ -1043,13 +1183,13 @@ export async function syncOnStartup(): Promise<void> {
     // 5. 保存到本地
     GM_setValue('visitedLinks', mergedLinks);
 
-    // 6. 检查是否需要上传到云端
+    // 6. 检查是否需要上传到云端；云端需要初始化时，即使本地为空也写入一份同步格式
     const localChanged = hasDataChanged(localLinksSnapshot, mergedLinks);
     const cloudChanged = hasDataChanged(cloudLinks, mergedLinks);
 
-    if (localChanged || cloudChanged) {
+    if (cloud.needsInitialization || localChanged || cloudChanged) {
       await uploadToCloud(mergedLinks);
-      console.log('数据已同步并上传到云端');
+      console.log(cloud.needsInitialization ? '已初始化云端同步数据' : '数据已同步并上传到云端');
     }
     else {
       console.log('数据已同步，无需上传');
@@ -1062,6 +1202,8 @@ export async function syncOnStartup(): Promise<void> {
 
     // 8. 发送同步完成事件
     eventBus.emit('sync:completed');
+
+    return { initialized: cloud.needsInitialization };
   }
   catch (error: unknown) {
     const syncError = error as Error;

@@ -17,10 +17,16 @@ import { GM_getValue } from 'vite-plugin-monkey/dist/client';
 function initializeSync(state: ScriptState): void {
   // 如果启用同步，在后台进行启动同步（不阻塞主流程）
   if (state.syncSettings.enabled) {
-    syncOnStartup().catch((error) => {
-      console.warn('后台同步失败:', error.message);
-      showNotification(`同步失败: ${error.message}`);
-    });
+    syncOnStartup()
+      .then(({ initialized }) => {
+        if (initialized) {
+          showNotification('已初始化云端同步数据', 'success');
+        }
+      })
+      .catch((error) => {
+        console.warn('后台同步失败:', error.message);
+        showNotification(`同步失败: ${error.message}`);
+      });
   }
 }
 

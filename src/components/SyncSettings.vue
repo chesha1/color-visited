@@ -41,11 +41,11 @@
         </label>
         <el-input
           v-model="formData.gistId"
-          placeholder="请输入现有 Gist 的 ID"
+          placeholder="请输入 Gist ID，或直接粘贴 Gist 网址"
           :disabled="!formData.enabled"
         />
         <p class="text-xs text-gray-500 mt-1">
-          手动创建一个 Gist，然后输入其 ID
+          新建一个 Gist，文件名和内容随意，首次同步时内容会被替换为同步数据
         </p>
       </div>
 
@@ -56,7 +56,7 @@
         </template>
         <ol class="text-xs text-blue-700 space-y-1 list-decimal list-inside">
           <li>到 GitHub > Settings > Developer settings > Personal access tokens > Tokens (classic) 创建令牌，权限选择 "gist"</li>
-          <li>手动创建一个 Gist（任意文件名和内容），复制 URL 中的 ID 部分</li>
+          <li>新建一个专用的 Gist（文件名和内容随意，首次同步时会被替换为同步数据），复制网址中的 ID 部分，或直接粘贴整个网址</li>
           <li>将令牌和 Gist ID 填入上方输入框</li>
         </ol>
       </el-card>
@@ -112,7 +112,7 @@
 import { ref, computed, watch } from 'vue'
 import { DEFAULT_SETTINGS } from '@/core/config'
 import type { SyncSettings } from '@/types'
-import { isGzipSyncSupported, validateGitHubToken } from '@/core/sync'
+import { isGzipSyncSupported, normalizeGistId, testSyncConnection } from '@/core/sync'
 import { showNotification } from '@/core/ui'
 
 interface Props {
@@ -177,12 +177,8 @@ const testConnection = async () => {
   testingConnection.value = true
 
   try {
-    const isValid = await validateGitHubToken(formData.value.githubToken)
-    if (isValid) {
-      showNotification('连接成功！', 'success')
-    } else {
-      showNotification('连接失败，请检查令牌是否正确', 'error')
-    }
+    const result = await testSyncConnection(formData.value.githubToken, normalizeGistId(formData.value.gistId))
+    showNotification(result.message, result.level)
   } catch (error: unknown) {
     const err = error as Error;
     showNotification('连接失败: ' + err.message, 'error')
@@ -198,6 +194,8 @@ const getFormData = (): SyncSettings => {
 
 // 保存表单数据
 const handleSave = () => {
+  // 保存前把 Gist 网址归一化成纯 ID，并回填到表单
+  formData.value.gistId = normalizeGistId(formData.value.gistId)
   emit('save', { ...formData.value })
   // 更新已保存状态
   savedSettings.value = { ...formData.value }
