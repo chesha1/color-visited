@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import { PRESET_RULES } from './src/shared/presetRules';
+import { PRESET_RULES } from './src/shared/presetRules.ts';
 import monkey from 'vite-plugin-monkey';
 import path from 'path';
 import AutoImport from 'unplugin-auto-import/vite'
@@ -14,7 +14,7 @@ const includeArray = Object.values(PRESET_RULES).flatMap(rule => rule.pages);
 export default defineConfig({
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      '@': path.resolve(import.meta.dirname, 'src'),
     },
   },
   plugins: [
@@ -22,11 +22,11 @@ export default defineConfig({
     tailwindcss(),
     AutoImport({
       resolvers: [ElementPlusResolver()],
-      dts: path.resolve(__dirname, 'src', 'auto-imports.d.ts'),
+      dts: path.resolve(import.meta.dirname, 'src', 'auto-imports.d.ts'),
     }),
     Components({
       resolvers: [ElementPlusResolver()],
-      dts: path.resolve(__dirname, 'src', 'components.d.ts'),
+      dts: path.resolve(import.meta.dirname, 'src', 'components.d.ts'),
     }),
     monkey({
       entry: 'src/main.ts',
