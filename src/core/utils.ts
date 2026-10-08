@@ -35,6 +35,8 @@ export function getBaseUrl(url: string): string {
   if (domain === 'ngabbs.com') return url.split('&')[0];
   if (domain === 'bbs.nga.cn') return url.split('&')[0];
   if (domain === 'nga.178.com') return url.split('&')[0];
+  // 帖子链接会带上语言前缀（如 /cn/posts/xxx、/en/posts/xxx），去掉后同一帖子在不同语言下视为同一链接
+  if (domain === 'chan.sankakucomplex.com') return url.split(/[?#]/)[0].replace(/\.com\/[a-z]{2}\/posts\//, '.com/posts/');
 
   // 使用正则表达式匹配所有 south-plus 域名
   if (/^www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net$/.test(domain)) {

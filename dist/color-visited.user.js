@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.20.4
+// @version      2.21.0
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -72,6 +72,8 @@
 // @include      /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/model\/.*/
 // @include      /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/pornstar\/.*/
 // @include      /^https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/
+// @include      /^https:\/\/chan\.sankakucomplex\.com\/([a-z]{2}\/?)?([?#].*)?$/
+// @include      /^https:\/\/chan\.sankakucomplex\.com\/([a-z]{2}\/)?posts\/?([?#].*)?$/
 // @include      /^https:\/\/seekingalpha\.com\/$/
 // @include      /^https:\/\/seekingalpha\.com\/symbol\/.*/
 // @include      /^https:\/\/www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net\/thread\.php\?fid.*/
@@ -21895,6 +21897,10 @@ var PRESET_RULES = {
 		pages: [/^https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/],
 		patterns: [/^https:\/\/www\.reddit\.com\/r\/[^/]+\/comments\/.*/]
 	},
+	"sankaku": {
+		pages: [/^https:\/\/chan\.sankakucomplex\.com\/([a-z]{2}\/?)?([?#].*)?$/, /^https:\/\/chan\.sankakucomplex\.com\/([a-z]{2}\/)?posts\/?([?#].*)?$/],
+		patterns: [/^https:\/\/chan\.sankakucomplex\.com\/posts\/[A-Za-z0-9]{11}$/]
+	},
 	"Seeking Alpha": {
 		pages: [/^https:\/\/seekingalpha\.com\/$/, /^https:\/\/seekingalpha\.com\/symbol\/.*/],
 		patterns: [/^https:\/\/seekingalpha\.com\/article\/.*/, /^https:\/\/seekingalpha\.com\/news\/.*/]
@@ -21968,6 +21974,7 @@ function getBaseUrl(url) {
 	if (domain === "ngabbs.com") return url.split("&")[0];
 	if (domain === "bbs.nga.cn") return url.split("&")[0];
 	if (domain === "nga.178.com") return url.split("&")[0];
+	if (domain === "chan.sankakucomplex.com") return url.split(/[?#]/)[0].replace(/\.com\/[a-z]{2}\/posts\//, ".com/posts/");
 	if (/^www\.(south|north|blue|white|level|snow|spring|summer)-plus\.net$/.test(domain)) {
 		let processedUrl = url;
 		processedUrl = processedUrl.replace(/#a$/, "");

@@ -236,6 +236,15 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.reddit\.com\/r\/[^/]+\/comments\/.*/, // 帖子
     ],
   },
+  'sankaku': {
+    pages: [
+      /^https:\/\/chan\.sankakucomplex\.com\/([a-z]{2}\/?)?([?#].*)?$/, // 首页、标签搜索页（如 /?tags=xxx，可带语言前缀 /cn、/en 等）
+      /^https:\/\/chan\.sankakucomplex\.com\/([a-z]{2}\/)?posts\/?([?#].*)?$/, // 帖子列表、标签搜索页（如 /cn/posts?tags=xxx）
+    ],
+    patterns: [
+      /^https:\/\/chan\.sankakucomplex\.com\/posts\/[A-Za-z0-9]{11}$/, // 帖子详情页（语言前缀和查询参数已在 getBaseUrl 中去掉）
+    ],
+  },
   'Seeking Alpha': {
     pages: [
       /^https:\/\/seekingalpha\.com\/$/, // 首页
