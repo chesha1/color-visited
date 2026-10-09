@@ -40,7 +40,7 @@ Open the settings panel through the "Settings" option in the userscript menu to 
 | ⏰ **Expiration Time** | Set retention time for link records (default 365 days) |
 | 🐛 **Debug Mode** | Show detailed debug info in console for troubleshooting |
 | 🌐 **Preset Websites** | Select websites where the script takes effect, supports 20+ popular websites |
-| ⌨️ **Shortcuts** | Customize batch marking shortcuts (default Shift+V / Cmd+Shift+V) |
+| ⌨️ **Shortcuts** | Customize batch marking shortcuts (default Ctrl+Shift+V / Cmd+Shift+V) |
 | ☁️ **Data Sync** | Achieve cross-device data synchronization via GitHub Gist |
 
 ## 🔧 Technical Principles

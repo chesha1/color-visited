@@ -24372,9 +24372,19 @@ var MenuManager = class {
 function createMenuManager(state) {
 	return new MenuManager(state);
 }
+function isTyping(event) {
+	if (event.isComposing) return true;
+	const target = event.composedPath()[0];
+	return target instanceof HTMLElement && (target.isContentEditable || [
+		"INPUT",
+		"TEXTAREA",
+		"SELECT"
+	].includes(target.tagName));
+}
 function setupBatchKeyListener(state) {
 	if (state.batchKeyHandler) document.removeEventListener("keydown", state.batchKeyHandler);
 	state.batchKeyHandler = function(event) {
+		if (isTyping(event)) return;
 		if (event.ctrlKey === state.batchKeySettings.ctrlKey && event.shiftKey === state.batchKeySettings.shiftKey && event.altKey === state.batchKeySettings.altKey && event.metaKey === state.batchKeySettings.metaKey && event.key.toUpperCase() === state.batchKeySettings.key) {
 			event.preventDefault();
 			batchAddLinks(state);

@@ -9,6 +9,15 @@ import type { ScriptState } from '@/types';
 
 // ================== 快捷键管理 ==================
 
+// 用户正在输入时不响应快捷键，否则会抢掉输入框里的同名操作（比如默认的 Ctrl+Shift+V 是浏览器的“粘贴为纯文本”）
+function isTyping(event: KeyboardEvent): boolean {
+  if (event.isComposing) return true;
+  // 监听器挂在 document 上，shadow DOM 里的输入框会被重定向成宿主元素，所以要从 composedPath 取实际的目标
+  const target = event.composedPath()[0];
+  return target instanceof HTMLElement
+    && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+}
+
 // 设置批量染色快捷键监听器
 export function setupBatchKeyListener(state: ScriptState): void {
   // 移除之前的监听器
@@ -18,6 +27,8 @@ export function setupBatchKeyListener(state: ScriptState): void {
 
   // 创建新的监听器
   state.batchKeyHandler = function (event: KeyboardEvent): void {
+    if (isTyping(event)) return;
+
     // 检测是否按下设置的快捷键组合
     if (
       event.ctrlKey === state.batchKeySettings.ctrlKey
