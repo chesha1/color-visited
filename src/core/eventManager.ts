@@ -4,6 +4,7 @@ import { shouldColorLink } from '@/core/pageDetector';
 import { batchAddLinks, updateAllLinksStatus } from '@/core/linkManager';
 import { provideLinkContext, ensureDOMObserver } from '@/core/domObserver';
 import { recordVisit } from '@/core/storage';
+import { matchesShortcut } from '@/core/shortcut';
 import { getBaseUrl } from '@/core/utils';
 import type { ScriptState } from '@/types';
 
@@ -27,22 +28,13 @@ export function setupBatchKeyListener(state: ScriptState): void {
 
   // 创建新的监听器
   state.batchKeyHandler = function (event: KeyboardEvent): void {
-    if (isTyping(event)) return;
+    if (isTyping(event) || !matchesShortcut(event, state.batchKeySettings)) return;
 
-    // 检测是否按下设置的快捷键组合
-    if (
-      event.ctrlKey === state.batchKeySettings.ctrlKey
-      && event.shiftKey === state.batchKeySettings.shiftKey
-      && event.altKey === state.batchKeySettings.altKey
-      && event.metaKey === state.batchKeySettings.metaKey
-      && event.key.toUpperCase() === state.batchKeySettings.key
-    ) {
-      // 阻止浏览器默认行为
-      event.preventDefault();
+    // 阻止浏览器默认行为
+    event.preventDefault();
 
-      // 执行批量染色功能
-      batchAddLinks(state);
-    }
+    // 执行批量染色功能
+    batchAddLinks(state);
   };
 
   // 添加新的监听器

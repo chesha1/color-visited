@@ -22300,7 +22300,7 @@ var DEFAULT_SETTINGS = {
 			shiftKey: true,
 			altKey: false,
 			metaKey: isMac,
-			key: "V"
+			code: "KeyV"
 		};
 	},
 	get presetStates() {
@@ -22595,6 +22595,19 @@ var PresetSettings_default = /* @__PURE__ */ defineComponent({
 	}
 });
 _css(".el-alert{--el-alert-padding:8px 16px;--el-alert-border-radius-base:var(--el-border-radius-base);--el-alert-title-font-size:14px;--el-alert-title-with-description-font-size:16px;--el-alert-description-font-size:14px;--el-alert-close-font-size:16px;--el-alert-close-customed-font-size:14px;--el-alert-icon-size:16px;--el-alert-icon-large-size:28px;width:100%;padding:var(--el-alert-padding);box-sizing:border-box;border-radius:var(--el-alert-border-radius-base);background-color:var(--el-color-white);opacity:1;transition:opacity var(--el-transition-duration-fast);align-items:center;margin:0;display:flex;position:relative;overflow:hidden}.el-alert.is-light .el-alert__close-btn{color:var(--el-text-color-placeholder)}.el-alert.is-dark .el-alert__close-btn,.el-alert.is-dark .el-alert__description{color:var(--el-color-white)}.el-alert.is-center{justify-content:center}.el-alert--primary{--el-alert-bg-color:var(--el-color-primary-light-9)}.el-alert--primary.is-light{background-color:var(--el-alert-bg-color);color:var(--el-color-primary)}.el-alert--primary.is-light .el-alert__description{color:var(--el-color-primary)}.el-alert--primary.is-dark{background-color:var(--el-color-primary);color:var(--el-color-white)}.el-alert--success{--el-alert-bg-color:var(--el-color-success-light-9)}.el-alert--success.is-light{background-color:var(--el-alert-bg-color);color:var(--el-color-success)}.el-alert--success.is-light .el-alert__description{color:var(--el-color-success)}.el-alert--success.is-dark{background-color:var(--el-color-success);color:var(--el-color-white)}.el-alert--info{--el-alert-bg-color:var(--el-color-info-light-9)}.el-alert--info.is-light{background-color:var(--el-alert-bg-color);color:var(--el-color-info)}.el-alert--info.is-light .el-alert__description{color:var(--el-color-info)}.el-alert--info.is-dark{background-color:var(--el-color-info);color:var(--el-color-white)}.el-alert--warning{--el-alert-bg-color:var(--el-color-warning-light-9)}.el-alert--warning.is-light{background-color:var(--el-alert-bg-color);color:var(--el-color-warning)}.el-alert--warning.is-light .el-alert__description{color:var(--el-color-warning)}.el-alert--warning.is-dark{background-color:var(--el-color-warning);color:var(--el-color-white)}.el-alert--error{--el-alert-bg-color:var(--el-color-error-light-9)}.el-alert--error.is-light{background-color:var(--el-alert-bg-color);color:var(--el-color-error)}.el-alert--error.is-light .el-alert__description{color:var(--el-color-error)}.el-alert--error.is-dark{background-color:var(--el-color-error);color:var(--el-color-white)}.el-alert__content{flex-direction:column;gap:4px;display:flex}.el-alert .el-alert__icon{font-size:var(--el-alert-icon-size);width:var(--el-alert-icon-size);margin-right:8px}.el-alert .el-alert__icon.is-big{font-size:var(--el-alert-icon-large-size);width:var(--el-alert-icon-large-size);margin-right:12px}.el-alert__title{font-size:var(--el-alert-title-font-size);line-height:24px}.el-alert__title.with-description{font-size:var(--el-alert-title-with-description-font-size)}.el-alert .el-alert__description{font-size:var(--el-alert-description-font-size);margin:0}.el-alert .el-alert__close-btn{font-size:var(--el-alert-close-font-size);opacity:1;cursor:pointer;position:absolute;top:12px;right:16px}.el-alert .el-alert__close-btn.is-customed{font-style:normal;font-size:var(--el-alert-close-customed-font-size);line-height:24px;top:8px}.el-alert-fade-enter-from,.el-alert-fade-leave-active{opacity:0}");
+function toShortcut({ ctrlKey, shiftKey, altKey, metaKey, code }) {
+	return {
+		ctrlKey,
+		shiftKey,
+		altKey,
+		metaKey,
+		code
+	};
+}
+function matchesShortcut(event, shortcut) {
+	const pressed = toShortcut(event);
+	return Object.keys(pressed).every((k) => pressed[k] === shortcut[k]);
+}
 var _hoisted_1$2 = { class: "space-y-6" };
 var ShortcutSettings_default = /* @__PURE__ */ defineComponent({
 	__name: "ShortcutSettings",
@@ -22624,8 +22637,7 @@ var ShortcutSettings_default = /* @__PURE__ */ defineComponent({
 			if (settings.ctrlKey) shortcutText.push(props.isMac ? "⌃ Control" : "Ctrl");
 			if (settings.altKey) shortcutText.push(props.isMac ? "⌥ Option" : "Alt");
 			if (settings.shiftKey) shortcutText.push(props.isMac ? "⇧ Shift" : "Shift");
-			let keyDisplay = settings.key;
-			if (settings.key) keyDisplay = {
+			if (settings.code) shortcutText.push({
 				"ArrowUp": "↑",
 				"ArrowDown": "↓",
 				"ArrowLeft": "←",
@@ -22633,15 +22645,14 @@ var ShortcutSettings_default = /* @__PURE__ */ defineComponent({
 				"Enter": "⏎",
 				"Backspace": "⌫",
 				"Delete": "⌦",
-				"Escape": "Esc",
-				" ": "Space"
-			}[settings.key] || settings.key;
-			if (keyDisplay) shortcutText.push(keyDisplay);
+				"Escape": "Esc"
+			}[settings.code] || settings.code.replace(/^(Key|Digit)/, ""));
 			return shortcutText.length > 0 ? shortcutText.join(" + ") : "未设置";
 		});
 		const handleKeyDown = (e) => {
-			if (e.key === "Control" || e.key === "Shift" || e.key === "Alt" || e.key === "Meta") return;
+			if (/^(Control|Shift|Alt|Meta)(Left|Right)$/.test(e.code)) return;
 			if ([
+				"",
 				"Tab",
 				"CapsLock",
 				"NumLock",
@@ -22649,27 +22660,11 @@ var ShortcutSettings_default = /* @__PURE__ */ defineComponent({
 				"Insert",
 				"PrintScreen",
 				"Pause"
-			].includes(e.key)) return;
+			].includes(e.code)) return;
 			e.preventDefault();
 			e.stopPropagation();
-			let keyName = e.key;
-			if (e.key.length === 1) keyName = e.key.toUpperCase();
-			else keyName = e.key;
-			console.log("快捷键记录:", {
-				key: keyName,
-				ctrlKey: e.ctrlKey,
-				shiftKey: e.shiftKey,
-				altKey: e.altKey,
-				metaKey: e.metaKey,
-				code: e.code
-			});
-			newSettings.value = {
-				ctrlKey: e.ctrlKey,
-				shiftKey: e.shiftKey,
-				altKey: e.altKey,
-				metaKey: e.metaKey,
-				key: keyName
-			};
+			newSettings.value = toShortcut(e);
+			console.log("快捷键记录:", newSettings.value);
 			hasNewKeyPress.value = true;
 			isResetMode.value = false;
 		};
@@ -24384,11 +24379,9 @@ function isTyping(event) {
 function setupBatchKeyListener(state) {
 	if (state.batchKeyHandler) document.removeEventListener("keydown", state.batchKeyHandler);
 	state.batchKeyHandler = function(event) {
-		if (isTyping(event)) return;
-		if (event.ctrlKey === state.batchKeySettings.ctrlKey && event.shiftKey === state.batchKeySettings.shiftKey && event.altKey === state.batchKeySettings.altKey && event.metaKey === state.batchKeySettings.metaKey && event.key.toUpperCase() === state.batchKeySettings.key) {
-			event.preventDefault();
-			batchAddLinks(state);
-		}
+		if (isTyping(event) || !matchesShortcut(event, state.batchKeySettings)) return;
+		event.preventDefault();
+		batchAddLinks(state);
 	};
 	document.addEventListener("keydown", state.batchKeyHandler);
 }

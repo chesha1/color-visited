@@ -21,7 +21,7 @@ export interface BatchKeySettings {
   shiftKey: boolean
   altKey: boolean
   metaKey: boolean
-  key: string
+  code: string  // 物理键位（KeyboardEvent.code），如 KeyV、ArrowUp
 }
 
 export interface SyncSettings {

@@ -14,7 +14,7 @@ export const DEFAULT_SETTINGS = {
       shiftKey: true,
       altKey: false,
       metaKey: isMac, // macOS 下为 true，Windows 下为 false
-      key: 'V'
+      code: 'KeyV'
     };
   },
   get presetStates(): Record<string, boolean> {

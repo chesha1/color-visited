@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { DEFAULT_SETTINGS } from '@/core/config'
+import { toShortcut } from '@/core/shortcut'
 import type { BatchKeySettings } from '@/types'
 
 interface Props {
@@ -72,10 +73,8 @@ const currentShortcutDisplay = computed(() => {
   if (settings.altKey) shortcutText.push(props.isMac ? '⌥ Option' : 'Alt')
   if (settings.shiftKey) shortcutText.push(props.isMac ? '⇧ Shift' : 'Shift')
   
-  // 改进键名显示
-  let keyDisplay = settings.key
-  if (settings.key) {
-    // 特殊键名映射
+  // 键位名去掉 Key、Digit 前缀即可显示（KeyV → V），少数键换成符号
+  if (settings.code) {
     const keyMap: Record<string, string> = {
       'ArrowUp': '↑',
       'ArrowDown': '↓',
@@ -85,13 +84,8 @@ const currentShortcutDisplay = computed(() => {
       'Backspace': '⌫',
       'Delete': '⌦',
       'Escape': 'Esc',
-      ' ': 'Space'
     }
-    keyDisplay = keyMap[settings.key] || settings.key
-  }
-  
-  if (keyDisplay) {
-    shortcutText.push(keyDisplay)
+    shortcutText.push(keyMap[settings.code] || settings.code.replace(/^(Key|Digit)/, ''))
   }
 
   return shortcutText.length > 0 ? shortcutText.join(' + ') : '未设置'
@@ -99,44 +93,21 @@ const currentShortcutDisplay = computed(() => {
 
 const handleKeyDown = (e: KeyboardEvent) => {
   // 忽略单独的修饰键按下
-  if (e.key === 'Control' || e.key === 'Shift' || e.key === 'Alt' || e.key === 'Meta') {
+  if (/^(Control|Shift|Alt|Meta)(Left|Right)$/.test(e.code)) {
     return
   }
 
-  // 忽略一些不适合作为快捷键的键
-  const ignoredKeys = ['Tab', 'CapsLock', 'NumLock', 'ScrollLock', 'Insert', 'PrintScreen', 'Pause']
-  if (ignoredKeys.includes(e.key)) {
+  // 忽略一些不适合作为快捷键的键；code 为空表示浏览器认不出是哪个键
+  const ignoredKeys = ['', 'Tab', 'CapsLock', 'NumLock', 'ScrollLock', 'Insert', 'PrintScreen', 'Pause']
+  if (ignoredKeys.includes(e.code)) {
     return
   }
 
   e.preventDefault()
   e.stopPropagation()
 
-  // 处理特殊键名
-  let keyName = e.key
-  if (e.key.length === 1) {
-    keyName = e.key.toUpperCase()
-  } else {
-    // 对于功能键，保持原始名称
-    keyName = e.key
-  }
-
-  console.log('快捷键记录:', {
-    key: keyName,
-    ctrlKey: e.ctrlKey,
-    shiftKey: e.shiftKey,
-    altKey: e.altKey,
-    metaKey: e.metaKey,
-    code: e.code
-  })
-
-  newSettings.value = {
-    ctrlKey: e.ctrlKey,
-    shiftKey: e.shiftKey,
-    altKey: e.altKey,
-    metaKey: e.metaKey,
-    key: keyName,
-  }
+  newSettings.value = toShortcut(e)
+  console.log('快捷键记录:', newSettings.value)
 
   hasNewKeyPress.value = true
   isResetMode.value = false // 手动按键时取消重置模式
