@@ -8,8 +8,8 @@ import { createMenuManager } from '@/core/menuManager';
 import { activateLinkFeatures, removeScript, updateAllLinksStatus } from '@/core/linkManager';
 import { setupBatchKeyListener, setupDOMObserver, setupLinkEventListeners } from '@/core/eventManager';
 import { saveUserSettings } from '@/core/state';
+import { migrateLegacyLinks } from '@/core/storage';
 import { eventBus } from '@/core/eventBus';
-import { GM_getValue } from 'vite-plugin-monkey/dist/client';
 
 // ================== 核心启动函数 ==================
 
@@ -52,10 +52,9 @@ function setupGlobalEventListeners(state: ScriptState): void {
   // 使用增量更新而非重置页面，避免清除同步期间用户点击产生的染色
   eventBus.on('sync:completed', () => {
     console.log('同步完成，增量更新链接状态...');
-    state.visitedLinks = GM_getValue('visitedLinks', {});
     if (isPageActive(state)) {
-      // 直接获取最新的 visitedLinks 并增量更新，不调用 setupPage 避免 removeScript 清除染色
-      updateAllLinksStatus(state.visitedLinks, state);
+      // 增量染色即可，不调用 setupPage 避免 removeScript 清除染色
+      updateAllLinksStatus(state);
     }
   });
 }
@@ -89,6 +88,9 @@ export function startColorVisitedScript(): void {
   'use strict';
 
   console.log('Color Visited Script has started!');
+
+  // 读取访问记录之前，先把旧版本的整块记录迁移成逐条存储
+  migrateLegacyLinks();
 
   // 初始化脚本状态
   const state = initializeScriptState();

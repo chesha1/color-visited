@@ -99,9 +99,13 @@
 // @require      data:application/javascript,%3B(typeof%20System!%3D'undefined')%26%26(System%3Dnew%20System.constructor())%3B
 // @connect      gist.githubusercontent.com
 // @grant        GM_addStyle
+// @grant        GM_deleteValue
+// @grant        GM_deleteValues
 // @grant        GM_getValue
+// @grant        GM_listValues
 // @grant        GM_registerMenuCommand
 // @grant        GM_setValue
+// @grant        GM_setValues
 // @grant        GM_xmlhttpRequest
 // @run-at       document-idle
 // @noframes
@@ -22779,10 +22783,63 @@ function mitt_default(n) {
 	};
 }
 var eventBus = mitt_default();
+var _GM_deleteValue = /* @__PURE__ */ (() => typeof GM_deleteValue != "undefined" ? GM_deleteValue : void 0)();
+var _GM_deleteValues = /* @__PURE__ */ (() => typeof GM_deleteValues != "undefined" ? GM_deleteValues : void 0)();
 var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
+var _GM_listValues = /* @__PURE__ */ (() => typeof GM_listValues != "undefined" ? GM_listValues : void 0)();
 var _GM_registerMenuCommand = /* @__PURE__ */ (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
 var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
+var _GM_setValues = /* @__PURE__ */ (() => typeof GM_setValues != "undefined" ? GM_setValues : void 0)();
 var _GM_xmlhttpRequest = /* @__PURE__ */ (() => typeof GM_xmlhttpRequest != "undefined" ? GM_xmlhttpRequest : void 0)();
+var LEGACY_LINKS_KEY = "visitedLinks";
+function isLinkKey(key) {
+	return key.includes(":");
+}
+function setLinks(links) {
+	if (_GM_setValues) _GM_setValues(links);
+	else for (const url in links) _GM_setValue(url, links[url]);
+}
+function deleteLinks(urls) {
+	if (_GM_deleteValues) _GM_deleteValues(urls);
+	else for (const url of urls) _GM_deleteValue(url);
+}
+function isVisited(url) {
+	return _GM_getValue(url) !== void 0;
+}
+function recordVisit(url) {
+	if (isVisited(url)) return false;
+	_GM_setValue(url, Date.now());
+	return true;
+}
+function loadLinks() {
+	const links = {};
+	for (const key of _GM_listValues()) if (isLinkKey(key)) links[key] = _GM_getValue(key);
+	return links;
+}
+function mergeLinks(links) {
+	const updates = {};
+	for (const [url, time] of Object.entries(links)) {
+		if (!isLinkKey(url) || !Number.isFinite(time)) continue;
+		const current = _GM_getValue(url);
+		if (current === void 0 || current < time) updates[url] = time;
+	}
+	const count = Object.keys(updates).length;
+	if (count > 0) setLinks(updates);
+	return count;
+}
+function deleteExpiredLinks(expirationTime) {
+	const now = Date.now();
+	const links = loadLinks();
+	const expiredUrls = Object.keys(links).filter((url) => now - links[url] > expirationTime);
+	if (expiredUrls.length > 0) deleteLinks(expiredUrls);
+}
+function migrateLegacyLinks() {
+	const legacyLinks = _GM_getValue(LEGACY_LINKS_KEY);
+	if (!legacyLinks) return;
+	const mergedCount = mergeLinks(legacyLinks);
+	_GM_deleteValue(LEGACY_LINKS_KEY);
+	console.log(`已把 ${mergedCount} 条访问记录迁移为逐条存储`);
+}
 var GITHUB_ACCEPT_HEADER = "application/vnd.github.v3+json";
 var SYNC_STORAGE_VERSION = "v3";
 var SYNC_STORAGE_ENCODING = "gzip-base64-json";
@@ -23436,31 +23493,18 @@ function extractVisitedLinks(data) {
 	if (isSyncData(data)) return data.visitedLinks;
 	return data;
 }
-function mergeVisitedLinks(localLinks, cloudLinks) {
-	const merged = { ...localLinks };
-	Object.keys(cloudLinks).forEach((url) => {
-		if (!merged[url] || cloudLinks[url] > merged[url]) merged[url] = cloudLinks[url];
-	});
-	return merged;
-}
 function hasDataChanged(oldData, newData) {
 	return !areVisitedLinksEqual(extractVisitedLinks(oldData), extractVisitedLinks(newData));
 }
 async function syncOnStartup() {
 	try {
 		console.log("开始同步数据...");
-		const localLinksSnapshotResult = requireVisitedLinksData(_GM_getValue("visitedLinks", {}), "本地启动快照");
-		const localLinksSnapshot = localLinksSnapshotResult.visitedLinks;
-		if (localLinksSnapshotResult.removedCount > 0) _GM_setValue("visitedLinks", localLinksSnapshot);
+		const localLinksSnapshot = loadLinks();
 		const cloud = await downloadFromCloud();
 		const cloudLinks = cloud.visitedLinks;
 		if (cloud.needsInitialization) console.log(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`);
-		let mergedLinks = mergeVisitedLinks(localLinksSnapshot, cloudLinks);
-		const currentLocalLinksResult = requireVisitedLinksData(_GM_getValue("visitedLinks", {}), "本地同步期快照");
-		const currentLocalLinks = currentLocalLinksResult.visitedLinks;
-		if (currentLocalLinksResult.removedCount > 0) _GM_setValue("visitedLinks", currentLocalLinks);
-		mergedLinks = mergeVisitedLinks(mergedLinks, currentLocalLinks);
-		_GM_setValue("visitedLinks", mergedLinks);
+		mergeLinks(cloudLinks);
+		const mergedLinks = loadLinks();
 		const localChanged = hasDataChanged(localLinksSnapshot, mergedLinks);
 		const cloudChanged = hasDataChanged(cloudLinks, mergedLinks);
 		if (cloud.needsInitialization || localChanged || cloudChanged) {
@@ -24006,7 +24050,6 @@ function initializeScriptState() {
 		batch: DEFAULT_SETTINGS.batchKey,
 		sync: DEFAULT_SETTINGS.sync
 	});
-	const visitedLinks = _GM_getValue("visitedLinks", {});
 	let needsSave = false;
 	Object.keys(PRESET_RULES).forEach((key) => {
 		if (!(key in userSettings.preset)) {
@@ -24021,8 +24064,7 @@ function initializeScriptState() {
 		batchKeySettings: userSettings.batch,
 		syncSettings: userSettings.sync,
 		batchKeyHandler: null,
-		linkClickHandler: null,
-		visitedLinks
+		linkClickHandler: null
 	};
 }
 function saveUserSettings(state) {
@@ -24033,18 +24075,9 @@ function saveUserSettings(state) {
 		sync: state.syncSettings
 	});
 }
-function deleteExpiredLinks(expirationTime) {
-	const visitedLinks = _GM_getValue("visitedLinks", {});
-	const now = Date.now();
-	Object.keys(visitedLinks).forEach((url) => {
-		if (now - visitedLinks[url] > expirationTime) delete visitedLinks[url];
-	});
-	_GM_setValue("visitedLinks", visitedLinks);
-}
 function batchAddLinks(state) {
 	const startTime = performance.now();
-	const visitedLinks = _GM_getValue("visitedLinks", {});
-	state.visitedLinks = visitedLinks;
+	const newLinks = {};
 	const now = Date.now();
 	let addedCount = 0;
 	const links = document.querySelectorAll("a[href]:not(.visited-link)");
@@ -24052,19 +24085,16 @@ function batchAddLinks(state) {
 	if (state.generalSettings.debug) console.log(`[batchAddLinks] 开始批量处理，找到 ${links.length} 个未标记链接`);
 	links.forEach((link) => {
 		const inputUrl = getBaseUrl(link.href);
-		if (shouldColorLink(inputUrl, state) && !Object.hasOwn(visitedLinks, inputUrl)) {
-			visitedLinks[inputUrl] = now;
+		if (shouldColorLink(inputUrl, state) && !Object.hasOwn(newLinks, inputUrl) && !isVisited(inputUrl)) {
+			newLinks[inputUrl] = now;
 			linksToUpdate.push(link);
 			addedCount++;
 		}
 	});
 	if (linksToUpdate.length > 0) {
-		_GM_setValue("visitedLinks", visitedLinks);
-		state.visitedLinks = visitedLinks;
+		mergeLinks(newLinks);
 		if (linksToUpdate.length > 1e3) batchProcessWithTimeSlicing(linksToUpdate, () => {
-			const refreshedVisitedLinks = _GM_getValue("visitedLinks", {});
-			state.visitedLinks = refreshedVisitedLinks;
-			updateAllLinksStatus(refreshedVisitedLinks, state);
+			updateAllLinksStatus(state);
 			const processingTime = performance.now() - startTime;
 			if (state.generalSettings.debug) console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
 			showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
@@ -24073,9 +24103,7 @@ function batchAddLinks(state) {
 			linksToUpdate.forEach((link) => {
 				link.classList.add("visited-link");
 			});
-			const refreshedVisitedLinks = _GM_getValue("visitedLinks", {});
-			state.visitedLinks = refreshedVisitedLinks;
-			updateAllLinksStatus(refreshedVisitedLinks, state);
+			updateAllLinksStatus(state);
 			const processingTime = performance.now() - startTime;
 			if (state.generalSettings.debug) console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
 			showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
@@ -24097,7 +24125,7 @@ function batchProcessWithTimeSlicing(linksToUpdate, onComplete) {
 	}
 	processNextBatch();
 }
-function updateLinkStatus(link, visitedLinks, state) {
+function updateLinkStatus(link, state) {
 	if (link.classList.contains("visited-link")) return;
 	const originalHref = link.href;
 	const inputUrl = getBaseUrl(originalHref);
@@ -24108,16 +24136,16 @@ function updateLinkStatus(link, visitedLinks, state) {
 		console.log(`[updateLinkStatus] shouldColorLink结果: ${shouldColor}`);
 	}
 	if (!shouldColor) return;
-	const isVisited = Object.hasOwn(visitedLinks, inputUrl);
-	if (state.generalSettings.debug) console.log(`[updateLinkStatus] 是否已访问: ${isVisited}`);
-	if (isVisited) {
+	const visited = isVisited(inputUrl);
+	if (state.generalSettings.debug) console.log(`[updateLinkStatus] 是否已访问: ${visited}`);
+	if (visited) {
 		link.classList.add("visited-link");
 		if (state.generalSettings.debug) console.log(`[updateLinkStatus] ${inputUrl} class added`);
 	}
 }
-function updateAllLinksStatus(visitedLinks, state) {
+function updateAllLinksStatus(state) {
 	document.querySelectorAll("a[href]:not(.visited-link)").forEach((link) => {
-		updateLinkStatus(link, visitedLinks, state);
+		updateLinkStatus(link, state);
 	});
 }
 function removeScript(state) {
@@ -24138,9 +24166,8 @@ function removeScript(state) {
 }
 function activateLinkFeatures(state, setupDOMObserver, setupLinkEventListeners) {
 	deleteExpiredLinks(state.generalSettings.expirationTime);
-	state.visitedLinks = _GM_getValue("visitedLinks", {});
-	logStorageInfo(state.visitedLinks);
-	updateAllLinksStatus(state.visitedLinks, state);
+	logStorageInfo(loadLinks());
+	updateAllLinksStatus(state);
 	setupDOMObserver(state);
 	state.linkClickHandler = setupLinkEventListeners(state);
 }
@@ -24150,7 +24177,6 @@ var urlChangeCallbacks = /* @__PURE__ */ new Set();
 var lastHref = location.href;
 /**
 * 提供链接染色所需的脚本状态。
-* Observer 在运行时始终从 state 上读取最新的 visitedLinks 引用。
 */
 function provideLinkContext(state) {
 	linkContext = state;
@@ -24183,19 +24209,19 @@ function ensureDOMObserver() {
 					if (node.nodeType !== Node.ELEMENT_NODE) return;
 					const element = node;
 					if (element.tagName === "A" && element.hasAttribute("href") && !element.classList.contains("visited-link")) {
-						updateLinkStatus(element, state.visitedLinks, state);
+						updateLinkStatus(element, state);
 						newLinksCount++;
 					}
 					const newLinks = element.querySelectorAll("a[href]:not(.visited-link)");
 					newLinksCount += newLinks.length;
 					newLinks.forEach((link) => {
-						updateLinkStatus(link, state.visitedLinks, state);
+						updateLinkStatus(link, state);
 					});
 				});
 				else if (mutation.type === "attributes" && mutation.attributeName === "href") {
 					const target = mutation.target;
 					if (target.tagName === "A" && !target.classList.contains("visited-link")) {
-						updateLinkStatus(target, state.visitedLinks, state);
+						updateLinkStatus(target, state);
 						attrLinksCount++;
 					}
 				}
@@ -24375,17 +24401,9 @@ function createLinkClickHandler(state) {
 			console.log(`[handleLinkClick] shouldColorLink结果: ${shouldColor}`);
 		}
 		if (!shouldColor) return;
-		const alreadyVisited = Object.hasOwn(state.visitedLinks, inputUrl);
-		if (state.generalSettings.debug) console.log(`[handleLinkClick] 是否已记录: ${alreadyVisited}`);
-		if (!alreadyVisited) {
-			state.visitedLinks[inputUrl] = Date.now();
-			_GM_setValue("visitedLinks", state.visitedLinks);
-			if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} saved`);
-			document.querySelectorAll("a[href]:not(.visited-link)").forEach((el) => {
-				if (getBaseUrl(el.href) === inputUrl) el.classList.add("visited-link");
-			});
-			if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} class added to all matching links`);
-		}
+		const isFirstVisit = recordVisit(inputUrl);
+		if (state.generalSettings.debug) console.log(`[handleLinkClick] 是否首次记录: ${isFirstVisit}`);
+		updateAllLinksStatus(state);
 	};
 }
 function setupLinkEventListeners(state) {
@@ -24414,8 +24432,7 @@ function setupGlobalEventListeners(state) {
 	});
 	eventBus.on("sync:completed", () => {
 		console.log("同步完成，增量更新链接状态...");
-		state.visitedLinks = _GM_getValue("visitedLinks", {});
-		if (isPageActive(state)) updateAllLinksStatus(state.visitedLinks, state);
+		if (isPageActive(state)) updateAllLinksStatus(state);
 	});
 }
 function setupPage(state) {
@@ -24436,6 +24453,7 @@ function startScript(state) {
 }
 function startColorVisitedScript() {
 	console.log("Color Visited Script has started!");
+	migrateLegacyLinks();
 	startScript(initializeScriptState());
 }
 startColorVisitedScript();

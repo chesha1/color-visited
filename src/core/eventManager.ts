@@ -1,11 +1,11 @@
 // ================== 事件管理模块 ==================
 
 import { shouldColorLink } from '@/core/pageDetector';
-import { batchAddLinks } from '@/core/linkManager';
+import { batchAddLinks, updateAllLinksStatus } from '@/core/linkManager';
 import { provideLinkContext, ensureDOMObserver } from '@/core/domObserver';
+import { recordVisit } from '@/core/storage';
 import { getBaseUrl } from '@/core/utils';
 import type { ScriptState } from '@/types';
-import { GM_setValue } from 'vite-plugin-monkey/dist/client';
 
 // ================== 快捷键管理 ==================
 
@@ -72,27 +72,14 @@ export function createLinkClickHandler(state: ScriptState): (event: Event) => vo
 
     if (!shouldColor) return; // 如果链接不符合匹配规则，返回
 
-    const alreadyVisited = Object.hasOwn(state.visitedLinks, inputUrl);
+    const isFirstVisit = recordVisit(inputUrl);
     if (state.generalSettings.debug) {
-      console.log(`[handleLinkClick] 是否已记录: ${alreadyVisited}`);
+      console.log(`[handleLinkClick] 是否首次记录: ${isFirstVisit}`);
     }
 
-    if (!alreadyVisited) {
-      // 如果是第一次点击该链接，记录到 visitedLinks 并更新存储
-      state.visitedLinks[inputUrl] = Date.now();
-      GM_setValue('visitedLinks', state.visitedLinks);
-      if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} saved`);
-
-      // 染色所有相同 href 的链接（包括当前点击的元素）
-      document.querySelectorAll('a[href]:not(.visited-link)').forEach((el) => {
-        const elUrl = getBaseUrl((el as HTMLAnchorElement).href);
-        if (elUrl === inputUrl) {
-          el.classList.add('visited-link');
-        }
-      });
-
-      if (state.generalSettings.debug) console.log(`[handleLinkClick] ${inputUrl} class added to all matching links`);
-    }
+    // 已有的记录可能是其他标签页写入的，本页还没染色，所以不论是否首次记录都重新染色。
+    // 这一步会染上所有相同 URL 的链接（包括当前点击的元素）
+    updateAllLinksStatus(state);
   };
 }
 

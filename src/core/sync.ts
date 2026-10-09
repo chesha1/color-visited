@@ -19,6 +19,7 @@ import type {
 } from '@/types';
 import { DEFAULT_SETTINGS } from '@/core/config';
 import { eventBus } from '@/core/eventBus';
+import { loadLinks, mergeLinks } from '@/core/storage';
 import { GM_getValue, GM_setValue, GM_xmlhttpRequest } from 'vite-plugin-monkey/dist/client';
 
 const GITHUB_ACCEPT_HEADER = 'application/vnd.github.v3+json';
@@ -1124,20 +1125,6 @@ function extractVisitedLinks(data: SyncData | VisitedLinksData): VisitedLinksDat
   return data;
 }
 
-// 合并本地和云端数据
-export function mergeVisitedLinks(localLinks: VisitedLinksData, cloudLinks: VisitedLinksData): VisitedLinksData {
-  const merged = { ...localLinks };
-
-  // 以最新时间戳为准合并数据
-  Object.keys(cloudLinks).forEach((url) => {
-    if (!merged[url] || cloudLinks[url] > merged[url]) {
-      merged[url] = cloudLinks[url];
-    }
-  });
-
-  return merged;
-}
-
 // 检查数据是否有变化
 export function hasDataChanged(oldData: VisitedLinksData | SyncData, newData: VisitedLinksData | SyncData): boolean {
   return !areVisitedLinksEqual(extractVisitedLinks(oldData), extractVisitedLinks(newData));
@@ -1149,14 +1136,7 @@ export async function syncOnStartup(): Promise<{ initialized: boolean }> {
     console.log('开始同步数据...');
 
     // 1. 获取本地数据快照（同步开始时）
-    const localLinksSnapshotResult = requireVisitedLinksData(
-      GM_getValue('visitedLinks', {}) as unknown,
-      '本地启动快照'
-    );
-    const localLinksSnapshot = localLinksSnapshotResult.visitedLinks;
-    if (localLinksSnapshotResult.removedCount > 0) {
-      GM_setValue('visitedLinks', localLinksSnapshot);
-    }
+    const localLinksSnapshot = loadLinks();
 
     // 2. 从云端获取数据（这个过程可能较慢）
     const cloud = await downloadFromCloud();
@@ -1165,25 +1145,12 @@ export async function syncOnStartup(): Promise<{ initialized: boolean }> {
       console.log(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`);
     }
 
-    // 3. 合并数据（以最新时间戳为准）
-    let mergedLinks = mergeVisitedLinks(localLinksSnapshot, cloudLinks);
+    // 3. 把云端数据逐条合并进本地（以最新时间戳为准），再读出合并后的完整数据。
+    // 合并以存储里的当前值为准，网络请求期间用户新点击的链接不会被覆盖
+    mergeLinks(cloudLinks);
+    const mergedLinks = loadLinks();
 
-    // 4. 重新获取本地数据，合并同步期间用户可能新增的链接
-    // 这是为了防止在网络请求期间用户点击的链接被覆盖丢失
-    const currentLocalLinksResult = requireVisitedLinksData(
-      GM_getValue('visitedLinks', {}) as unknown,
-      '本地同步期快照'
-    );
-    const currentLocalLinks = currentLocalLinksResult.visitedLinks;
-    if (currentLocalLinksResult.removedCount > 0) {
-      GM_setValue('visitedLinks', currentLocalLinks);
-    }
-    mergedLinks = mergeVisitedLinks(mergedLinks, currentLocalLinks);
-
-    // 5. 保存到本地
-    GM_setValue('visitedLinks', mergedLinks);
-
-    // 6. 检查是否需要上传到云端；云端需要初始化时，即使本地为空也写入一份同步格式
+    // 4. 检查是否需要上传到云端；云端需要初始化时，即使本地为空也写入一份同步格式
     const localChanged = hasDataChanged(localLinksSnapshot, mergedLinks);
     const cloudChanged = hasDataChanged(cloudLinks, mergedLinks);
 
@@ -1195,12 +1162,12 @@ export async function syncOnStartup(): Promise<{ initialized: boolean }> {
       console.log('数据已同步，无需上传');
     }
 
-    // 7. 更新同步时间
+    // 5. 更新同步时间
     const syncSettings = getSyncSettings();
     syncSettings.lastSyncTime = Date.now();
     saveSyncSettings(syncSettings);
 
-    // 8. 发送同步完成事件
+    // 6. 发送同步完成事件
     eventBus.emit('sync:completed');
 
     return { initialized: cloud.needsInitialization };

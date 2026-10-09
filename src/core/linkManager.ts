@@ -4,30 +4,15 @@ import { shouldColorLink } from '@/core/pageDetector';
 import { showNotification, removeCustomStyles } from '@/core/ui';
 import { getBaseUrl, logStorageInfo } from '@/core/utils';
 import { clearLinkContext } from '@/core/domObserver';
+import { deleteExpiredLinks, isVisited, loadLinks, mergeLinks } from '@/core/storage';
 import type { ScriptState, VisitedLinks } from '@/types';
-import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
-
-// ================== 链接存储管理 ==================
-
-// 删除过期链接
-export function deleteExpiredLinks(expirationTime: number): void {
-  const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
-  const now = Date.now();
-  Object.keys(visitedLinks).forEach((url) => {
-    if (now - visitedLinks[url] > expirationTime) {
-      delete visitedLinks[url];
-    }
-  });
-  GM_setValue('visitedLinks', visitedLinks);
-}
 
 // 批量染色当前页面上的所有符合规则的链接（仅供快捷键调用）
 export function batchAddLinks(state: ScriptState): void {
   // 性能监控：记录开始时间
   const startTime = performance.now();
 
-  const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
-  state.visitedLinks = visitedLinks;
+  const newLinks: VisitedLinks = {};
   const now = Date.now();
   let addedCount = 0;
 
@@ -45,8 +30,8 @@ export function batchAddLinks(state: ScriptState): void {
     const inputUrl = getBaseUrl((link as HTMLAnchorElement).href);
 
     // 检查链接是否符合规则且尚未被标记为已访问
-    if (shouldColorLink(inputUrl, state) && !Object.hasOwn(visitedLinks, inputUrl)) {
-      visitedLinks[inputUrl] = now;
+    if (shouldColorLink(inputUrl, state) && !Object.hasOwn(newLinks, inputUrl) && !isVisited(inputUrl)) {
+      newLinks[inputUrl] = now;
       linksToUpdate.push(link);
       addedCount++;
     }
@@ -54,18 +39,15 @@ export function batchAddLinks(state: ScriptState): void {
 
   // 第二遍：批量更新DOM
   if (linksToUpdate.length > 0) {
-    // 保存更新后的访问链接记录
-    GM_setValue('visitedLinks', visitedLinks);
-    state.visitedLinks = visitedLinks;
+    // 保存新增的访问记录
+    mergeLinks(newLinks);
 
     // 对于大量链接，使用 DocumentFragment 或分时处理
     if (linksToUpdate.length > 1000) {
       // 分时处理：对于超大量链接，分批在不同时隙处理，避免长时间阻塞
       batchProcessWithTimeSlicing(linksToUpdate, () => {
         // 处理完成后重新应用所有链接状态，模拟页面刷新的效果
-        const refreshedVisitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
-        state.visitedLinks = refreshedVisitedLinks;
-        updateAllLinksStatus(refreshedVisitedLinks, state);
+        updateAllLinksStatus(state);
 
         // 处理完成后显示通知
         const endTime = performance.now();
@@ -84,9 +66,7 @@ export function batchAddLinks(state: ScriptState): void {
       });
 
       // 批量添加完成后，重新应用所有链接状态，模拟页面刷新的效果
-      const refreshedVisitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
-      state.visitedLinks = refreshedVisitedLinks;
-      updateAllLinksStatus(refreshedVisitedLinks, state);
+      updateAllLinksStatus(state);
 
       // 性能监控：计算处理时间
       const endTime = performance.now();
@@ -142,7 +122,7 @@ function batchProcessWithTimeSlicing(linksToUpdate: Element[], onComplete?: () =
 // ================== 链接状态管理 ==================
 
 // 更新单个链接的状态
-export function updateLinkStatus(link: Element, visitedLinks: VisitedLinks, state: ScriptState): void {
+export function updateLinkStatus(link: Element, state: ScriptState): void {
   // 如果链接已经有 visited-link 类，跳过处理以提高性能
   // 这个检查避免了重复的DOM操作和URL处理
   if (link.classList.contains('visited-link')) return;
@@ -160,23 +140,23 @@ export function updateLinkStatus(link: Element, visitedLinks: VisitedLinks, stat
   if (!shouldColor) return;
 
   // 添加 visited-link 类名
-  const isVisited = Object.hasOwn(visitedLinks, inputUrl);
+  const visited = isVisited(inputUrl);
   if (state.generalSettings.debug) {
-    console.log(`[updateLinkStatus] 是否已访问: ${isVisited}`);
+    console.log(`[updateLinkStatus] 是否已访问: ${visited}`);
   }
 
-  if (isVisited) {
+  if (visited) {
     link.classList.add('visited-link');
     if (state.generalSettings.debug) console.log(`[updateLinkStatus] ${inputUrl} class added`);
   }
 }
 
 // 批量更新页面中所有链接的状态
-export function updateAllLinksStatus(visitedLinks: VisitedLinks, state: ScriptState): void {
+export function updateAllLinksStatus(state: ScriptState): void {
   // 只查找还没有 visited-link 类的链接，避免重复处理，提高性能
   // 在大量链接的页面上，这个优化可以减少90%以上的不必要DOM操作
   document.querySelectorAll('a[href]:not(.visited-link)').forEach((link) => {
-    updateLinkStatus(link, visitedLinks, state);
+    updateLinkStatus(link, state);
   });
 }
 
@@ -218,12 +198,8 @@ export function activateLinkFeatures(
   setupLinkEventListeners: (state: ScriptState) => ((event: Event) => void)
 ): void {
   deleteExpiredLinks(state.generalSettings.expirationTime); // 删除过期的链接
-
-  const visitedLinks: VisitedLinks = GM_getValue('visitedLinks', {});
-  state.visitedLinks = visitedLinks;
-
-  logStorageInfo(state.visitedLinks); // 显示存储信息
-  updateAllLinksStatus(state.visitedLinks, state); // 更新链接状态
+  logStorageInfo(loadLinks()); // 显示存储信息
+  updateAllLinksStatus(state); // 更新链接状态
 
   // 设置全局 DOM 观察器（仅首次创建）
   setupDOMObserver(state);

@@ -15,7 +15,6 @@ let lastHref: string = location.href;
 
 /**
  * 提供链接染色所需的脚本状态。
- * Observer 在运行时始终从 state 上读取最新的 visitedLinks 引用。
  */
 export function provideLinkContext(state: ScriptState): void {
     linkContext = state;
@@ -59,14 +58,14 @@ export function ensureDOMObserver(): MutationObserver {
                         const element = node as Element;
                         // 检查节点本身是否是链接
                         if (element.tagName === 'A' && element.hasAttribute('href') && !element.classList.contains('visited-link')) {
-                            updateLinkStatus(element, state.visitedLinks, state);
+                            updateLinkStatus(element, state);
                             newLinksCount++;
                         }
                         // 检查子节点中的链接
                         const newLinks = element.querySelectorAll('a[href]:not(.visited-link)');
                         newLinksCount += newLinks.length;
                         newLinks.forEach((link: Element): void => {
-                            updateLinkStatus(link, state.visitedLinks, state);
+                            updateLinkStatus(link, state);
                         });
                     });
                 }
@@ -74,7 +73,7 @@ export function ensureDOMObserver(): MutationObserver {
                 else if (mutation.type === 'attributes' && mutation.attributeName === 'href') {
                     const target = mutation.target as Element;
                     if (target.tagName === 'A' && !target.classList.contains('visited-link')) {
-                        updateLinkStatus(target, state.visitedLinks, state);
+                        updateLinkStatus(target, state);
                         attrLinksCount++;
                     }
                 }
