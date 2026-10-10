@@ -1105,31 +1105,45 @@ export function hasDataChanged(oldData: VisitedLinksData | SyncData, newData: Vi
   return !areVisitedLinksEqual(extractVisitedLinks(oldData), extractVisitedLinks(newData));
 }
 
-// 启动时同步；initialized 表示本次把云端内容初始化成了同步格式，由调用方决定是否提示
-export async function syncOnStartup(syncSettings: SyncSettings): Promise<{ initialized: boolean }> {
+// 只保留首次访问不早于 cutoff 的记录，即还没过期的，和本地过期清理（deleteExpiredLinks）的判断一致
+function pickUnexpiredLinks(links: VisitedLinksData, cutoff: number): VisitedLinksData {
+  const unexpiredLinks: VisitedLinksData = {};
+
+  for (const url in links) {
+    if (links[url] >= cutoff) {
+      unexpiredLinks[url] = links[url];
+    }
+  }
+
+  return unexpiredLinks;
+}
+
+// 启动时同步；initialized 表示本次把云端内容初始化成了同步格式，由调用方决定是否提示。
+// expirationTime 是本机设置的过期时间，过期的记录两个方向都不同步
+export async function syncOnStartup(syncSettings: SyncSettings, expirationTime: number): Promise<{ initialized: boolean }> {
   try {
     console.log('开始同步数据...');
 
-    // 1. 获取本地数据快照（同步开始时）
-    const localLinksSnapshot = loadLinks();
-
-    // 2. 从云端获取数据（这个过程可能较慢）
+    // 1. 从云端获取数据（这个过程可能较慢）
     const cloud = await downloadFromCloud(syncSettings);
-    const cloudLinks = cloud.visitedLinks;
     if (cloud.needsInitialization) {
       console.log(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`);
     }
 
-    // 3. 把云端数据逐条合并进本地（以最新时间戳为准），再读出合并后的完整数据。
+    // 2. 过期的记录两个方向都不同步，两边按同一个截止时间判断。否则云端的过期记录会被合并进本地、重新染色，
+    // 激活页面时被删掉，下次同步又被合并回来；上传时也会原样带回云端，永远删不干净
+    const cutoff = Date.now() - expirationTime;
+    const cloudLinks = pickUnexpiredLinks(cloud.visitedLinks, cutoff);
+
+    // 3. 把云端数据逐条合并进本地（以最新时间戳为准），再读出合并后的数据。
     // 合并以存储里的当前值为准，网络请求期间用户新点击的链接不会被覆盖
     mergeLinks(cloudLinks);
-    const mergedLinks = loadLinks();
+    const mergedLinks = pickUnexpiredLinks(loadLinks(), cutoff);
 
-    // 4. 检查是否需要上传到云端；云端需要初始化时，即使本地为空也写入一份同步格式
-    const localChanged = hasDataChanged(localLinksSnapshot, mergedLinks);
-    const cloudChanged = hasDataChanged(cloudLinks, mergedLinks);
-
-    if (cloud.needsInitialization || localChanged || cloudChanged) {
+    // 4. 合并后的数据已包含云端的全部有效记录，和云端一致就说明没有要上传的；
+    // 云端需要初始化时，即使本地为空也写入一份同步格式。
+    // 云端只是有记录到期，不会为此单独上传，它们会在下次上传时一并去掉
+    if (cloud.needsInitialization || hasDataChanged(cloudLinks, mergedLinks)) {
       await uploadToCloud(syncSettings, mergedLinks);
       console.log(cloud.needsInitialization ? '已初始化云端同步数据' : '数据已同步并上传到云端');
     }

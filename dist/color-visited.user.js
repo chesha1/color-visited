@@ -23485,18 +23485,21 @@ function extractVisitedLinks(data) {
 function hasDataChanged(oldData, newData) {
 	return !areVisitedLinksEqual(extractVisitedLinks(oldData), extractVisitedLinks(newData));
 }
-async function syncOnStartup(syncSettings) {
+function pickUnexpiredLinks(links, cutoff) {
+	const unexpiredLinks = {};
+	for (const url in links) if (links[url] >= cutoff) unexpiredLinks[url] = links[url];
+	return unexpiredLinks;
+}
+async function syncOnStartup(syncSettings, expirationTime) {
 	try {
 		console.log("开始同步数据...");
-		const localLinksSnapshot = loadLinks();
 		const cloud = await downloadFromCloud(syncSettings);
-		const cloudLinks = cloud.visitedLinks;
 		if (cloud.needsInitialization) console.log(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`);
+		const cutoff = Date.now() - expirationTime;
+		const cloudLinks = pickUnexpiredLinks(cloud.visitedLinks, cutoff);
 		mergeLinks(cloudLinks);
-		const mergedLinks = loadLinks();
-		const localChanged = hasDataChanged(localLinksSnapshot, mergedLinks);
-		const cloudChanged = hasDataChanged(cloudLinks, mergedLinks);
-		if (cloud.needsInitialization || localChanged || cloudChanged) {
+		const mergedLinks = pickUnexpiredLinks(loadLinks(), cutoff);
+		if (cloud.needsInitialization || hasDataChanged(cloudLinks, mergedLinks)) {
 			await uploadToCloud(syncSettings, mergedLinks);
 			console.log(cloud.needsInitialization ? "已初始化云端同步数据" : "数据已同步并上传到云端");
 		} else console.log("数据已同步，无需上传");
@@ -24298,7 +24301,7 @@ function setupLinkEventListeners(state) {
 	return handleLinkClick;
 }
 function initializeSync(state) {
-	if (state.syncSettings.enabled) syncOnStartup(state.syncSettings).then(({ initialized }) => {
+	if (state.syncSettings.enabled) syncOnStartup(state.syncSettings, state.generalSettings.expirationTime).then(({ initialized }) => {
 		if (initialized) showNotification("已初始化云端同步数据", "success");
 	}).catch((error) => {
 		console.warn("后台同步失败:", error.message);

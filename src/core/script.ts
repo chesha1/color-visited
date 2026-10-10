@@ -17,7 +17,7 @@ import { eventBus } from '@/core/eventBus';
 function initializeSync(state: ScriptState): void {
   // 如果启用同步，在后台进行启动同步（不阻塞主流程）
   if (state.syncSettings.enabled) {
-    syncOnStartup(state.syncSettings)
+    syncOnStartup(state.syncSettings, state.generalSettings.expirationTime)
       .then(({ initialized }) => {
         if (initialized) {
           showNotification('已初始化云端同步数据', 'success');
