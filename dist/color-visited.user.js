@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         color-visited 对已访问过的链接染色
-// @version      2.21.0
+// @version      2.21.1
 // @author       chesha1
 // @description  把访问过的链接染色成灰色
 // @license      GPL-3.0-only
@@ -22348,7 +22348,7 @@ var GeneralSettings_default = /* @__PURE__ */ defineComponent({
 		const expirationDays = computed({
 			get: () => Math.round(formData.value.expirationTime / 864e5),
 			set: (days) => {
-				formData.value.expirationTime = days * 1e3 * 60 * 60 * 24;
+				formData.value.expirationTime = days == null || days < 1 || !Number.isInteger(days) ? savedSettings.value.expirationTime : days * 1e3 * 60 * 60 * 24;
 			}
 		});
 		const handleSave = () => {
@@ -22404,7 +22404,6 @@ var GeneralSettings_default = /* @__PURE__ */ defineComponent({
 						default: withCtx(() => [createBaseVNode("div", _hoisted_3$3, [createBaseVNode("div", _hoisted_4$3, [createVNode(_component_el_input_number, {
 							modelValue: expirationDays.value,
 							"onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => expirationDays.value = $event),
-							min: 1,
 							max: 3650,
 							"controls-position": "right",
 							size: "large",

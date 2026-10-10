@@ -28,7 +28,6 @@
           <div class="flex items-center gap-2">
             <el-input-number
               v-model="expirationDays"
-              :min="1"
               :max="3650"
               controls-position="right"
               size="large"
@@ -92,11 +91,15 @@ const colorPresets = [
   '#0f172a', // slate-900
 ]
 
-// 过期时间（天数）
+// 过期时间（天数），只接受至少 1 天的整数。清空（el-input-number 发出 null）、0、负数、小数这类输入不算数，回到保存的天数，失焦后输入框也会显示回来。
+// 不能沿用输入过程中的数：从 365 一路退格到空，中间会经过 3。下限也不能交给组件的 min：它会把这些输入改成 1 天，保存后一天前的记录全被删掉。
+// 小数不能存：输入框按四舍五入显示整数天，存 9.6 天会显示成 10 天
 const expirationDays = computed({
   get: () => Math.round(formData.value.expirationTime / (1000 * 60 * 60 * 24)),
-  set: (days: number) => {
-    formData.value.expirationTime = days * 1000 * 60 * 60 * 24
+  set: (days: number | null | undefined) => {
+    formData.value.expirationTime = days == null || days < 1 || !Number.isInteger(days)
+      ? savedSettings.value.expirationTime
+      : days * 1000 * 60 * 60 * 24
   }
 })
 
