@@ -5,7 +5,7 @@
 | 文件 | 格式 | 记录数 | 数据截至 | 来源 |
 |---|---|---|---|---|
 | `visited-links.v3.json` | v3 同步包 | 129,378 | 2026-10-10 | 从同步用的 Gist 下载 |
-| `visited-links.v2.json` | v2 同步包 | 97,048 | 2026-04-11 | 原先在仓库根目录（7b3ba07 引入，2026-10-10 移到这里） |
+| `visited-links.v2.json` | v2 同步包 | 97,048 | 2026-04-11 | 原先在仓库根目录，2026-10-10 移到这里，并已从 git 历史中清除 |
 
 - 两种格式的外层都是 `{ syncVersion, encoding, payload, itemCount, updatedAt, originalBytes, compressedBytes }`，`payload` 是 gzip 之后再 base64 的 JSON。v2 里是平铺的「URL → 首次访问时间戳」；v3 先按 host 分组，组内路径排序后再做前缀差分。
 - 两份都能被当前的 sync.ts 完整解码，条数和 `itemCount` 一致（2026-10-10 验证）。

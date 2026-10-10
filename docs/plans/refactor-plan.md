@@ -1,7 +1,8 @@
 # color-visited 重构与优化计划
 
-> 基于提交 `1421605`（2026-10-09）对全部代码的通读。
-> 文中行号均指该提交。代码改动后行号会漂移，请以函数名定位；需要对照原文时用 `git show 1421605:<路径>`。
+> 基于提交 `f7f543b`（2026-10-09）对全部代码的通读。
+> 文中行号均指该提交。代码改动后行号会漂移，请以函数名定位；需要对照原文时用 `git show f7f543b:<路径>`。
+> 2026-10-10 清理过一次 git 历史，那之后的提交号都已换成新的。
 
 ## 怎么使用这份文档
 
@@ -34,10 +35,6 @@
 
 ## 待决策（需要你拍板）
 
-- [ ] **D1 · 旧的 `visited-links.json` 要不要从 git 历史里清除**
-  - 这是一个 v2 同步包：97,048 条记录，`updatedAt` 是 2026-04-11，由 7b3ba07 放在仓库根目录。它和 2026-10 的真实同步数据最早的一条记录是同一天，应该是同一份浏览记录的早期快照。
-  - 2026-10-10 已移到 `test/fixtures/local/visited-links.v2.json`，不再入库（见那里的 README）。
-  - 但仓库是公开的，历史里仍然能看到它。要彻底清掉，需要用 `git filter-repo` 改写历史并 force push，所有提交号都会变；已经被 clone 或 fork 的副本收不回来。
 - [ ] **D3 · 要不要去掉 Element Plus**（见 A6）
   - 收益：体积大幅下降，所有 CSS 隔离方面的 hack 一起消失。
   - 代价：要手写十来个小组件，取色器也得自己实现。
@@ -48,15 +45,9 @@
 
 ## 待手动验证
 
-已完成的条目里，以下验证需要真实浏览器，还没做：
+已完成的条目里，需要在真实浏览器里做、还没做的验证放在这里。
 
-- [ ] **B1：** 打开两个 V2EX 列表页标签 A 和 B。在 A 中点击链接 x，再在 B 中点击链接 y，然后刷新 A。x 和 y 都应该保持染色。
-- [ ] **B1：** 用 97,048 条的真实数据升级一次，看控制台是否打印 `已把 N 条访问记录迁移为逐条存储`，迁移和之后的页面加载是否明显变慢。
-- [ ] **B2：** 在 V2EX 首页的搜索框里按 Ctrl+Shift+V，应能正常粘贴，并且不出现"已批量添加"的提示。
-- [ ] **B3：** 把快捷键设为 Ctrl+↑ 并保存，在列表页按下后应触发批量染色。
-- [ ] **B3：** 开着中文输入法录入一次字母组合，应显示成对应字母。
-- [ ] **B4：** 在 V2EX 列表页的控制台里执行 `document.body.insertAdjacentHTML('beforeend', '<a href="http://">x</a><svg><a href="https://www.v2ex.com/t/1"><text>x</text></a></svg>')`，控制台不应出现脚本的报错；之后点击帖子链接仍能记录和染色，按批量快捷键仍能批量标记。
-- [ ] **B4：** 在 Tampermonkey 和 Violentmonkey 里各打开一次列表页，已访问的链接照常染色。现在靠 `instanceof HTMLAnchorElement` 判断链接，headless Chrome 里没有扩展的沙箱，这一点只能在真实扩展里确认。
+目前没有：B1–B4 的手动验证已在 2026-10-10 全部通过。
 
 ## 背景事实与约束
 
@@ -68,7 +59,7 @@
   - 129,378 条记录，33 个 host，最早一条是 2025-04-13。
   - 平铺 JSON 7.4 MB，v3 前缀差分后 3.6 MB，gzip 后 840 KB，base64 之后的文件 1,119,885 字节。
   - 文件超过 1 MB，GitHub API 返回的内容会被截断，同步时实际走的是 raw_url 那条路径（不变量 4）。
-- **2026-04，v2：** `test/fixtures/local/visited-links.v2.json`，原先在仓库根目录（见 D1）。97,048 条记录，原始 JSON 5.4 MB，gzip 后 732 KB。
+- **2026-04，v2：** `test/fixtures/local/visited-links.v2.json`，原先在仓库根目录，已从 git 历史中清除（见「已定的取舍」）。97,048 条记录，原始 JSON 5.4 MB，gzip 后 732 KB。
 
 ### 存储结构（必须兼容老用户的数据）
 
@@ -129,6 +120,10 @@
 - **快捷键的已知局限：**
   - 按物理键位匹配，键名按 QWERTY 的位置显示：非 QWERTY 布局下，显示的键名可能和键帽不一致（比如 AZERTY 上印着 A 的键显示成 Q），但按同一个键照样能触发；主键盘的 1 和小键盘的 1 算两个键。
   - closed 模式的 shadow root 从外面看不到内部节点，在那里的输入框里按快捷键仍会触发。这种情况很少见。
+- **真实的同步数据只放本机，不入库（原 D1，2026-10-10）。**
+  - 两份样本都在 `test/fixtures/local/`，说明见那里的 README。
+  - 根目录原来的 `visited-links.json` 已从 git 历史中清除：从 v3 那个提交（76b0291）起的 17 个提交改写过，提交号都变了；更早的提交、`refactor/v2` 分支和 tag 不受影响。
+  - GitHub 上按旧提交号仍然能打开这些提交，要等 GitHub Support 清理。已经被 clone 或 fork 的副本收不回来。
 - **`getBaseUrl` 读 `<a>` 的 `hostname`，不自己 `new URL`（B4）。**
   - 图的是 `getBaseUrl` 里没有会抛错的代码：href 解析失败或被删掉时，`hostname` 是空字符串，链接原样返回。性能只快 0.2–0.3 µs/个，不是理由。
   - 参数类型是 `Pick<URL, 'href' | 'hostname'>`，`<a>` 元素和 `URL` 对象都能传。
@@ -145,12 +140,13 @@
     - `a[href]` 会选中 SVG 里的 `<a>`，它的 `.href` 是 `SVGAnimatedString`，交给 `new URL` 会抛错；
   - 构建产物的头部有 SystemJS 的 `@require`，产物中有 18 处 `_css(` 把样式注入宿主页面（grep 产物确认）；
   - vite-plugin-monkey 默认从 package.json 读取 `version`、`author` 等字段（8.1.1 源码，`dist/node/index.mjs` 第 2041 行）；
-  - 仓库可以公开访问。
+  - 仓库可以公开访问；
+  - B1–B4 的手动验证在真实浏览器里全部通过（2026-10-10），包括两个标签页交替记录访问、旧数据迁移，以及 `instanceof HTMLAnchorElement` 在 Tampermonkey 和 Violentmonkey 的沙箱里都成立。
 - **依据规范或文档推断：**
   - Tampermonkey 注册菜单时如果不传 id，会新建一个菜单项（TM 文档）。
 - **未核实：**
   - Tailwind 的 `@property` 在 shadow root 中失效（见 A6）。
-  - 按 URL 逐条存储后，Tampermonkey 和 Violentmonkey 在 10 万个键下的页面注入、`GM_listValues` 和逐条 `GM_getValue` 的耗时。存储语义只在 Node 里模拟过，没有在真实扩展里测过。
+  - 按 URL 逐条存储后，Tampermonkey 和 Violentmonkey 在 10 万个键下页面注入、`GM_listValues` 和逐条 `GM_getValue` 的具体耗时。手动验证时页面加载没有明显变慢，但没有测过具体数字。
 - 核实时，`pnpm typecheck` 和 eslint 都没有报错。但 eslint 几乎没有配置规则（见 E1），所以这不能说明代码没问题。
 
 ---
@@ -208,7 +204,7 @@
   - 位置：`getV3GroupDescriptor`（sync.ts）。
   - 问题：它用 `pathname + search + hash` 拼回路径。URL 以空的 `#` 或 `?` 结尾时，`hash`、`search` 返回空字符串，这个字符就丢了。URL 里的用户名和密码（`user:pw@`）也会丢，因为 `host` 不包含这一部分。
     - 实际数据：v2 样本里有 1 条 linux.do 的链接以 `#` 结尾，云端存的是去掉 `#` 的版本，原样的那条只在本地。其他设备上这条记录对不上，影响很小。
-  - 修法：拼出来的结果和原 URL 不一样时，改放进 raw 分组（`V3_RAW_GROUP_KEY`）原样保存。raw 分组是和 v3 一起引入的（7b3ba07），能读 v3 的版本都认识。
+  - 修法：拼出来的结果和原 URL 不一样时，改放进 raw 分组（`V3_RAW_GROUP_KEY`）原样保存。raw 分组是和 v3 一起引入的（76b0291），能读 v3 的版本都认识。
   - 验证：用 `test/fixtures/local/` 里的 v2 样本跑 v3 往返测试（见 E2），`decode(encode(x))` 应和 `x` 完全一致，条数和每条的时间戳都不变。
 
 ## 2. 性能
@@ -492,11 +488,13 @@
 
 | 日期 | 完成的条目 | 提交 | 备注 |
 |---|---|---|---|
-| 2026-10-09 | 完成全部代码的分析，写出本文档 | — | 基于提交 1421605 |
-| 2026-10-09 | B1（顺带完成 P2、C3） | bc63d1f | 访问记录改为按 URL 逐条存储，新增 storage.ts，启动时迁移旧的 `visitedLinks` 键；建议关闭 D2 和 P4；新发现 B7 |
-| 2026-10-09 | D5 关闭；B2 | ae4ead1 | 默认快捷键不换；快捷键在输入框、可编辑区域（含 open shadow root 里的）和输入法组字时不触发；README 改正默认键；新增 B8（批量标记可撤销），待实施 |
-| 2026-10-10 | B3（顺带完成 C13） | 5cdf4cc | 快捷键改为按 `event.code` 录入和匹配，`batch.key` 改名为 `code`，新增 shortcut.ts；按要求不迁移旧设置，老用户需要重新录入 |
+| 2026-10-09 | 完成全部代码的分析，写出本文档 | — | 基于提交 f7f543b |
+| 2026-10-09 | B1（顺带完成 P2、C3） | 3296fb2 | 访问记录改为按 URL 逐条存储，新增 storage.ts，启动时迁移旧的 `visitedLinks` 键；建议关闭 D2 和 P4；新发现 B7 |
+| 2026-10-09 | D5 关闭；B2 | 9f4b315 | 默认快捷键不换；快捷键在输入框、可编辑区域（含 open shadow root 里的）和输入法组字时不触发；README 改正默认键；新增 B8（批量标记可撤销），待实施 |
+| 2026-10-10 | B3（顺带完成 C13） | 247ad2b | 快捷键改为按 `event.code` 录入和匹配，`batch.key` 改名为 `code`，新增 shortcut.ts；按要求不迁移旧设置，老用户需要重新录入 |
 | 2026-10-10 | D2、P4 关闭 | — | 精简文档，删去已完成条目的正文；D2、P4 已被 B1 的逐条存储取代；核对代码时发现 P3 原来的第 4 步（本地数据只校验一次）已随 B1 完成 |
-| 2026-10-10 | B4（顺带完成 C2） | 49e0fbd | `getBaseUrl` 改读 `<a>` 的 `hostname`，调用方跳过 SVG 里的 `<a>`，`setupPage` 出错不再影响设置界面挂载；顺带修好 href 被删掉时 `new URL('')` 抛错；97,048 条存储 URL 的归一化结果新旧一致 |
+| 2026-10-10 | B4（顺带完成 C2） | 32d11de | `getBaseUrl` 改读 `<a>` 的 `hostname`，调用方跳过 SVG 里的 `<a>`，`setupPage` 出错不再影响设置界面挂载；顺带修好 href 被删掉时 `new URL('')` 抛错；97,048 条存储 URL 的归一化结果新旧一致 |
 | 2026-10-10 | — | — | 从同步 Gist 拉取最新的 v3 包，放在 `test/fixtures/local/`（已加进 .gitignore，不入库），用 sync.ts 的解码器校验通过；数据显示云端 44% 的记录已过期，补进 B7 |
-| 2026-10-10 | — | — | 根目录的 `visited-links.json` 移到 `test/fixtures/local/visited-links.v2.json`，不再入库，目录里加 README 说明两份样本；D1 只剩是否清理 git 历史；用 v2 样本跑 v3 往返时新发现 B9 |
+| 2026-10-10 | — | de7cf13 | 根目录的 `visited-links.json` 移到 `test/fixtures/local/visited-links.v2.json`，不再入库，目录里加 README 说明两份样本；D1 只剩是否清理 git 历史；用 v2 样本跑 v3 往返时新发现 B9 |
+| 2026-10-10 | D1 关闭 | — | 用 git filter-branch 把 `visited-links.json` 从历史中删除，并 force push 了 main。只改写了从 76b0291 起的 17 个提交，提交号都变了，本文引用的已换成新的；更早的提交（包括唯一带签名的根提交）、`refactor/v2` 和 tag 不受影响。GitHub 上按旧提交号仍能访问，待联系 GitHub Support 清理 |
+| 2026-10-10 | B1–B4 的手动验证 | — | 在真实浏览器里全部通过，清空「待手动验证」 |
