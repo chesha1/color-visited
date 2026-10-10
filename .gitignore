@@ -27,3 +27,7 @@ dist-ssr
 .claude
 CLAUDE.md
 .github/copilot-instructions.md
+
+# 真实的同步数据，只在本地用于测试，不入库（仓库是公开的）；目录里的说明文件除外
+test/fixtures/local/*
+!test/fixtures/local/README.md
