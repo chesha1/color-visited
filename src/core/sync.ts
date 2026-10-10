@@ -17,10 +17,9 @@ import type {
   VisitedLinksData,
   VisitedLinksRepairResult
 } from '@/types';
-import { DEFAULT_SETTINGS } from '@/core/config';
 import { eventBus } from '@/core/eventBus';
-import { loadLinks, mergeLinks } from '@/core/storage';
-import { GM_getValue, GM_setValue, GM_xmlhttpRequest } from 'vite-plugin-monkey/dist/client';
+import { loadLinks, mergeLinks, setLastSyncTime } from '@/core/storage';
+import { GM_xmlhttpRequest } from 'vite-plugin-monkey/dist/client';
 
 const GITHUB_ACCEPT_HEADER = 'application/vnd.github.v3+json';
 const SYNC_STORAGE_VERSION = 'v3' as const;
@@ -46,15 +45,6 @@ const GITHUB_HTTP_STATUS_HINTS: Partial<Record<number, string>> = {
 
 const compressionSupportCache = new Map<SyncStorageEncoding, boolean>();
 const knownSyncPollutionKeySet = new Set<string>(KNOWN_SYNC_POLLUTION_KEYS);
-
-function getDefaultUserSettings() {
-  return {
-    general: DEFAULT_SETTINGS.general,
-    preset: DEFAULT_SETTINGS.presetStates,
-    batch: DEFAULT_SETTINGS.batchKey,
-    sync: { ...DEFAULT_SETTINGS.sync } as SyncSettings
-  };
-}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -908,19 +898,6 @@ function areVisitedLinksEqual(left: VisitedLinksData, right: VisitedLinksData): 
   return leftCount === rightCount;
 }
 
-// 获取同步设置
-export function getSyncSettings(): SyncSettings {
-  const userSettings = GM_getValue('userSettings', getDefaultUserSettings());
-  return userSettings.sync;
-}
-
-// 保存同步设置（仅更新sync部分，保持与其他模块兼容）
-export function saveSyncSettings(settings: SyncSettings): void {
-  const userSettings = GM_getValue('userSettings', getDefaultUserSettings());
-  userSettings.sync = settings;
-  GM_setValue('userSettings', userSettings);
-}
-
 // ================== GitHub API 模块 ==================
 
 // 拼出带原因说明的 HTTP 错误文本，如「获取 Gist 失败: 404（Gist 不存在、ID 填写有误，或令牌无权访问）」
@@ -1084,8 +1061,7 @@ export async function getGist(token: string, gistId: string): Promise<CloudSnaps
 // ================== 云端数据操作 ==================
 
 // 上传数据到云端
-export async function uploadToCloud(data: SyncData | VisitedLinksData): Promise<void> {
-  const syncSettings = getSyncSettings();
+export async function uploadToCloud(syncSettings: SyncSettings, data: SyncData | VisitedLinksData): Promise<void> {
   const { githubToken } = syncSettings;
   const gistId = normalizeGistId(syncSettings.gistId);
 
@@ -1101,8 +1077,7 @@ export async function uploadToCloud(data: SyncData | VisitedLinksData): Promise<
 }
 
 // 从云端下载数据
-export async function downloadFromCloud(): Promise<CloudSnapshot> {
-  const syncSettings = getSyncSettings();
+export async function downloadFromCloud(syncSettings: SyncSettings): Promise<CloudSnapshot> {
   const { githubToken } = syncSettings;
   const gistId = normalizeGistId(syncSettings.gistId);
 
@@ -1131,7 +1106,7 @@ export function hasDataChanged(oldData: VisitedLinksData | SyncData, newData: Vi
 }
 
 // 启动时同步；initialized 表示本次把云端内容初始化成了同步格式，由调用方决定是否提示
-export async function syncOnStartup(): Promise<{ initialized: boolean }> {
+export async function syncOnStartup(syncSettings: SyncSettings): Promise<{ initialized: boolean }> {
   try {
     console.log('开始同步数据...');
 
@@ -1139,7 +1114,7 @@ export async function syncOnStartup(): Promise<{ initialized: boolean }> {
     const localLinksSnapshot = loadLinks();
 
     // 2. 从云端获取数据（这个过程可能较慢）
-    const cloud = await downloadFromCloud();
+    const cloud = await downloadFromCloud(syncSettings);
     const cloudLinks = cloud.visitedLinks;
     if (cloud.needsInitialization) {
       console.log(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`);
@@ -1155,17 +1130,15 @@ export async function syncOnStartup(): Promise<{ initialized: boolean }> {
     const cloudChanged = hasDataChanged(cloudLinks, mergedLinks);
 
     if (cloud.needsInitialization || localChanged || cloudChanged) {
-      await uploadToCloud(mergedLinks);
+      await uploadToCloud(syncSettings, mergedLinks);
       console.log(cloud.needsInitialization ? '已初始化云端同步数据' : '数据已同步并上传到云端');
     }
     else {
       console.log('数据已同步，无需上传');
     }
 
-    // 5. 更新同步时间
-    const syncSettings = getSyncSettings();
-    syncSettings.lastSyncTime = Date.now();
-    saveSyncSettings(syncSettings);
+    // 5. 记下这次同步成功的时间
+    setLastSyncTime(Date.now());
 
     // 6. 发送同步完成事件
     eventBus.emit('sync:completed');

@@ -26,8 +26,7 @@ export const DEFAULT_SETTINGS = {
   sync: {
     enabled: false,
     githubToken: '',
-    gistId: '',
-    lastSyncTime: 0
+    gistId: ''
   } as SyncSettings
 } as const;
 

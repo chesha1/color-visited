@@ -1,4 +1,4 @@
-// ================== 访问记录存储模块 ==================
+// ================== 存储模块 ==================
 
 // 每条访问记录单独存成一个 GM 值：键是归一化后的 URL，值是首次访问的时间戳。
 // 记录之间互不相关，扩展后台按键应用各个标签页的写入，所以一次写入只改动自己那几条，
@@ -6,10 +6,12 @@
 
 import type { VisitedLinks } from '@/types';
 import {
+  GM_addValueChangeListener,
   GM_deleteValue,
   GM_deleteValues,
   GM_getValue,
   GM_listValues,
+  GM_removeValueChangeListener,
   GM_setValue,
   GM_setValues
 } from 'vite-plugin-monkey/dist/client';
@@ -83,4 +85,24 @@ export function migrateLegacyLinks(): void {
   const mergedCount = mergeLinks(legacyLinks);
   GM_deleteValue(LEGACY_LINKS_KEY);
   console.log(`已把 ${mergedCount} 条访问记录迁移为逐条存储`);
+}
+
+// ================== 同步状态 ==================
+
+// 上次同步成功的时间（ms），0 表示从未同步。它是同步写下的状态，不是用户设置：放在 userSettings 里的话，
+// 保存设置时会连同页面里那份旧值整块写回去。所以单独存一个键，只有同步会写它
+const LAST_SYNC_TIME_KEY = 'lastSyncTime';
+
+export function getLastSyncTime(): number {
+  return GM_getValue(LAST_SYNC_TIME_KEY, 0);
+}
+
+export function setLastSyncTime(time: number): void {
+  GM_setValue(LAST_SYNC_TIME_KEY, time);
+}
+
+// 本标签页或其他标签页同步完成后，用新的时间回调；返回取消监听的函数
+export function onLastSyncTimeChange(listener: (time: number) => void): () => void {
+  const id = GM_addValueChangeListener<number>(LAST_SYNC_TIME_KEY, (_key, _oldTime, time) => listener(time ?? 0));
+  return () => GM_removeValueChangeListener(id);
 }

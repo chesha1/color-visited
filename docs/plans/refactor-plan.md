@@ -6,7 +6,7 @@
 
 ## 怎么使用这份文档
 
-- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 B6、B7」。
+- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 B7、B8」。
 - 条目编号的含义：**B** = bug，**P** = 性能，**A** = 架构，**C** = 代码细节，**E** = 工程化，**D** = 需要你拍板的决策。
 - 每完成一项：
   - 从正文删掉这一条，并在文末「会话记录」里追加一行，写上提交号；
@@ -18,11 +18,11 @@
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 1 | 修 bug，加几个低风险的小优化 | B6–B9、P1、P3、A6 短期第 1 步 | 进行中 |
+| 1 | 修 bug，加几个低风险的小优化 | B7–B9、P1、P3、A6 短期第 1 步 | 进行中 |
 | 2 | 先搭安全网：测试 + 格式化 | E2、E1a | 未开始 |
 | 3 | 统一存储层，清理死代码 | A1、C7–C9 | 未开始 |
 | 4 | 核心生命周期 + 规则模型 | A2、A7、C1 | 未开始 |
-| 5 | 设置数据流 + 设置对话框 | A3、A4、C12 | 未开始 |
+| 5 | 设置数据流 + 设置对话框 | A3、B10、A4、C12 | 未开始 |
 | 6 | 拆分 sync.ts | A5 | 未开始 |
 | 7 | 视决策而定 | A6 长期（D3）、E5（D4） | 未开始 |
 | 随时 | 零散小项 | C4–C6、C10、C11、C14、E1b、E3、E4、E6、E7 | 未开始 |
@@ -30,7 +30,8 @@
 阶段之间的依赖：
 
 - 阶段 6 要在阶段 2 的测试完成之后做；
-- A3 依赖 A1。
+- A3 依赖 A1；
+- B10 和 A3 一起做。
 
 ## 待决策（需要你拍板）
 
@@ -44,9 +45,12 @@
 
 ## 待手动验证
 
-已完成的条目里，需要在真实浏览器里做、还没做的验证放在这里。
+已完成的条目里，需要在真实浏览器里做、还没做的验证放在这里。B1–B5 的手动验证已在 2026-10-10 全部通过。
 
-目前没有：B1–B5 的手动验证已在 2026-10-10 全部通过。
+- **B6**（headless Chrome 里用内存版 GM API 跑通了，下面几条要在真实扩展里确认）：
+  1. 开启同步，打开一个激活页，等同步完成后打开设置，"最后同步时间"应为刚才的时间。
+  2. 改一项常规设置并保存，关掉设置再打开，时间不变。
+  3. 设置开着，在另一个标签页打开一个激活页（会触发一次同步），这边的时间应自动更新。这一条依赖 `GM_addValueChangeListener`，Tampermonkey 和 Violentmonkey 各试一次。
 
 ## 背景事实与约束
 
@@ -71,9 +75,13 @@
     general: { color: string; expirationTime: number /* ms */; debug: boolean },
     preset:  Record<规则 key, boolean>,   // 规则 key 会被持久化在这里，改 key 需要迁移
     batch:   { ctrlKey, shiftKey, altKey, metaKey: boolean; code: string /* KeyboardEvent.code，B3 之前是 key */ },
-    sync:    { enabled: boolean; githubToken: string; gistId: string; lastSyncTime: number },
+    sync:    { enabled: boolean; githubToken: string; gistId: string },
   }
   ```
+  - B6 之前 `sync` 里还有 `lastSyncTime`。老用户的存储里会残留这个字段，但已经没有代码读它，下次保存同步设置时就会去掉。
+- `lastSyncTime`：上次同步成功的时间戳（ms），没有这个键表示从未同步（B6）。
+  - 只有 sync.ts 通过 storage.ts 的 `setLastSyncTime` 写它。
+  - 设置页用 `getLastSyncTime` 读，再用 `onLastSyncTimeChange`（基于 `GM_addValueChangeListener`）跟着刷新。
 
 ### 构建与运行环境
 
@@ -131,6 +139,15 @@
 - **保存任何一类设置，都按新设置重新初始化页面（B5）。**
   - 以前只有常规设置和预设网站会重新初始化页面，快捷键和同步设置只写存储。现在四类设置走同一条路径，和 A3 的目标一致（`settings:changed` 之后调用 `refresh()`）。
   - 代价是保存快捷键或同步设置时，也要多跑一次 setupPage，多读一遍全量存储（见 P1）。保存是手动点的，这点耗时感觉不到。
+- **`lastSyncTime` 不算设置，单独存一个键（B6）。**
+  - 它是同步写下的状态，只有 sync.ts 写。保存设置时会把 `userSettings` 整块写回，所以它只要还在 `userSettings` 里，就总有机会被设置页手里的旧值覆盖。
+  - 原先计划的止血做法是处理 `sync:completed` 时刷新 `state.syncSettings`，有三处管不到：
+    - 它只刷新本标签页。别的标签页同步之后，在这里保存任何设置，照样会写回旧值。每打开一个列表页都会同步一次（见 P3），所以这是最常见的情况。
+    - 在同步页点"重置为默认"再保存，会把时间写成 0。
+    - 对话框开着时同步完成，显示不会更新。如果是原地修改 `state.syncSettings`，重新打开也还是旧值：对话框第一次打开后就一直挂载着，察觉不到对原始对象的修改。
+  - 设置页不再从 props 读这个时间，而是直接读存储，并用 `GM_addValueChangeListener` 跟着刷新。所以设置开着的时候，不论本标签页还是其他标签页同步完，显示都会更新。产物因此多了 `GM_addValueChangeListener` 和 `GM_removeValueChangeListener` 两个 `@grant`。
+  - sync.ts 不再自己读写 `userSettings`：`syncOnStartup(settings)` 由 script.ts 传入同步设置，`getDefaultUserSettings`、`getSyncSettings`、`saveSyncSettings` 都已删除。
+  - 旧值不迁移（按要求）。老用户升级后，第一次同步完成之前，设置页会显示"从未同步"。开着同步的话，下次打开列表页就会同步，基本看不到这个状态。
 
 ### 结论的可信度
 
@@ -146,6 +163,7 @@
   - B1–B4 的手动验证在真实浏览器里全部通过（2026-10-10），包括两个标签页交替记录访问、旧数据迁移，以及 `instanceof HTMLAnchorElement` 在 Tampermonkey 和 Violentmonkey 的沙箱里都成立。
 - **依据规范或文档推断：**
   - Tampermonkey 注册菜单时如果不传 id，会新建一个菜单项（TM 文档）。
+  - `GM_addValueChangeListener` 对本标签页的写入也会回调，此时 `remote` 为 false。VM 文档写明了这一点；TM 文档只说 `remote` 表示改动是否来自其他实例。B6 在真实扩展里的验证见「待手动验证」。
 - **未核实：**
   - Tailwind 的 `@property` 在 shadow root 中失效（见 A6）。
   - 按 URL 逐条存储后，Tampermonkey 和 Violentmonkey 在 10 万个键下页面注入、`GM_listValues` 和逐条 `GM_getValue` 的具体耗时。手动验证时页面加载没有明显变慢，但没有测过具体数字。
@@ -154,16 +172,6 @@
 ---
 
 ## 1. Bug
-
-- [ ] **B6 · `lastSyncTime` 会被旧值写回**
-  - 位置：
-    - `syncOnStartup` 在 [sync.ts:1199-1201](../../src/core/sync.ts#L1199-L1201) 直接写存储，经由 `getSyncSettings` 和 `saveSyncSettings`，绕过了 state；
-    - 旧值通过 `saveUserSettings`（[state.ts:47-55](../../src/core/state.ts#L47-L55)）写回。
-  - 问题：同步完成后，`state.syncSettings.lastSyncTime` 没有更新。结果有两个：
-    - 设置页显示的是旧时间；
-    - 之后任意一次 `saveUserSettings(state)`，都会把旧值写回存储。
-  - 修法（先止血）：处理 `sync:completed` 时，同时刷新 `state.syncSettings`。根治见 A1。
-  - 验证：开启同步，等同步完成后打开设置，"最后同步时间"应为刚才的时间；再保存一次常规设置，这个时间不应被改回旧值。
 
 - [ ] **B7 · 开启同步后，过期记录永远删不干净**
   - 位置：`syncOnStartup`（sync.ts）、`deleteExpiredLinks`（storage.ts）。
@@ -197,6 +205,15 @@
   - 修法：拼出来的结果和原 URL 不一样时，改放进 raw 分组（`V3_RAW_GROUP_KEY`）原样保存。raw 分组是和 v3 一起引入的（76b0291），能读 v3 的版本都认识。
   - 验证：用 `test/fixtures/local/` 里的 v2 样本跑 v3 往返测试（见 E2），`decode(encode(x))` 应和 `x` 完全一致，条数和每条的时间戳都不变。
 
+- [ ] **B10 · 两个标签页都保存过设置时，后保存的会冲掉先保存的**（和 A3 一起做）
+  - 位置：`initializeScriptState`、`saveUserSettings`（state.ts），以及 script.ts 里对 `settings:save` 的处理。
+  - 问题：每个标签页只在启动时把 `userSettings` 读进 `state`，之后不再更新。保存任何一类设置，都会把 `state` 里的四类设置整块写回。
+    - 例：标签页 A 先打开。在标签页 B 里改了颜色并保存，再回到 A 改快捷键并保存，A 会把旧颜色一起写回去，B 的改动就丢了。B6 时在 headless Chrome 里用内存版 GM API 复现过，B6 前后的产物都一样。
+    - 在刷新之前，A 的设置页显示的是旧值，页面也一直按旧设置染色。
+    - B6 修的是这类问题里由同步引起的那一种。用户自己改的设置没法像 `lastSyncTime` 那样按写入方拆开，只能让内存里的设置跟着存储更新。
+  - 修法：settings store 用 `GM_addValueChangeListener('userSettings', …)` 订阅变化。其他标签页保存后，本标签页更新 store 并调用 `refresh()`。B6 的 `onLastSyncTimeChange` 用的是同一个机制。
+  - 验证：开两个标签页 A、B。在 B 里改颜色并保存，A 的链接颜色应跟着变；再在 A 里改快捷键并保存，刷新 B，颜色仍是 B 改的那个。
+
 ## 2. 性能
 
 - [ ] **P1 · 每次 setupPage 都全量读两遍存储**
@@ -216,9 +233,9 @@
   - 问题：
     - 每个列表页加载时，都会 GET 整个 Gist，合并后只要有变化就调用 `updateGist`；
     - `updateGist` 为了拿到文件名，又 GET 一次整个 Gist，然后 PATCH 整份数据；
-    - `lastSyncTime` 已经存下来了，却没有用来控制同步频率。
+    - `lastSyncTime` 已经存下来了，却没有用来控制同步频率。B6 之后它单独存一个键，所有标签页共用，节流时直接用 `getLastSyncTime()` 读即可。
   - 修法：
-    1. 用 `lastSyncTime` 节流，比如 10 分钟内跳过同步；在设置里另外提供一个"立即同步"按钮。
+    1. 用 `lastSyncTime` 节流，比如 10 分钟内跳过同步；在设置里另外提供一个"立即同步"按钮。设置页显示的同步时间会跟着存储自动刷新，按钮不用再手动更新它。
     2. 把第一次 GET 拿到的文件名传给更新步骤，省掉第二次 GET。
     3. 用 ETag 加 `If-None-Match` 做条件请求。GitHub 返回 304 时不消耗限流额度。
   - 验证：节流窗口内加载页面时，不发任何 GitHub 请求；一次上传只有 1 个 GET 和 1 个 PATCH。
@@ -227,14 +244,14 @@
 
 - [ ] **A1 · 统一存储层 `storage.ts`**
   - 访问记录这一半已随 B1 完成：storage.ts 是唯一读写访问记录的模块。剩下要做的是 `userSettings` 这一半。
+  - B6 已经删掉了 sync.ts 自己的那套设置读写（`getDefaultUserSettings`、`getSyncSettings`、`saveSyncSettings`）。现在由 script.ts 把同步设置传给 `syncOnStartup`；`lastSyncTime` 也移出了 `userSettings`，改由 storage.ts 读写。
   - 现状：
     - 同一份设置存在两处：内存里的 `state` 和 GM 存储。
-    - `'userSettings'` 在 state.ts 和 sync.ts 里被直接调用 GM API，共 6 处。
-    - sync.ts 自己又写了一套 `getDefaultUserSettings`、`getSyncSettings`、`saveSyncSettings`（[sync.ts:49-56](../../src/core/sync.ts#L49-L56)、[911-921](../../src/core/sync.ts#L911-L921)），B6 就是这么产生的。
+    - `'userSettings'` 在 state.ts 里被直接调用 GM API，共 3 处。
     - "所有预设默认启用"的逻辑写了 2 遍：[config.ts:20-25](../../src/core/config.ts#L20-L25)、[PresetSettings.vue:182-186](../../src/components/PresetSettings.vue#L182-L186)。menuManager.ts 里原来还有一份，已随 B5 删除。
   - 目标：让 `storage.ts` 成为唯一调用 GM 存储 API 的模块，再对外提供：
     - 设置的 key 常量；
-    - `loadSettings()`：用 deepMerge 合并默认值，补上缺失的规则 key，清掉已经不存在的规则 key；
+    - `loadSettings()`：用 deepMerge 合并默认值，补上缺失的规则 key，清掉已经不存在的规则 key。如果 deepMerge 只保留默认值里有的字段，B6 之前残留在 `userSettings.sync` 里的 `lastSyncTime` 也会顺带清掉；
     - `saveSettings()`。
   - 完成标准：`grep -rn "GM_getValue\|GM_setValue" src` 只匹配到 storage.ts。
 
@@ -290,6 +307,7 @@
     - 常量 `isMac` 被当作 prop 一层层往下传，`showSettingsDialog` 还把它放进了事件的 payload。
   - 目标：
     - `settings.ts` 导出一个 reactive store 和 `save(next)`。`save` 通过 A1 持久化，然后发出 `settings:changed`，core 收到后调用 `refresh()`。
+    - store 订阅 `userSettings` 的变化，其他标签页保存后跟着更新（见 B10）。
     - 菜单回调在打开对话框时，触发 UI 懒挂载（见 A6）。
     - 删除 `SettingsDialogPayload`、App.vue 的 4 个 handler，以及 `settings:save` 事件。
     - 组件直接 `import { isMac }`，不再通过 prop 传递。
@@ -445,7 +463,9 @@
       - 不应触发：Ctrl+↑ 对 Ctrl+↓、Ctrl+Shift+V 对 Ctrl+V、1 对小键盘 1；焦点在 input、textarea、select、contenteditable（含其子元素，以及 open shadow root 里的这些元素）中；输入法正在组字。
     - `getBaseUrl`：各站点的归一化，用 `new URL(...)` 传入；`{ href: 'http://', hostname: '' }` 和 `{ href: '', hostname: '' }`（`<a>` 的 href 解析失败、被删掉时就是这样）应原样返回。调用方跳过 SVG 的 `<a>`，这一条要在 DOM 环境里测。
     - 规则匹配：写成表格驱动的测试，列出"URL → 应命中哪条规则、是否应该染色"。
-    - 设置对话框（端到端）：打开 N 次再保存，`userSettings` 只写 1 次、setupPage 只跑 1 次；保存同步设置后，`GM_registerMenuCommand` 只被调用过 1 次；快捷键页"重置为默认"后保存，存下来的是默认快捷键，按下能批量标记。
+    - 设置对话框（端到端）：
+      - 打开 N 次再保存，`userSettings` 只写 1 次、setupPage 只跑 1 次；保存同步设置后，`GM_registerMenuCommand` 只被调用过 1 次；快捷键页"重置为默认"后保存，存下来的是默认快捷键，按下能批量标记。
+      - "最后同步时间"（B6）：同步完成后打开设置，显示的是刚才的时间；保存其他设置不会改动 `lastSyncTime`；对话框开着时其他标签页同步，显示会更新；同步页"重置为默认"不影响它；反复开关对话框，值变化监听器始终只有 1 个。
   - 提示：
     - sync.ts 是从 `vite-plugin-monkey/dist/client` import GM API 的，测试里需要用 `vi.mock` 替换掉；
     - 本机 Node 是 v26，原生支持 `CompressionStream`、`Blob`、`Response`。
@@ -458,6 +478,9 @@
       - Node 起一个本地 https 服务（自签证书），headless Chrome 加上 `--host-resolver-rules=MAP www.v2ex.com 127.0.0.1:8443` 和 `--ignore-certificate-errors`，打开的 `https://www.v2ex.com/` 就是这个本地页面，脚本按激活页运行。
       - 页面里依次放内存版 GM API、SystemJS（取自 node_modules）和构建产物（加 `defer`），再由一个驱动脚本点菜单、操作对话框，把结果写进 `<pre>`，用 `--dump-dom --virtual-time-budget=60000` 取出。
       - 有两个坑。一是 Chrome 要用异步的 `execFile` 启动：同步调用会卡住同一进程里的 https 服务，拿到的是空白页。二是 `--virtual-time-budget` 下 rAF 不触发，Vue 的离场过渡永远结束不了，对话框关不掉，要把 rAF 换成 setTimeout。
+    - B6 时发现，不需要激活页的场景（同步、设置对话框）直接用 `file://` 页面就行，不用起 https 服务，脚本同样没有入库：
+      - 页面里放的东西和 B5 一样。内存版 GM API 要实现 `GM_addValueChangeListener`：写入后异步回调，本标签页的写入 `remote` 为 false；另外提供一个 `remoteSet`，用来模拟其他标签页的写入。
+      - `fetch` 换成桩，返回一个内容为空的 Gist。这样首次同步会走初始化流程，发出 GET、GET、PATCH 三个请求。
 - [ ] **E3 · 整理 package.json**
   - license 写的是 `ISC`，而 userscript 头部写的是 `GPL-3.0-only`，两者不一致。
   - `main` 和 `description` 两个字段没有意义。
@@ -489,4 +512,5 @@
 | 2026-10-10 | — | de7cf13 | 根目录的 `visited-links.json` 移到 `test/fixtures/local/visited-links.v2.json`，不再入库，目录里加 README 说明两份样本；D1 只剩是否清理 git 历史；用 v2 样本跑 v3 往返时新发现 B9 |
 | 2026-10-10 | D1 关闭 | — | 用 git filter-branch 把 `visited-links.json` 从历史中删除，并 force push 了 main。只改写了从 76b0291 起的 17 个提交，提交号都变了，本文引用的已换成新的；更早的提交（包括唯一带签名的根提交）、`refactor/v2` 和 tag 不受影响。GitHub 上按旧提交号仍能访问，待联系 GitHub Support 清理 |
 | 2026-10-10 | B1–B4 的手动验证 | — | 在真实浏览器里全部通过，清空「待手动验证」 |
-| 2026-10-10 | B5（顺带完成 A3 的一部分和 C8 的一条） | 待提交 | 保存监听改为启动时在 script.ts 订阅一次，菜单只注册一次，删掉 MenuManager 类和 `SettingsDialogConfig`；删掉 reset 通道，快捷键页重置后也走保存；`settings:save` 改成可辨识联合类型；保存任何设置都重新初始化页面。headless Chrome 端到端对比新旧产物：打开 3 次后保存，旧版写 3 次存储、跑 3 次 setupPage，新版各 1 次；保存同步设置后，旧版菜单注册了 4 次，新版始终 1 次；手动验证在真实浏览器里通过 |
+| 2026-10-10 | B5（顺带完成 A3 的一部分和 C8 的一条） | 4ae9279 | 保存监听改为启动时在 script.ts 订阅一次，菜单只注册一次，删掉 MenuManager 类和 `SettingsDialogConfig`；删掉 reset 通道，快捷键页重置后也走保存；`settings:save` 改成可辨识联合类型；保存任何设置都重新初始化页面。headless Chrome 端到端对比新旧产物：打开 3 次后保存，旧版写 3 次存储、跑 3 次 setupPage，新版各 1 次；保存同步设置后，旧版菜单注册了 4 次，新版始终 1 次；手动验证在真实浏览器里通过 |
+| 2026-10-10 | B6（顺带完成 A1 中 sync.ts 的部分） | 待提交 | `lastSyncTime` 移出 `userSettings`，单独存一个键，只由同步写入；设置页直接读存储，并用 `GM_addValueChangeListener` 跟着刷新；sync.ts 不再自己读写 `userSettings`，同步设置由 script.ts 传入。headless Chrome（`file://` 页面）端到端对比新旧产物：同步后打开设置，旧版显示 1970 年的旧值，新版是刚才的时间；保存常规设置后，旧版把存储里的时间改回旧值，新版不变；其他标签页同步后，旧版不更新，新版在对话框开着时也会更新；同步页重置并保存后，旧版把时间写成 0，新版不变；对话框关开 3 次后，监听器仍只有 1 个。新发现 B10，新旧产物上都复现了 |

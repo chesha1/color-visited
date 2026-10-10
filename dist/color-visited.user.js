@@ -99,11 +99,13 @@
 // @require      data:application/javascript,%3B(typeof%20System!%3D'undefined')%26%26(System%3Dnew%20System.constructor())%3B
 // @connect      gist.githubusercontent.com
 // @grant        GM_addStyle
+// @grant        GM_addValueChangeListener
 // @grant        GM_deleteValue
 // @grant        GM_deleteValues
 // @grant        GM_getValue
 // @grant        GM_listValues
 // @grant        GM_registerMenuCommand
+// @grant        GM_removeValueChangeListener
 // @grant        GM_setValue
 // @grant        GM_setValues
 // @grant        GM_xmlhttpRequest
@@ -22311,8 +22313,7 @@ var DEFAULT_SETTINGS = {
 	sync: {
 		enabled: false,
 		githubToken: "",
-		gistId: "",
-		lastSyncTime: 0
+		gistId: ""
 	}
 };
 var _hoisted_1$4 = { class: "space-y-6" };
@@ -22754,33 +22755,13 @@ var ShortcutSettings_default = /* @__PURE__ */ defineComponent({
 });
 _css(".el-tag{--el-tag-font-size:12px;--el-tag-border-radius:4px;--el-tag-border-radius-rounded:9999px;background-color:var(--el-tag-bg-color);border-color:var(--el-tag-border-color);color:var(--el-tag-text-color);vertical-align:middle;height:24px;font-size:var(--el-tag-font-size);border-radius:var(--el-tag-border-radius);box-sizing:border-box;white-space:nowrap;--el-icon-size:14px;--el-tag-bg-color:var(--el-color-primary-light-9);--el-tag-border-color:var(--el-color-primary-light-8);--el-tag-hover-color:var(--el-color-primary);border-style:solid;border-width:1px;justify-content:center;align-items:center;padding:0 9px;line-height:1;display:inline-flex}.el-tag.el-tag--primary{--el-tag-bg-color:var(--el-color-primary-light-9);--el-tag-border-color:var(--el-color-primary-light-8);--el-tag-hover-color:var(--el-color-primary)}.el-tag.el-tag--success{--el-tag-bg-color:var(--el-color-success-light-9);--el-tag-border-color:var(--el-color-success-light-8);--el-tag-hover-color:var(--el-color-success)}.el-tag.el-tag--warning{--el-tag-bg-color:var(--el-color-warning-light-9);--el-tag-border-color:var(--el-color-warning-light-8);--el-tag-hover-color:var(--el-color-warning)}.el-tag.el-tag--danger{--el-tag-bg-color:var(--el-color-danger-light-9);--el-tag-border-color:var(--el-color-danger-light-8);--el-tag-hover-color:var(--el-color-danger)}.el-tag.el-tag--error{--el-tag-bg-color:var(--el-color-error-light-9);--el-tag-border-color:var(--el-color-error-light-8);--el-tag-hover-color:var(--el-color-error)}.el-tag.el-tag--info{--el-tag-bg-color:var(--el-color-info-light-9);--el-tag-border-color:var(--el-color-info-light-8);--el-tag-hover-color:var(--el-color-info)}.el-tag.is-hit{border-color:var(--el-color-primary)}.el-tag.is-round{border-radius:var(--el-tag-border-radius-rounded)}.el-tag .el-tag__close{color:var(--el-tag-text-color);flex-shrink:0}.el-tag .el-tag__close:hover{color:var(--el-color-white);background-color:var(--el-tag-hover-color)}.el-tag.el-tag--primary{--el-tag-text-color:var(--el-color-primary)}.el-tag.el-tag--success{--el-tag-text-color:var(--el-color-success)}.el-tag.el-tag--warning{--el-tag-text-color:var(--el-color-warning)}.el-tag.el-tag--danger{--el-tag-text-color:var(--el-color-danger)}.el-tag.el-tag--error{--el-tag-text-color:var(--el-color-error)}.el-tag.el-tag--info{--el-tag-text-color:var(--el-color-info)}.el-tag .el-icon{cursor:pointer;font-size:calc(var(--el-icon-size) - 2px);height:var(--el-icon-size);width:var(--el-icon-size);border-radius:50%}.el-tag .el-tag__close{background-color:#0000;border:none;border-radius:50%;outline:none;margin-left:6px;padding:0;overflow:hidden}.el-tag .el-tag__close:focus-visible{outline:2px solid var(--el-color-primary);outline-offset:2px}.el-tag .el-tag__close .el-icon{display:flex}.el-tag--dark{--el-tag-text-color:var(--el-color-white);--el-tag-bg-color:var(--el-color-primary);--el-tag-border-color:var(--el-color-primary);--el-tag-hover-color:var(--el-color-primary-light-3)}.el-tag--dark.el-tag--primary{--el-tag-bg-color:var(--el-color-primary);--el-tag-border-color:var(--el-color-primary);--el-tag-hover-color:var(--el-color-primary-light-3)}.el-tag--dark.el-tag--success{--el-tag-bg-color:var(--el-color-success);--el-tag-border-color:var(--el-color-success);--el-tag-hover-color:var(--el-color-success-light-3)}.el-tag--dark.el-tag--warning{--el-tag-bg-color:var(--el-color-warning);--el-tag-border-color:var(--el-color-warning);--el-tag-hover-color:var(--el-color-warning-light-3)}.el-tag--dark.el-tag--danger{--el-tag-bg-color:var(--el-color-danger);--el-tag-border-color:var(--el-color-danger);--el-tag-hover-color:var(--el-color-danger-light-3)}.el-tag--dark.el-tag--error{--el-tag-bg-color:var(--el-color-error);--el-tag-border-color:var(--el-color-error);--el-tag-hover-color:var(--el-color-error-light-3)}.el-tag--dark.el-tag--info{--el-tag-bg-color:var(--el-color-info);--el-tag-border-color:var(--el-color-info);--el-tag-hover-color:var(--el-color-info-light-3)}.el-tag--dark.el-tag--primary,.el-tag--dark.el-tag--success,.el-tag--dark.el-tag--warning,.el-tag--dark.el-tag--danger,.el-tag--dark.el-tag--error,.el-tag--dark.el-tag--info{--el-tag-text-color:var(--el-color-white)}.el-tag--plain,.el-tag--plain.el-tag--primary{--el-tag-bg-color:var(--el-fill-color-blank);--el-tag-border-color:var(--el-color-primary-light-5);--el-tag-hover-color:var(--el-color-primary)}.el-tag--plain.el-tag--success{--el-tag-bg-color:var(--el-fill-color-blank);--el-tag-border-color:var(--el-color-success-light-5);--el-tag-hover-color:var(--el-color-success)}.el-tag--plain.el-tag--warning{--el-tag-bg-color:var(--el-fill-color-blank);--el-tag-border-color:var(--el-color-warning-light-5);--el-tag-hover-color:var(--el-color-warning)}.el-tag--plain.el-tag--danger{--el-tag-bg-color:var(--el-fill-color-blank);--el-tag-border-color:var(--el-color-danger-light-5);--el-tag-hover-color:var(--el-color-danger)}.el-tag--plain.el-tag--error{--el-tag-bg-color:var(--el-fill-color-blank);--el-tag-border-color:var(--el-color-error-light-5);--el-tag-hover-color:var(--el-color-error)}.el-tag--plain.el-tag--info{--el-tag-bg-color:var(--el-fill-color-blank);--el-tag-border-color:var(--el-color-info-light-5);--el-tag-hover-color:var(--el-color-info)}.el-tag.is-closable{padding-right:5px}.el-tag--large{--el-icon-size:16px;height:32px;padding:0 11px}.el-tag--large .el-tag__close{margin-left:8px}.el-tag--large.is-closable{padding-right:7px}.el-tag--small{--el-icon-size:12px;height:20px;padding:0 7px}.el-tag--small .el-tag__close{margin-left:4px}.el-tag--small.is-closable{padding-right:3px}.el-tag--small .el-icon-close{transform:scale(.8)}.el-tag.el-tag--primary.is-hit{border-color:var(--el-color-primary)}.el-tag.el-tag--success.is-hit{border-color:var(--el-color-success)}.el-tag.el-tag--warning.is-hit{border-color:var(--el-color-warning)}.el-tag.el-tag--danger.is-hit{border-color:var(--el-color-danger)}.el-tag.el-tag--error.is-hit{border-color:var(--el-color-error)}.el-tag.el-tag--info.is-hit{border-color:var(--el-color-info)}");
 _css(".el-card{--el-card-border-color:var(--el-border-color-light);--el-card-border-radius:4px;--el-card-padding:20px;--el-card-bg-color:var(--el-fill-color-blank);border-radius:var(--el-card-border-radius);border:1px solid var(--el-card-border-color);background-color:var(--el-card-bg-color);color:var(--el-text-color-primary);transition:var(--el-transition-duration);flex-direction:column;display:flex;overflow:hidden}.el-card.is-always-shadow,.el-card.is-hover-shadow:hover,.el-card.is-hover-shadow:focus{box-shadow:var(--el-box-shadow-light)}.el-card__header{padding:calc(var(--el-card-padding) - 2px) var(--el-card-padding);border-bottom:1px solid var(--el-card-border-color);box-sizing:border-box}.el-card__body{padding:var(--el-card-padding);flex-grow:1;overflow:auto}.el-card__footer{padding:calc(var(--el-card-padding) - 2px) var(--el-card-padding);border-top:1px solid var(--el-card-border-color);box-sizing:border-box}");
-function mitt_default(n) {
-	return {
-		all: n = n || /* @__PURE__ */ new Map(),
-		on: function(t, e) {
-			var i = n.get(t);
-			i ? i.push(e) : n.set(t, [e]);
-		},
-		off: function(t, e) {
-			var i = n.get(t);
-			i && (e ? i.splice(i.indexOf(e) >>> 0, 1) : n.set(t, []));
-		},
-		emit: function(t, e) {
-			var i = n.get(t);
-			i && i.slice().map(function(n) {
-				n(e);
-			}), (i = n.get("*")) && i.slice().map(function(n) {
-				n(t, e);
-			});
-		}
-	};
-}
-var eventBus = mitt_default();
+var _GM_addValueChangeListener = /* @__PURE__ */ (() => typeof GM_addValueChangeListener != "undefined" ? GM_addValueChangeListener : void 0)();
 var _GM_deleteValue = /* @__PURE__ */ (() => typeof GM_deleteValue != "undefined" ? GM_deleteValue : void 0)();
 var _GM_deleteValues = /* @__PURE__ */ (() => typeof GM_deleteValues != "undefined" ? GM_deleteValues : void 0)();
 var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
 var _GM_listValues = /* @__PURE__ */ (() => typeof GM_listValues != "undefined" ? GM_listValues : void 0)();
 var _GM_registerMenuCommand = /* @__PURE__ */ (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
+var _GM_removeValueChangeListener = /* @__PURE__ */ (() => typeof GM_removeValueChangeListener != "undefined" ? GM_removeValueChangeListener : void 0)();
 var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
 var _GM_setValues = /* @__PURE__ */ (() => typeof GM_setValues != "undefined" ? GM_setValues : void 0)();
 var _GM_xmlhttpRequest = /* @__PURE__ */ (() => typeof GM_xmlhttpRequest != "undefined" ? GM_xmlhttpRequest : void 0)();
@@ -22833,6 +22814,39 @@ function migrateLegacyLinks() {
 	_GM_deleteValue(LEGACY_LINKS_KEY);
 	console.log(`已把 ${mergedCount} 条访问记录迁移为逐条存储`);
 }
+var LAST_SYNC_TIME_KEY = "lastSyncTime";
+function getLastSyncTime() {
+	return _GM_getValue(LAST_SYNC_TIME_KEY, 0);
+}
+function setLastSyncTime(time) {
+	_GM_setValue(LAST_SYNC_TIME_KEY, time);
+}
+function onLastSyncTimeChange(listener) {
+	const id = _GM_addValueChangeListener(LAST_SYNC_TIME_KEY, (_key, _oldTime, time) => listener(time ?? 0));
+	return () => _GM_removeValueChangeListener(id);
+}
+function mitt_default(n) {
+	return {
+		all: n = n || /* @__PURE__ */ new Map(),
+		on: function(t, e) {
+			var i = n.get(t);
+			i ? i.push(e) : n.set(t, [e]);
+		},
+		off: function(t, e) {
+			var i = n.get(t);
+			i && (e ? i.splice(i.indexOf(e) >>> 0, 1) : n.set(t, []));
+		},
+		emit: function(t, e) {
+			var i = n.get(t);
+			i && i.slice().map(function(n) {
+				n(e);
+			}), (i = n.get("*")) && i.slice().map(function(n) {
+				n(t, e);
+			});
+		}
+	};
+}
+var eventBus = mitt_default();
 var GITHUB_ACCEPT_HEADER = "application/vnd.github.v3+json";
 var SYNC_STORAGE_VERSION = "v3";
 var SYNC_STORAGE_ENCODING = "gzip-base64-json";
@@ -22854,14 +22868,6 @@ var GITHUB_HTTP_STATUS_HINTS = {
 };
 var compressionSupportCache = /* @__PURE__ */ new Map();
 var knownSyncPollutionKeySet = new Set(KNOWN_SYNC_POLLUTION_KEYS);
-function getDefaultUserSettings() {
-	return {
-		general: DEFAULT_SETTINGS.general,
-		preset: DEFAULT_SETTINGS.presetStates,
-		batch: DEFAULT_SETTINGS.batchKey,
-		sync: { ...DEFAULT_SETTINGS.sync }
-	};
-}
 function isPlainObject(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -23352,14 +23358,6 @@ function areVisitedLinksEqual(left, right) {
 	for (const _url in right) rightCount++;
 	return leftCount === rightCount;
 }
-function getSyncSettings() {
-	return _GM_getValue("userSettings", getDefaultUserSettings()).sync;
-}
-function saveSyncSettings(settings) {
-	const userSettings = _GM_getValue("userSettings", getDefaultUserSettings());
-	userSettings.sync = settings;
-	_GM_setValue("userSettings", userSettings);
-}
 function formatGitHubHttpError(action, status) {
 	const hint = GITHUB_HTTP_STATUS_HINTS[status];
 	return hint ? `${action}: ${status}（${hint}）` : `${action}: ${status}`;
@@ -23464,16 +23462,14 @@ async function getGist(token, gistId) {
 		throw error;
 	}
 }
-async function uploadToCloud(data) {
-	const syncSettings = getSyncSettings();
+async function uploadToCloud(syncSettings, data) {
 	const { githubToken } = syncSettings;
 	const gistId = normalizeGistId(syncSettings.gistId);
 	if (!githubToken) throw new Error("GitHub 令牌未设置");
 	if (!gistId) throw new Error("Gist ID 未设置，请先创建 Gist 并在设置中填入 ID");
 	await updateGist(githubToken, gistId, data);
 }
-async function downloadFromCloud() {
-	const syncSettings = getSyncSettings();
+async function downloadFromCloud(syncSettings) {
 	const { githubToken } = syncSettings;
 	const gistId = normalizeGistId(syncSettings.gistId);
 	if (!githubToken || !gistId) return {
@@ -23489,11 +23485,11 @@ function extractVisitedLinks(data) {
 function hasDataChanged(oldData, newData) {
 	return !areVisitedLinksEqual(extractVisitedLinks(oldData), extractVisitedLinks(newData));
 }
-async function syncOnStartup() {
+async function syncOnStartup(syncSettings) {
 	try {
 		console.log("开始同步数据...");
 		const localLinksSnapshot = loadLinks();
-		const cloud = await downloadFromCloud();
+		const cloud = await downloadFromCloud(syncSettings);
 		const cloudLinks = cloud.visitedLinks;
 		if (cloud.needsInitialization) console.log(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`);
 		mergeLinks(cloudLinks);
@@ -23501,12 +23497,10 @@ async function syncOnStartup() {
 		const localChanged = hasDataChanged(localLinksSnapshot, mergedLinks);
 		const cloudChanged = hasDataChanged(cloudLinks, mergedLinks);
 		if (cloud.needsInitialization || localChanged || cloudChanged) {
-			await uploadToCloud(mergedLinks);
+			await uploadToCloud(syncSettings, mergedLinks);
 			console.log(cloud.needsInitialization ? "已初始化云端同步数据" : "数据已同步并上传到云端");
 		} else console.log("数据已同步，无需上传");
-		const syncSettings = getSyncSettings();
-		syncSettings.lastSyncTime = Date.now();
-		saveSyncSettings(syncSettings);
+		setLastSyncTime(Date.now());
 		eventBus.emit("sync:completed");
 		return { initialized: cloud.needsInitialization };
 	} catch (error) {
@@ -23620,15 +23614,18 @@ var SyncSettings_default = /* @__PURE__ */ defineComponent({
 		const formData = /* @__PURE__ */ ref({
 			enabled: props.currentSettings.enabled,
 			githubToken: props.currentSettings.githubToken,
-			gistId: props.currentSettings.gistId,
-			lastSyncTime: props.currentSettings.lastSyncTime
+			gistId: props.currentSettings.gistId
 		});
 		const savedSettings = /* @__PURE__ */ ref({ ...props.currentSettings });
 		const testingConnection = /* @__PURE__ */ ref(false);
 		const gzipSupportAvailable = isGzipSyncSupported();
+		const lastSyncTime = /* @__PURE__ */ ref(getLastSyncTime());
+		onUnmounted(onLastSyncTimeChange((time) => {
+			lastSyncTime.value = time;
+		}));
 		const lastSyncTimeFormatted = computed(() => {
-			if (!formData.value.lastSyncTime) return "从未同步";
-			return new Date(formData.value.lastSyncTime).toLocaleString();
+			if (!lastSyncTime.value) return "从未同步";
+			return new Date(lastSyncTime.value).toLocaleString();
 		});
 		const hasChanges = computed(() => {
 			return formData.value.enabled !== savedSettings.value.enabled || formData.value.githubToken !== savedSettings.value.githubToken || formData.value.gistId !== savedSettings.value.gistId;
@@ -23673,8 +23670,7 @@ var SyncSettings_default = /* @__PURE__ */ defineComponent({
 			formData.value = {
 				enabled: newSettings.enabled,
 				githubToken: newSettings.githubToken,
-				gistId: newSettings.gistId,
-				lastSyncTime: newSettings.lastSyncTime
+				gistId: newSettings.gistId
 			};
 			savedSettings.value = { ...newSettings };
 		}, {
@@ -24302,7 +24298,7 @@ function setupLinkEventListeners(state) {
 	return handleLinkClick;
 }
 function initializeSync(state) {
-	if (state.syncSettings.enabled) syncOnStartup().then(({ initialized }) => {
+	if (state.syncSettings.enabled) syncOnStartup(state.syncSettings).then(({ initialized }) => {
 		if (initialized) showNotification("已初始化云端同步数据", "success");
 	}).catch((error) => {
 		console.warn("后台同步失败:", error.message);

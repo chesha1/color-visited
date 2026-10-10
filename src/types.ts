@@ -28,7 +28,6 @@ export interface SyncSettings {
   enabled: boolean
   githubToken: string
   gistId: string
-  lastSyncTime: number
 }
 
 // ================== 配置类型 ==================
