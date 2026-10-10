@@ -61,12 +61,17 @@ function setupGlobalEventListeners(state: ScriptState): void {
 
 // 页面级别的设置和初始化
 function setupPage(state: ScriptState): void {
-  removeScript(state); // 清除之前的脚本效果
+  // 出错也不能往外抛：启动时异常会冒到 main.ts 顶层，设置界面就挂载不上了
+  try {
+    removeScript(state); // 清除之前的脚本效果
 
-  if (isPageActive(state)) {
-    injectCustomStyles(state.generalSettings.color);
-    activateLinkFeatures(state, setupDOMObserver, setupLinkEventListeners);
-    setupBatchKeyListener(state); // 设置批量染色快捷键监听
+    if (isPageActive(state)) {
+      injectCustomStyles(state.generalSettings.color);
+      activateLinkFeatures(state, setupDOMObserver, setupLinkEventListeners);
+      setupBatchKeyListener(state); // 设置批量染色快捷键监听
+    }
+  } catch (error) {
+    console.error('[setupPage] 页面初始化失败:', error);
   }
 }
 

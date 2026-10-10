@@ -60,11 +60,12 @@ export function createLinkClickHandler(state: ScriptState): (event: Event) => vo
     const target = event.target as Element | null;
     if (!target) return;
 
-    const link = target.closest('a[href]') as HTMLAnchorElement | null;
-    if (!link) return; // 如果点击的不是链接，直接返回
+    const link = target.closest('a[href]');
+    // 点击的不是链接，或者是 SVG 里的 <a>（它的 href 不是字符串），直接返回
+    if (!(link instanceof HTMLAnchorElement)) return;
 
     const originalHref = link.href;
-    const inputUrl = getBaseUrl(originalHref);
+    const inputUrl = getBaseUrl(link);
     const shouldColor = shouldColorLink(inputUrl, state);
 
     if (state.generalSettings.debug) {

@@ -22256,8 +22256,7 @@ var isMac = (() => {
 	if (browserNavigator.userAgentData) return browserNavigator.userAgentData.platform === "macOS";
 	return /Mac|iPod|iPhone|iPad/.test(browserNavigator.userAgent);
 })();
-function getBaseUrl(url) {
-	const domain = new URL(url).hostname;
+function getBaseUrl({ href: url, hostname: domain }) {
 	if (domain === "www.v2ex.com") return url.split("?")[0].split("#")[0];
 	if (domain === "linux.do") return url.replace(/(\/\d+)\/\d+$/, "$1");
 	if (domain === "www.bilibili.com") return url.split("?")[0];
@@ -24079,7 +24078,8 @@ function batchAddLinks(state) {
 	const linksToUpdate = [];
 	if (state.generalSettings.debug) console.log(`[batchAddLinks] 开始批量处理，找到 ${links.length} 个未标记链接`);
 	links.forEach((link) => {
-		const inputUrl = getBaseUrl(link.href);
+		if (!(link instanceof HTMLAnchorElement)) return;
+		const inputUrl = getBaseUrl(link);
 		if (shouldColorLink(inputUrl, state) && !Object.hasOwn(newLinks, inputUrl) && !isVisited(inputUrl)) {
 			newLinks[inputUrl] = now;
 			linksToUpdate.push(link);
@@ -24121,9 +24121,10 @@ function batchProcessWithTimeSlicing(linksToUpdate, onComplete) {
 	processNextBatch();
 }
 function updateLinkStatus(link, state) {
+	if (!(link instanceof HTMLAnchorElement)) return;
 	if (link.classList.contains("visited-link")) return;
 	const originalHref = link.href;
-	const inputUrl = getBaseUrl(originalHref);
+	const inputUrl = getBaseUrl(link);
 	const shouldColor = shouldColorLink(inputUrl, state);
 	if (state.generalSettings.debug) {
 		console.log(`[updateLinkStatus] 原始href: ${originalHref}`);
@@ -24394,9 +24395,9 @@ function createLinkClickHandler(state) {
 		const target = event.target;
 		if (!target) return;
 		const link = target.closest("a[href]");
-		if (!link) return;
+		if (!(link instanceof HTMLAnchorElement)) return;
 		const originalHref = link.href;
-		const inputUrl = getBaseUrl(originalHref);
+		const inputUrl = getBaseUrl(link);
 		const shouldColor = shouldColorLink(inputUrl, state);
 		if (state.generalSettings.debug) {
 			console.log(`[handleLinkClick] 原始href: ${originalHref}`);
@@ -24439,11 +24440,15 @@ function setupGlobalEventListeners(state) {
 	});
 }
 function setupPage(state) {
-	removeScript(state);
-	if (isPageActive(state)) {
-		injectCustomStyles(state.generalSettings.color);
-		activateLinkFeatures(state, setupDOMObserver, setupLinkEventListeners);
-		setupBatchKeyListener(state);
+	try {
+		removeScript(state);
+		if (isPageActive(state)) {
+			injectCustomStyles(state.generalSettings.color);
+			activateLinkFeatures(state, setupDOMObserver, setupLinkEventListeners);
+			setupBatchKeyListener(state);
+		}
+	} catch (error) {
+		console.error("[setupPage] 页面初始化失败:", error);
 	}
 }
 function startScript(state) {

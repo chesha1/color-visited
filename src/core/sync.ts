@@ -812,7 +812,7 @@ async function deserializeCompressedSyncEnvelope(envelope: CompressedSyncEnvelop
 }
 
 // 旧版明文数据的特征：至少一条记录的键是完整网址、值是有限数字。
-// 本地记录的键都由 getBaseUrl(link.href) 生成，{"count": 5} 这类普通对象不会命中。
+// 本地记录的键都由 getBaseUrl(link) 生成，{"count": 5} 这类普通对象不会命中。
 function hasLegacyVisitedLinkRecord(value: Record<string, unknown>): boolean {
   for (const key in value) {
     const timestamp = value[key];

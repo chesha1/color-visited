@@ -25,8 +25,9 @@ export const isMac = (() => {
 // ================== URL 处理工具 ==================
 
 // 去除各种查询参数等的干扰
-export function getBaseUrl(url: string): string {
-  const domain = new URL(url).hostname;
+// 传入 <a> 元素或 URL 对象，直接读它的 hostname，不自己 new URL：
+// <a> 的 href 解析失败时 hostname 是空字符串，不会命中下面任何站点，链接原样返回，不会抛错
+export function getBaseUrl({ href: url, hostname: domain }: Pick<URL, 'href' | 'hostname'>): string {
   if (domain === 'www.v2ex.com') return url.split('?')[0].split('#')[0];
   if (domain === 'linux.do') return url.replace(/(\/\d+)\/\d+$/, '$1');
   if (domain === 'www.bilibili.com') return url.split('?')[0];

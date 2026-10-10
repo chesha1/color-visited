@@ -5,31 +5,31 @@
 
 ## 怎么使用这份文档
 
-- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 B2、B3」。
+- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 B5、B6」。
 - 条目编号的含义：**B** = bug，**P** = 性能，**A** = 架构，**C** = 代码细节，**E** = 工程化，**D** = 需要你拍板的决策。
 - 每完成一项：
-  - 把 `[ ]` 改成 `[x]`，并在条目末尾写上提交号；
-  - 在文末「会话记录」里追加一行。
-- 新发现的问题按同样格式补进对应章节，编号顺延。
+  - 从正文删掉这一条，并在文末「会话记录」里追加一行，写上提交号；
+  - 条目里仍然有用的内容挪到对应章节：要在真实浏览器里做的验证放进「待手动验证」，有意做出的取舍放进「已定的取舍」，可以写成测试的场景放进 E2。
+- 新发现的问题按同样格式补进对应章节，编号顺延，删掉的编号不再复用。
 - 仓库约定（包管理器、版本号位置、提交信息格式）见 [AGENTS.md](../../AGENTS.md)。
 
 ## 进度总览
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 1 | 修 bug，加几个低风险的小优化 | B1–B8、P1、P3、A6 短期第 1 步 | 进行中（B1、B2、B3 已完成） |
+| 1 | 修 bug，加几个低风险的小优化 | B5–B8、P1、P3、A6 短期第 1 步 | 进行中 |
 | 2 | 先搭安全网：测试 + 格式化 | E2、E1a | 未开始 |
 | 3 | 统一存储层，清理死代码 | A1、C7–C9 | 未开始 |
-| 4 | 核心生命周期 + 规则模型 | A2、A7、C1–C3 | 未开始 |
-| 5 | 设置数据流 + 设置对话框 | A3、A4、C12、C13 | 未开始 |
+| 4 | 核心生命周期 + 规则模型 | A2、A7、C1 | 未开始 |
+| 5 | 设置数据流 + 设置对话框 | A3、A4、C12 | 未开始 |
 | 6 | 拆分 sync.ts | A5 | 未开始 |
-| 7 | 视决策而定 | P4（D2）、A6 长期（D3）、E5（D4） | 未开始 |
-| 随时 | 零散小项 | C4–C6、C10、C11、C14、E1b、E3、E4、E6、E7 | 未开始（C13 已随 B3 完成） |
+| 7 | 视决策而定 | A6 长期（D3）、E5（D4） | 未开始 |
+| 随时 | 零散小项 | C4–C6、C10、C11、C14、E1b、E3、E4、E6、E7 | 未开始 |
 
 阶段之间的依赖：
 
 - 阶段 6 要在阶段 2 的测试完成之后做；
-- A3 和 P4 都依赖 A1；
+- A3 依赖 A1；
 - B5 的代码会在 A3 中被整体删除。如果打算很快做 A3，B5 只需要最小限度的止血。
 
 ## 待决策（需要你拍板）
@@ -39,24 +39,25 @@
   - 仓库是公开的，不登录也能直接访问这个文件。
   - 如果是真实浏览数据：删除文件，并用 `git filter-repo` 从历史里清除。这会改写提交号，需要 force push。
   - 如果是测试样本：挪到 `test/fixtures/`，在 E2 里当作大数据量样本使用。
-- [ ] **D2 · 要不要按 host 分片存储**（见 P4）
-  - 收益：页面只需要读写当前站点的数据，B1 的竞态窗口也会变小。
-  - 代价：需要一次性迁移数据，同步时要把所有分片汇总起来。
-  - **B1 之后建议直接关闭：** 访问记录已改为按 URL 逐条存储，粒度比按 host 分片更细，分片的收益已经全部拿到，迁移和同步汇总的代价也已经付过了。
 - [ ] **D3 · 要不要去掉 Element Plus**（见 A6）
   - 收益：体积大幅下降，所有 CSS 隔离方面的 hack 一起消失。
   - 代价：要手写十来个小组件，取色器也得自己实现。
 - [ ] **D4 · `dist/` 是否继续提交入库**（见 E5）。决定前要先确认 GreasyFork 目前是从哪里同步脚本的。
-- [x] **D5 · 批量快捷键的默认值要不要换**（见 B2）。Windows 下的 Ctrl+Shift+V 和浏览器的"粘贴为纯文本"冲突。只改默认值的话，已经保存过设置的老用户不受影响。
-  - **结论（2026-10-09）：不换**，保留 Ctrl+Shift+V / ⌘⇧V。理由：
-    - "粘贴为纯文本"只在可编辑元素里起作用。B2 让快捷键在可编辑元素里不触发之后，在其余位置按这个键，浏览器本来就什么也不做，拦掉它没有代价。
-    - 其他 Ctrl+Shift+字母大多已被浏览器或输入法占用，而且多数在整页都生效。处理函数会 `preventDefault`，换过去等于抢走一个浏览器功能。例如 A（Chrome 的搜索标签页、Firefox 的附加组件）、M（Chrome 的切换用户、Firefox 的响应式设计模式）、F（微软拼音和搜狗的简繁切换）、U（Linux 上 IBus 的 Unicode 输入）。
-    - 带 Alt 的组合问题更多：Mac 的 Option 和部分键盘布局下的 AltGr 会改写 `event.key`（Mac 上 ⌥V 得到 `√`），按 `event.key` 匹配就认不出来（B3 之后改为按 `event.code` 匹配，这一条已不成立）；Alt+Shift 还是 Firefox 的 accesskey 组合，也是 Windows 切换输入语言的热键。
-    - 改默认值只影响从没保存过设置的人。`saveUserSettings` 和 `saveSyncSettings` 都把设置整份写回，保存过任何一项设置的老用户，存储里已经是旧键了。而从没打开过设置、一直在用默认键的人，升级后快捷键会悄悄变掉。
-    - 剩下的风险是用户以为焦点在输入框里、其实不在时误按。换哪个键都避免不了，根治办法是让批量标记可以撤销，见 B8。
 - [ ] **D6 · 再次点击已访问的链接时，要不要刷新时间戳**
-  - 现在只在第一次点击时记录时间戳（[eventManager.ts:80](../../src/core/eventManager.ts#L80)），所以过期是从首次访问开始算的。
-  - 但同步合并时取的是最大时间戳（[sync.ts:1133](../../src/core/sync.ts#L1133)），两处语义不一致。
+  - 现在只在第一次点击时记录时间戳（storage.ts 的 `recordVisit`），所以过期是从首次访问开始算的。
+  - 但合并云端数据时取的是最大时间戳（storage.ts 的 `mergeLinks`），两处语义不一致。
+
+## 待手动验证
+
+已完成的条目里，以下验证需要真实浏览器，还没做：
+
+- [ ] **B1：** 打开两个 V2EX 列表页标签 A 和 B。在 A 中点击链接 x，再在 B 中点击链接 y，然后刷新 A。x 和 y 都应该保持染色。
+- [ ] **B1：** 用 97,048 条的真实数据升级一次，看控制台是否打印 `已把 N 条访问记录迁移为逐条存储`，迁移和之后的页面加载是否明显变慢。
+- [ ] **B2：** 在 V2EX 首页的搜索框里按 Ctrl+Shift+V，应能正常粘贴，并且不出现"已批量添加"的提示。
+- [ ] **B3：** 把快捷键设为 Ctrl+↑ 并保存，在列表页按下后应触发批量染色。
+- [ ] **B3：** 开着中文输入法录入一次字母组合，应显示成对应字母。
+- [ ] **B4：** 在 V2EX 列表页的控制台里执行 `document.body.insertAdjacentHTML('beforeend', '<a href="http://">x</a><svg><a href="https://www.v2ex.com/t/1"><text>x</text></a></svg>')`，控制台不应出现脚本的报错；之后点击帖子链接仍能记录和染色，按批量快捷键仍能批量标记。
+- [ ] **B4：** 在 Tampermonkey 和 Violentmonkey 里各打开一次列表页，已访问的链接照常染色。现在靠 `instanceof HTMLAnchorElement` 判断链接，headless Chrome 里没有扩展的沙箱，这一点只能在真实扩展里确认。
 
 ## 背景事实与约束
 
@@ -66,7 +67,7 @@
 
 ### 存储结构（必须兼容老用户的数据）
 
-- 访问记录（B1 之后）：每条单独存成一个 GM 值，键是归一化后的 URL，值是首次访问的时间戳（ms）。只有 `src/core/storage.ts` 读写它们。
+- 访问记录：每条单独存成一个 GM 值，键是归一化后的 URL，值是首次访问的时间戳（ms）。只有 `src/core/storage.ts` 读写它们。
   - storage.ts 把含冒号的键都当作访问记录（URL 一定带协议头），所以**设置类的键不能含冒号**。
   - 旧版本（v2.21.0 及以前）把全部记录存在 `visitedLinks` 一个键里，结构是 `Record<URL, 时间戳>`。新版本启动时把它逐条合并进来再删掉，可以重复执行。
 - `userSettings` 的结构如下：
@@ -88,11 +89,11 @@
   - 每个标签页有一份同步读取用的缓存。写入先进本标签页的缓存，再发给扩展后台，由后台按到达顺序应用并广播给其他标签页。所以不同键的并发写入互不影响，同一个键是后写覆盖先写。
   - `GM_getValues`、`GM_setValues`、`GM_deleteValues` 需要 Tampermonkey 5.3+ 或 Violentmonkey 2.19.1+，storage.ts 在旧版本上退回逐条写。
   - TM 和 VM 内部都把一个脚本的全部值存成一整块（[TM #1787](https://github.com/Tampermonkey/tampermonkey/issues/1787)、[VM #183](https://github.com/violentmonkey/violentmonkey/issues/183)）。页面侧会缓存全部值：VM 的 `GM_getValue` 每次都要把存的字符串解码一遍，对象值就是一次 `JSON.parse`；`GM_setValue` 每次都要 `JSON.stringify`，然后发一条消息。
-  - 逐条存储的开销（B1 时按 VM 页面侧源码建模，在 Node 里实测，9.7 万条）：
-    - 点击一次：页面主线程从约 41 ms 降到约 0，也不再给每个打开的标签页广播 5.6 MB 的消息。
-    - 页面注入：要把 9.7 万个键逐个交给页面，从约 14 ms 涨到约 53 ms。旧布局用之前还要再花约 27 ms 解析大键，所以实际净增约 10–30 ms。
-    - 后台每次持久化：从约 6 ms 涨到约 25 ms，不在页面主线程上。
-    - 1 万条以内，以上差别都在几毫秒以内。TM 闭源，常数可能不同。
+  - 逐条存储的开销（按 VM 页面侧源码建模，在 Node 里实测，9.7 万条；TM 闭源，常数可能不同）：
+    - 点击一次只写一个键，页面主线程的开销约为 0。
+    - 页面注入约 53 ms，要把 9.7 万个键逐个交给页面。比旧的单键布局净增约 10–30 ms。
+    - 后台每次持久化约 25 ms，不在页面主线程上。
+    - 1 万条以内，和旧布局的差别都在几毫秒以内。
 - **GM 权限声明。** vite-plugin-monkey 会根据代码里 import 的 `GM_*` 自动生成 `@grant`。如果要请求新的域名，需要在 `vite.config.ts` 的 `connect` 里加上。
 
 ### 同步模块的行为不变量（重构 sync 之前先用测试锁住）
@@ -105,103 +106,51 @@
 4. 文件超过 1 MB 被截断时，改用 raw_url 获取完整内容。如果获取到的内容无法识别（比如代理或限流返回的 HTML），抛错，不覆盖云端（[sync.ts:830-837](../../src/core/sync.ts#L830-L837)）。
 5. 不是同步数据的内容，按"空"处理，并标记 `needsInitialization`，本次同步会把它初始化成同步格式。这包括：空内容、不是 JSON、不是对象、没有同步特征的对象（含 `{}`）。这样新建 Gist 时内容可以随便填（v2.20.4 引入）。
 6. 继续支持读取以下旧格式：v2 压缩包、带 `visitedLinks` 字段的对象、键是网址且值是数字的明文对象。
-7. 自愈：剔除已知的同步包污染键（`syncVersion`、`encoding`、`payload` 等）和不是有限数字的时间戳，并打印日志。B1 之后这只针对云端数据：本地按键存储，不含冒号的键不会被读出来，`mergeLinks` 也拒绝写入这类键和非法时间戳，本地数据不会再被污染。
-8. 合并时，每条 URL 取最大的时间戳，而且不能丢掉同步期间发生的点击。B1 之前靠"网络请求返回后重读一次本地再合并"（[sync.ts:1171-1181](../../src/core/sync.ts#L1171-L1181)）；B1 之后由 `mergeLinks` 直接和存储里的当前值逐条比较，本标签页和其他标签页在同步期间的写入都不会被覆盖。
+7. 自愈：剔除云端数据里已知的同步包污染键（`syncVersion`、`encoding`、`payload` 等）和不是有限数字的时间戳，并打印日志。本地数据不会被污染：不含冒号的键不会被当作记录读出来，`mergeLinks` 也拒绝写入这类键和非法时间戳。
+8. 合并时，每条 URL 取最大的时间戳，而且不能丢掉同步期间发生的点击：`mergeLinks` 直接和存储里的当前值逐条比较，本标签页和其他标签页在同步期间的写入都不会被覆盖。
 9. 只有数据有变化，或需要初始化时，才上传（[sync.ts:1190](../../src/core/sync.ts#L1190)）。
 10. 上传时一律写成 v3 格式：gzip + base64 + 按 host 分组的前缀差分。同步模块内部始终使用平铺的 map（由 `loadLinks()` 组装）。
+
+### 已定的取舍
+
+已完成的条目里有意做出的选择，改动相关代码前先看一眼：
+
+- **默认批量快捷键保持 Ctrl+Shift+V / ⌘⇧V（原 D5，2026-10-09）。**
+  - 它和 Windows 下 Chrome 的"粘贴为纯文本"冲突，但后者只在可编辑元素里起作用，而快捷键在可编辑元素里已经不触发。
+  - 换别的键代价更大：其他 Ctrl+Shift+字母大多已被浏览器或输入法整页占用（如 A、M、F、U），处理函数会 `preventDefault`，换过去等于抢走一个浏览器功能；Alt+Shift 是 Firefox 的 accesskey 组合，也是 Windows 切换输入语言的热键。
+  - 改默认值只影响从没保存过设置的人，他们的快捷键会在升级后悄悄变掉。
+  - 误按的根治办法是让批量标记可以撤销，见 B8。
+- **旧的快捷键设置不迁移（B3，按要求）。** `batch.key` 改名为 `code` 后，保存过任意设置的老用户快捷键会失效，设置页只显示修饰键（如 "Ctrl + Shift"），要重新录入或点"重置"。
+- **快捷键的已知局限：**
+  - 按物理键位匹配，键名按 QWERTY 的位置显示：非 QWERTY 布局下，显示的键名可能和键帽不一致（比如 AZERTY 上印着 A 的键显示成 Q），但按同一个键照样能触发；主键盘的 1 和小键盘的 1 算两个键。
+  - closed 模式的 shadow root 从外面看不到内部节点，在那里的输入框里按快捷键仍会触发。这种情况很少见。
+- **`getBaseUrl` 读 `<a>` 的 `hostname`，不自己 `new URL`（B4）。**
+  - 图的是 `getBaseUrl` 里没有会抛错的代码：href 解析失败或被删掉时，`hostname` 是空字符串，链接原样返回。性能只快 0.2–0.3 µs/个，不是理由。
+  - 参数类型是 `Pick<URL, 'href' | 'hostname'>`，`<a>` 元素和 `URL` 对象都能传。
+  - 不用 `URL.parse`：它要 Chrome 126+、Firefox 126+、Safari 18+，在内核更旧的浏览器上会直接报错，让整个脚本失效。
+  - SVG 里的 `<a>` 直接跳过，不染色也不记录：它的 href 是 `SVGAnimatedString` 对象，不是字符串。
 
 ### 结论的可信度
 
 - **已核实：**
-  - B1–B6 涉及的代码路径，都逐行读过；
-  - `new URL('http://')` 和 `new URL('https://exa mple.com')` 会抛 TypeError（在 Node 中实测）；
+  - B4–B6 涉及的代码路径，都逐行读过；
+  - B4 中各种链接的行为（Node 和 headless Chrome 155 实测）：
+    - `new URL('http://')` 会抛 TypeError；`a.href` 解析失败时返回原始属性值，`a.hostname` 是空字符串；
+    - `new URL('https://exa mple.com')` 只在 Node 中抛错，Chrome 会把空格转义成 `%20`；
+    - `a[href]` 会选中 SVG 里的 `<a>`，它的 `.href` 是 `SVGAnimatedString`，交给 `new URL` 会抛错；
   - 构建产物的头部有 SystemJS 的 `@require`，产物中有 18 处 `_css(` 把样式注入宿主页面（grep 产物确认）；
   - vite-plugin-monkey 默认从 package.json 读取 `version`、`author` 等字段（8.1.1 源码，`dist/node/index.mjs` 第 2041 行）；
   - 仓库可以公开访问。
 - **依据规范或文档推断：**
-  - `a.href` 解析失败时，返回的是原始属性值（HTML 规范）；
   - Tampermonkey 注册菜单时如果不传 id，会新建一个菜单项（TM 文档）。
 - **未核实：**
   - Tailwind 的 `@property` 在 shadow root 中失效（见 A6）。
-  - 按 URL 逐条存储（B1）后，Tampermonkey 和 Violentmonkey 在 10 万个键下的页面注入、`GM_listValues` 和逐条 `GM_getValue` 的耗时。存储语义只在 Node 里模拟过，没有在真实扩展里测过。
+  - 按 URL 逐条存储后，Tampermonkey 和 Violentmonkey 在 10 万个键下的页面注入、`GM_listValues` 和逐条 `GM_getValue` 的耗时。存储语义只在 Node 里模拟过，没有在真实扩展里测过。
 - 核实时，`pnpm typecheck` 和 eslint 都没有报错。但 eslint 几乎没有配置规则（见 E1），所以这不能说明代码没问题。
 
 ---
 
 ## 1. Bug
-
-- [x] **B1 · 多个标签页会互相覆盖访问记录，导致数据丢失**（bc63d1f）
-  - 位置：`createLinkClickHandler`，[eventManager.ts:80-83](../../src/core/eventManager.ts#L80-L83)。内存副本在 `activateLinkFeatures` 中载入（[linkManager.ts:222-223](../../src/core/linkManager.ts#L222-L223)），此后只有 `sync:completed` 和 `batchAddLinks` 会刷新它。
-  - 问题：点击时，脚本把"页面加载时的内存副本 + 新增的一条"整份写回存储。如果两个标签页都开着列表页，后写入的一方会抹掉另一方在它加载之后记下的链接，以及其他标签页同步进来的记录。`syncOnStartup` 专门处理过同一类竞态，但点击这条路径没有处理。
-  - 根因：访问记录彼此独立，却被打包成一个对象存在一个键里。记一条就要读出整块、改一条、再整块写回，而页面拿来改的是加载时缓存的旧副本。原来设想的两种修法都只能缩小竞态窗口，消除不了：写前重读也好，`GM_addValueChangeListener` 也好，整块写入在跨标签页传播的那几毫秒里仍然会互相覆盖。
-  - 修法：每条记录单独存成一个 GM 值，键是 URL，值是首次访问时间。
-    - 扩展后台按键应用各标签页的写入：不同 URL 互不影响；同一 URL 后写覆盖先写，只差几毫秒的时间戳，不会丢记录。
-    - 页面不再缓存副本（删掉了 `ScriptState.visitedLinks`），读取直接查存储，也能看到其他标签页刚写的记录。所以点击后不论是否首次记录都重新染色。
-    - 新增 `src/core/storage.ts`，它是唯一读写访问记录的模块：`isVisited`、`recordVisit`、`loadLinks`、`mergeLinks`（逐条取较大时间戳）、`deleteExpiredLinks`、`migrateLegacyLinks`。
-    - 同步改为先 `mergeLinks(云端)`、再 `loadLinks()`，不再需要重读本地；删掉了 `mergeVisitedLinks`。
-    - 启动时迁移旧的 `visitedLinks` 大键，见「存储结构」。
-  - 验证：
-    - 已做：在 Node 里模拟 GM 存储（后台串行应用写入、每个标签页一份缓存、异步广播），用真实的 storage.ts 跑了 11 个场景。覆盖了：旧实现能复现 B1；新实现在传播窗口内并发写也不丢；迁移可重复执行、能补进旧版本标签页写回的数据；同步期间的点击不丢；云端数据不能覆盖 `userSettings`；没有批量接口时的退回路径。模拟脚本没有入库，做 E2 时可以改写成 Vitest 用例。
-    - 待做（需要真实浏览器）：打开两个 V2EX 列表页标签 A 和 B。在 A 中点击链接 x，再在 B 中点击链接 y，然后刷新 A。x 和 y 都应该保持染色。
-    - 待做：用 97,048 条的真实数据升级一次，看控制台是否打印 `已把 N 条访问记录迁移为逐条存储`，迁移和之后的页面加载是否明显变慢。
-
-- [x] **B2 · 在输入框里按批量快捷键也会触发**（ae4ead1）
-  - 位置：`setupBatchKeyListener`，[eventManager.ts:20-35](../../src/core/eventManager.ts#L20-L35)。默认值在 [config.ts:11-19](../../src/core/config.ts#L11-L19)。
-  - 问题：代码没有检查事件目标。Windows 下默认快捷键是 Ctrl+Shift+V，正好是 Chrome 的"粘贴为纯文本"。在页面搜索框里按下它，会发生两件事：
-    - 粘贴被 `preventDefault` 拦掉；
-    - 整页链接被批量标记为已访问，而且没法撤销（见 B8）。
-  - 修法：新增 `isTyping(event)`，处理函数开头遇到以下情况直接 return：
-    - 事件目标是 `input`、`textarea`、`select`，或 `isContentEditable` 为真；
-    - `event.isComposing` 为真。
-    - 事件目标从 `event.composedPath()[0]` 取，而不是 `event.target`：监听器挂在 document 上，shadow root 里的输入框会被重定向成宿主元素，用 `event.target` 会漏判。closed 模式的 shadow root 从外面看不到内部节点，那里的输入框仍会触发，这种情况很少见。
-    - 默认键不换，见 D5。
-    - README 里写的默认键是 "Shift+V"，和代码不一致，已一并改正。
-  - 验证：
-    - 已做：用 esbuild 打包真实的 eventManager.ts（依赖换成桩），在 headless Chrome 146 里派发合成的 Ctrl+Shift+V keydown，新旧代码对照。
-      - 旧代码在所有场景下都触发，并拦掉默认行为。
-      - 新代码在以下场景都不触发，也不拦默认行为：input、textarea、select、contenteditable 及其子元素、open shadow root 里的 input 和 contenteditable、输入法组字中。
-      - 新代码在 body 和 button 上照常触发；closed shadow root 里的 input 仍会触发（已知限制）。
-      - 测试脚本没有入库，做 E2 时可以改写成 Vitest 用例。
-    - 待做（需要真实浏览器）：在 V2EX 首页的搜索框里按 Ctrl+Shift+V，应能正常粘贴，并且不出现"已批量添加"的提示。
-
-- [x] **B3 · 特殊键能录入，但按下后永远不会触发**（fe8cdbe）
-  - 位置：录入在 [ShortcutSettings.vue:116-122](../../src/components/ShortcutSettings.vue#L116-L122)，匹配在 [eventManager.ts:27](../../src/core/eventManager.ts#L27)。
-  - 问题：录入时，多字符的键名保持原样（`ArrowUp`、`Enter`、`Escape`、`Delete`、`Home` 等）。匹配时却先对 `event.key` 做了 `toUpperCase()`，于是 `'ARROWUP' !== 'ArrowUp'`。目前只有单字符键和 F1–F12 能正常工作，而 UI 里还专门为这些特殊键做了显示映射。
-  - 原计划的修法：抽一个 `normalizeKey(key)`：单字符转大写，多字符保持原样，录入和匹配两边都用它。也可以改用 `event.code`，它不受键盘布局影响，但已保存的设置需要迁移。
-  - 根因：`event.key` 是"这次按键产生的字符"，同一个键会因为大小写、Shift（1 → `!`）、Mac 的 Option（V → `√`）、输入法（`Process`）、死键（`Dead`）、键盘布局而不同。所以录入和匹配各自都得先归一化，两边一不一致就出 bug。补一个共用的 `normalizeKey` 只是把这两份归一化合成一份，归一化本身还在。
-  - 修法：快捷键改为"修饰键 + 物理键位"，按 `event.code` 录入和匹配，完全不做转换。
-    - `userSettings.batch` 的 `key` 字段改名为 `code`，存 `KeyV`、`ArrowUp` 这类键位名，默认值是 `KeyV`。
-    - 新增 `src/core/shortcut.ts`：
-      - `toShortcut(event)` 直接取事件上同名的五个字段：`ctrlKey`、`shiftKey`、`altKey`、`metaKey`、`code`；
-      - `matchesShortcut(event, shortcut)` 定义为"`toShortcut(event)` 和设置逐字段相等"。录入和匹配用的是同一个函数，两边不可能再分歧。
-    - 录入时修饰键按 `code` 识别（`ControlLeft` 等），`code` 为空（浏览器认不出的键）时不录入。
-    - 显示时去掉 `Key`、`Digit` 前缀（`KeyV` → V），方向键等几个键换成符号。
-    - 顺带删掉录入处什么也不做的 else 分支（C13）。
-  - 取舍：
-    - 键位按 QWERTY 命名。AZERTY、Dvorak 用户按下印着 A 的键会显示成 Q，但按同一个键照样能触发。
-    - 主键盘的 1 和小键盘的 1 算两个键。
-    - **不兼容旧设置（按要求不做迁移）：** 保存过任意设置的老用户，存储里的 `batch` 只有 `key` 没有 `code`。升级后快捷键不再触发，设置页只显示修饰键（如 "Ctrl + Shift"），要重新录入或点"重置"。D5 已经分析过，`saveUserSettings` 和 `saveSyncSettings` 都把设置整份写回，所以受影响的是所有保存过任意设置的人。C9 的 `deepMerge(defaults, stored)` 会给缺 `code` 的旧设置补上默认值。
-  - 验证：
-    - 已做：用 esbuild 打包真实的 eventManager.ts 和 shortcut.ts（其他依赖换成桩），在 headless Chrome 146 里派发合成的 keydown。录入直接调 `toShortcut`，旧代码按 HEAD 的录入逻辑存成设置，然后按下：
-      - 15 组按键：Ctrl+↑、←、Enter、Escape、Delete、Home、PageDown、F1、Alt+F12、Space、Ctrl+Shift+V、Shift+1，录入 Ctrl+v 后开着大写锁定再按，录入时英文布局、按下时俄文布局，Mac 上 ⌥⇧V（key 是 `◊`）。新代码全部触发；旧代码在方向键、Enter、Escape、Delete、Home、PageDown 上不触发（复现 B3），换成俄文布局后也认不出。
-      - 默认值：Ctrl+Shift+V 能触发。假设默认值是 ⌥⇧V，在 Mac 上按下（key 是 `◊`）也能触发，D5 里提到的这个问题也就没有了。
-      - 不该触发的场景都不触发：Ctrl+↑ 对 Ctrl+↓、Ctrl+↑ 对 ↑、Ctrl+Shift+V 对 Ctrl+V、Enter 对 E、1 对小键盘 1。
-      - 测试脚本没有入库，做 E2 时可以改写成 Vitest 用例。
-    - 待做（需要真实浏览器）：把快捷键设为 Ctrl+↑ 并保存，在列表页按下后应触发批量染色；开着中文输入法录入一次字母组合，应显示成对应字母。
-
-- [ ] **B4 · 一个无法解析的 href 就能让整页脚本失效**
-  - 位置：`getBaseUrl`，[utils.ts:29](../../src/core/utils.ts#L29)。
-  - 问题：`new URL(url)` 没有 try/catch。`a.href` 解析失败时会返回原始属性值，比如 `http://`、`https://exa mple.com`，这时 `new URL` 会抛错。
-    - 页面加载时：异常沿 `updateAllLinksStatus → activateLinkFeatures → setupPage → startColorVisitedScript` 一路冒到 [main.ts:6](../../src/main.ts#L6) 的顶层。后面的 `createIsolatedApp()` 不会执行，连设置对话框都打不开。
-    - 在 MutationObserver 回调中：异常会中断这一批变更的处理，URL 变化检测也会被跳过。
-  - 修法：
-    - 不再自己 `new URL`，直接用 `<a>` 元素上已经解析好的 `hostname`、`pathname`、`search`、`hash`。解析失败时，`hostname` 是空字符串。
-    - 至少要用 try/catch 包住，出错时跳过这个链接。
-    - 和 C2 一起做。
-    - 另外在 `setupPage` 外层再包一层 try/catch，保证无论如何 UI 都能挂载。
-  - 验证：
-    - 单元测试：`getBaseUrl('http://')` 不应抛错。
-    - 手动测试：在页面里插入 `<a href="http://">x</a>` 并触发一次扫描，脚本的其他功能应保持正常。
 
 - [ ] **B5 · 设置对话框的监听器泄漏，菜单被重复注册**
   - 位置：
@@ -225,19 +174,19 @@
   - 修法（先止血）：处理 `sync:completed` 时，同时刷新 `state.syncSettings`。根治见 A1。
   - 验证：开启同步，等同步完成后打开设置，"最后同步时间"应为刚才的时间；再保存一次常规设置，这个时间不应被改回旧值。
 
-- [ ] **B7 · 开启同步后，过期记录永远删不干净**（B1 时发现，问题早于 B1）
+- [ ] **B7 · 开启同步后，过期记录永远删不干净**
   - 位置：`syncOnStartup`（sync.ts）、`deleteExpiredLinks`（storage.ts）。
-  - 问题：同步时，云端的过期记录会被合并回本地，上传时又原样带回云端。云端从不清理过期记录，于是每次同步都把它们写回本地，下次激活页面再删掉，来回折腾；在这期间它们还会让过期的链接重新染色。B1 之前更糟：同步会把开始时的本地快照整份写回，连刚被清理掉的过期记录也一起复活。
+  - 问题：同步时，云端的过期记录会被合并回本地，上传时又原样带回云端。云端从不清理过期记录，于是每次同步都把它们写回本地，下次激活页面再删掉，来回折腾；在这期间它们还会让过期的链接重新染色。
   - 修法：合并云端数据前、上传前，都按 `expirationTime` 过滤掉过期条目。可以把过期时间传给 `syncOnStartup`，也可以让 `mergeLinks` 统一拒绝过期条目。
   - 验证：把过期时间临时调成 1 分钟，同步一次，等 1 分钟后再同步，云端的 `itemCount` 应该下降。
 
-- [ ] **B8 · 批量标记之后无法撤销**（D5 讨论时提出）
+- [ ] **B8 · 批量标记之后无法撤销**
   - 位置：`batchAddLinks`（linkManager.ts）、`showNotification`（ui.ts）。
   - 问题：按下快捷键后，页面上所有符合规则、还没访问过的链接会一次性写进存储，之后没有办法撤回：
     - 设置里没有删除记录的入口，这些记录只能等过期，默认要一年；
     - 开了同步的话，下次同步会把它们传到 Gist，带到所有设备上。
 
-    B2 之后，在输入框里按快捷键已经不会触发，但焦点其实不在输入框时误按，仍然会触发。换哪个默认键都避免不了这种误按（见 D5）。
+    在输入框里按快捷键已经不会触发，但焦点其实不在输入框时误按，仍然会触发。换哪个默认键都避免不了这种误按（见「已定的取舍」）。
   - 修法：在"已批量添加 N 个链接"的通知上加一个"撤销"按钮，显示时间从 2 秒延长到 5 秒左右。点击后删掉这次新增的记录，并去掉对应链接的颜色；之前就访问过的链接不受影响。
     - 这次新增的 URL 就是 `batchAddLinks` 里的 `newLinks`。storage.ts 里已经有私有的 `deleteLinks(urls)`（优先用 `GM_deleteValues`，旧版扩展退回逐条删），导出即可。
     - `updateAllLinksStatus` 只加颜色、不去颜色，要单独去掉这些 URL 对应的所有链接上的 `visited-link` 类。同一个 URL 在页面上可能有好几个链接。
@@ -251,62 +200,43 @@
 
 ## 2. 性能
 
-- [ ] **P1 · 每次 setupPage 都全量读写存储**
-  - 位置：`activateLinkFeatures`（[linkManager.ts:220-225](../../src/core/linkManager.ts#L220-L225)）、`deleteExpiredLinks`（[linkManager.ts:13-22](../../src/core/linkManager.ts#L13-L22)，B1 后移到 storage.ts）、`logStorageInfo`（[utils.ts:59-78](../../src/core/utils.ts#L59-L78)）。
-  - 问题：页面加载、SPA 跳转、每次保存设置时，都会依次执行：
-    1. 读取全部数据；
-    2. 删除过期记录，而且不管有没有删掉东西，都整份写回；
-    3. 再读一次全部数据；
-    4. 再把全部数据 stringify 一遍算大小。这一步只是为了打一行日志，而且不受 debug 开关控制。
-  - B1 之后的现状：第 2、3 步没有了。过期清理只在确实有过期条目时才删，而且只删那几个键；染色直接按链接查存储，不再整份读取。剩下两次全量枚举（`GM_listValues` 加逐条 `GM_getValue`）：一次在过期清理里，一次给 `logStorageInfo` 打日志。9.7 万条时两次合计约 75 ms（模型实测，见「GM 存储的语义」），是逐条存储后页面加载里最大的一块，所以 P1 适合紧接着 B1 做。
+- [ ] **P1 · 每次 setupPage 都全量读两遍存储**
+  - 位置：`activateLinkFeatures`（[linkManager.ts:220-225](../../src/core/linkManager.ts#L220-L225)）、`deleteExpiredLinks`（storage.ts）、`logStorageInfo`（[utils.ts:59-78](../../src/core/utils.ts#L59-L78)）。
+  - 问题：页面加载、SPA 跳转、每次保存设置时，都要全量枚举两遍存储（`GM_listValues` 加逐条 `GM_getValue`）：
+    1. 过期清理一遍；
+    2. `logStorageInfo` 一遍。这一遍只是为了打一行日志，还要把全部数据 stringify 一遍算大小，而且不受 debug 开关控制。
+
+    9.7 万条时两遍合计约 75 ms（模型实测，见「GM 存储的语义」），是页面加载里最大的一块。
   - 修法：
     - 降低过期清理的频率，比如每天一次，用一个时间戳记录上次清理的时间（这个键名不能含冒号，见「存储结构」）；
     - `logStorageInfo` 只在 debug 模式下执行。
   - 验证：关闭 debug 后，控制台不再出现 `visitedLinks storage size`；在 Performance 面板里对比修改前后 setupPage 的耗时。
-
-- [x] **P2 · 每次点击都把全部数据写回**（随 B1 完成，bc63d1f）
-  - 位置：[eventManager.ts:83](../../src/core/eventManager.ts#L83)。
-  - 问题：每点一次链接，就 `GM_setValue` 写入 5.4 MB 的数据，油猴还要把这次变更同步给其他标签页。
-  - 修法：根治要靠 P4。
-  - 结果：B1 之后每次点击只写一个键。
 
 - [ ] **P3 · 开启同步后，每次页面加载都会完整同步一次**
   - 位置：`initializeSync`（[script.ts:17-31](../../src/core/script.ts#L17-L31)）、`syncOnStartup`（[sync.ts:1147-1213](../../src/core/sync.ts#L1147-L1213)）、`updateGist`（[sync.ts:1013-1056](../../src/core/sync.ts#L1013-L1056)）。
   - 问题：
     - 每个列表页加载时，都会 GET 整个 Gist，合并后只要有变化就调用 `updateGist`；
     - `updateGist` 为了拿到文件名，又 GET 一次整个 Gist，然后 PATCH 整份数据；
-    - 一次同步中，数据要经过 3 次 `requireVisitedLinksData` 的校验和复制（第 714、1152、1173 行）；
     - `lastSyncTime` 已经存下来了，却没有用来控制同步频率。
   - 修法：
     1. 用 `lastSyncTime` 节流，比如 10 分钟内跳过同步；在设置里另外提供一个"立即同步"按钮。
     2. 把第一次 GET 拿到的文件名传给更新步骤，省掉第二次 GET。
     3. 用 ETag 加 `If-None-Match` 做条件请求。GitHub 返回 304 时不消耗限流额度。
-    4. 本地数据只校验一次。
   - 验证：节流窗口内加载页面时，不发任何 GitHub 请求；一次上传只有 1 个 GET 和 1 个 PATCH。
-
-- [ ] **P4 · 按 host 分片存储**（依赖 D2 和 A1）
-  - **已被 B1 取代，建议和 D2 一起关闭：** 按 URL 逐条存储的粒度更细，下面列的收益都已拿到。
-  - 思路：每个站点单独一个 key，比如 `visited:<host>`。页面只读写当前站点的那一份；同步时用 `GM_listValues()` 汇总所有分片。
-  - 迁移：一次性把旧的 `visitedLinks` 大 key 拆成分片，拆完后删除旧 key。迁移必须可以重复执行，中途关闭页面也不能丢数据。
-  - 收益：P1 和 P2 的读写量都降到单个站点的规模，B1 的竞态窗口也随之变小。
 
 ## 3. 架构
 
 - [ ] **A1 · 统一存储层 `storage.ts`**
-  - 进度：访问记录这一半已在 B1 完成。storage.ts 已经存在，并且是唯一读写访问记录的模块。下面的「现状」写于 B1 之前，剩下要做的是 `userSettings` 那一半。
+  - 访问记录这一半已随 B1 完成：storage.ts 是唯一读写访问记录的模块。剩下要做的是 `userSettings` 这一半。
   - 现状：
-    - 同一份数据存在两处：内存里的 `state` 和 GM 存储。
-    - `'visitedLinks'` 和 `'userSettings'` 在 6 个文件里被直接调用 GM API，共约 18 处。
+    - 同一份设置存在两处：内存里的 `state` 和 GM 存储。
+    - `'userSettings'` 在 state.ts 和 sync.ts 里被直接调用 GM API，共 6 处。
     - sync.ts 自己又写了一套 `getDefaultUserSettings`、`getSyncSettings`、`saveSyncSettings`（[sync.ts:49-56](../../src/core/sync.ts#L49-L56)、[911-921](../../src/core/sync.ts#L911-L921)），B6 就是这么产生的。
     - "所有预设默认启用"的逻辑写了 3 遍：[config.ts:20-25](../../src/core/config.ts#L20-L25)、[menuManager.ts:58-61](../../src/core/menuManager.ts#L58-L61)、[PresetSettings.vue:182-186](../../src/components/PresetSettings.vue#L182-L186)。
-  - 目标：让 `storage.ts` 成为唯一调用 GM 存储 API 的模块，对外提供：
-    - key 常量；
+  - 目标：让 `storage.ts` 成为唯一调用 GM 存储 API 的模块，再对外提供：
+    - 设置的 key 常量；
     - `loadSettings()`：用 deepMerge 合并默认值，补上缺失的规则 key，清掉已经不存在的规则 key；
-    - `saveSettings()`；
-    - `loadLinks()`；
-    - `recordVisit(url)`：先读最新值，合并，再写回；
-    - `addVisits(urls)`；
-    - `pruneExpired()`。
+    - `saveSettings()`。
   - 完成标准：`grep -rn "GM_getValue\|GM_setValue" src` 只匹配到 storage.ts。
 
 - [ ] **A2 · 核心生命周期改成"激活 → dispose"**
@@ -442,7 +372,7 @@
       每条 pages 正则都会生成一条 `@include`，目前共有 88 条。
     - **未使用的字段。** 没有任何规则用到 `description` 字段。
   - 目标：
-    - 规则结构改为 `{ id, name, pages, patterns, normalize?: (url: URL) => string }`。id 直接沿用现有的 key，这样就不用迁移数据；name 另外填写显示名。
+    - 规则结构改为 `{ id, name, pages, patterns, normalize?: (url) => string }`，`url` 和 `getBaseUrl` 的参数同类型（现在是 `Pick<URL, 'href' | 'hostname'>`，需要时再加字段），`<a>` 元素和 `URL` 对象都能传。id 直接沿用现有的 key，这样就不用迁移数据；name 另外填写显示名。
     - 归一化逻辑跟着规则走。`getBaseUrl` 变成：先找到对应的规则，再调用它的 `normalize`。
   - 约束：规则文件会在 Node 中被 import，见「构建与运行环境」。
 
@@ -452,11 +382,8 @@
   - 现在的问题：
     - 两个分支的收尾代码是复制粘贴的；
     - 超过 1000 条时才启用的时间分片属于过度设计，给 1000 个元素加 class 大约只要 1 ms；
-    - 刚写完存储，紧接着又读一遍（B1 已去掉）；
     - 最后还要整页重新扫描一次，只是为了补上 URL 重复的那些链接。
   - 改法：只用一个循环——计算 URL，不匹配就跳过，没有记录就新增一条，然后加上 class。大约 20 行就够。
-- [ ] **C2 · `getBaseUrl` 不再对每个链接重新 `new URL`**，改用 `<a>` 元素上已经解析好的属性。和 B4 一起做。
-- [x] **C3 · 点击后不再重新解析整页的链接。**（随 B1 完成，bc63d1f） [eventManager.ts:87-92](../../src/core/eventManager.ts#L87-L92) 为了找出 URL 相同的链接，把整页链接都解析了一遍。改为复用 `updateAllLinksStatus`（做完 A2 后就是 `colorAll`）。
 - [ ] **C4 · 整理 debug 日志**
   - 现在有 18 处 `if (state.generalSettings.debug) console.log(...)`。开启 debug 后，每个链接会打出 7–9 行日志。统一改用一个 `log.debug()`。
   - 还有几处日志不受 debug 开关控制：[ShortcutSettings.vue:124-131](../../src/components/ShortcutSettings.vue#L124-L131)、[184-190](../../src/components/ShortcutSettings.vue#L184-L190)、[script.ts:54](../../src/core/script.ts#L54)、[91](../../src/core/script.ts#L91)。
@@ -481,7 +408,7 @@
   - 现状：`DEFAULT_SETTINGS` 里有些字段是 getter，每次返回新副本；有些是共享对象，被直接当作 `GM_getValue` 的默认值（[state.ts:12-17](../../src/core/state.ts#L12-L17)），有被意外修改的风险。
   - 改法：
     - 改为 `createDefaultSettings()` 工厂函数；
-    - 加载时执行一次 `deepMerge(defaults, stored)`。以后新增字段时，就不用再单独写迁移代码。
+    - 加载时执行一次 `deepMerge(defaults, stored)`。以后新增字段时，就不用再单独写迁移代码；B3 之前保存的快捷键设置缺 `code`，也会因此补上默认的 `KeyV`。
 - [ ] **C10 · 统一命名**
   - 快捷键在不同地方分别叫 batchKeySettings、batch、batch-key、shortcut；SettingsDialog 的 `currentSettings` prop 其实也是快捷键设置。
   - 预设分别叫 presetSettings、presetStates、preset、states。
@@ -497,7 +424,6 @@
   - `v-model` 和 `@change` 重复写入同一个值（[PresetSettings.vue:65-66](../../src/components/PresetSettings.vue#L65-L66)）。
   - `formatRegex` 处理了参数为 string 的情况，但实际不会传入 string。
   - 模板里内联的统计逻辑改成 computed。
-- [x] **C13 · ShortcutSettings 组件：** [ShortcutSettings.vue:116-122](../../src/components/ShortcutSettings.vue#L116-L122) 的 if/else 中，else 分支什么也没做。（随 B3 完成，fe8cdbe）做完 A4 后，这个组件会大幅简化。
 - [ ] **C14 · 去掉 isMac 检测里对 navigator 的判空**（[utils.ts:7-8](../../src/core/utils.ts#L7-L8)）。这个判空是为 Node 环境准备的，但规则文件挪到 shared/ 之后，utils.ts 已经不会在 Node 中执行了。
 
 ## 5. 工程化
@@ -518,12 +444,18 @@
       - 自愈逻辑；
       - 「同步模块的行为不变量」中的每一个分支；
       - 合并逻辑。
-    - `getBaseUrl`：包括 B4 中的那些非法输入。
+    - storage.ts 的多标签页语义：传播窗口内的并发写不丢；迁移可以重复执行，并能补进旧版本标签页写回的大键；同步期间的点击不丢；云端数据不能覆盖 `userSettings`；没有批量接口时退回逐条写。
+    - 批量快捷键：
+      - 应触发：方向键、Enter、Escape、F1 等特殊键；开着大写锁定；录入和按下时键盘布局不同；Mac 上的 ⌥⇧V。
+      - 不应触发：Ctrl+↑ 对 Ctrl+↓、Ctrl+Shift+V 对 Ctrl+V、1 对小键盘 1；焦点在 input、textarea、select、contenteditable（含其子元素，以及 open shadow root 里的这些元素）中；输入法正在组字。
+    - `getBaseUrl`：各站点的归一化，用 `new URL(...)` 传入；`{ href: 'http://', hostname: '' }` 和 `{ href: '', hostname: '' }`（`<a>` 的 href 解析失败、被删掉时就是这样）应原样返回。调用方跳过 SVG 的 `<a>`，这一条要在 DOM 环境里测。
     - 规则匹配：写成表格驱动的测试，列出"URL → 应命中哪条规则、是否应该染色"。
   - 提示：
     - sync.ts 是从 `vite-plugin-monkey/dist/client` import GM API 的，测试里需要用 `vi.mock` 替换掉；
     - 本机 Node 是 v26，原生支持 `CompressionStream`、`Blob`、`Response`。
     - storage.ts 的多标签页语义可以沿用 B1 时的模拟思路：mock 一个 GM 存储，后台按到达顺序应用写入，每个标签页一份缓存，`flush()` 时再广播。用不同的 query 导入 storage.ts，就能得到多个互相独立的"标签页"实例。
+    - 上面 storage.ts 和快捷键的场景，B1–B3 时已经在 Node 和 headless Chrome 里用临时脚本验证过，脚本没有入库，需要改写成 Vitest 用例。
+    - B4 时在 headless Chrome 里端到端地跑过构建产物：用 CDP 的 Fetch 拦截把 `https://www.v2ex.com` 的请求换成本地页面，GM API 用一个内存实现代替，SystemJS 取自 node_modules。脚本要等 HTML 解析完再注入（比如加 `defer`），否则 SystemJS 的自动导入会把入口模块再执行一遍。这套脚本同样没有入库。
 - [ ] **E3 · 整理 package.json**
   - license 写的是 `ISC`，而 userscript 头部写的是 `GPL-3.0-only`，两者不一致。
   - `main` 和 `description` 两个字段没有意义。
@@ -548,4 +480,6 @@
 | 2026-10-09 | 完成全部代码的分析，写出本文档 | — | 基于提交 1421605 |
 | 2026-10-09 | B1（顺带完成 P2、C3） | bc63d1f | 访问记录改为按 URL 逐条存储，新增 storage.ts，启动时迁移旧的 `visitedLinks` 键；建议关闭 D2 和 P4；新发现 B7 |
 | 2026-10-09 | D5 关闭；B2 | ae4ead1 | 默认快捷键不换；快捷键在输入框、可编辑区域（含 open shadow root 里的）和输入法组字时不触发；README 改正默认键；新增 B8（批量标记可撤销），待实施 |
-| 2026-10-10 | B3（顺带完成 C13） | fe8cdbe | 快捷键改为按 `event.code` 录入和匹配，`batch.key` 改名为 `code`，新增 shortcut.ts；按要求不迁移旧设置，老用户需要重新录入 |
+| 2026-10-10 | B3（顺带完成 C13） | 5cdf4cc | 快捷键改为按 `event.code` 录入和匹配，`batch.key` 改名为 `code`，新增 shortcut.ts；按要求不迁移旧设置，老用户需要重新录入 |
+| 2026-10-10 | D2、P4 关闭 | — | 精简文档，删去已完成条目的正文；D2、P4 已被 B1 的逐条存储取代；核对代码时发现 P3 原来的第 4 步（本地数据只校验一次）已随 B1 完成 |
+| 2026-10-10 | B4（顺带完成 C2） | 待提交 | `getBaseUrl` 改读 `<a>` 的 `hostname`，调用方跳过 SVG 里的 `<a>`，`setupPage` 出错不再影响设置界面挂载；顺带修好 href 被删掉时 `new URL('')` 抛错；97,048 条存储 URL 的归一化结果新旧一致 |

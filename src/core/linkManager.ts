@@ -27,7 +27,8 @@ export function batchAddLinks(state: ScriptState): void {
 
   // 第一遍：收集需要更新的链接，避免在DOM操作过程中修改数据
   links.forEach((link) => {
-    const inputUrl = getBaseUrl((link as HTMLAnchorElement).href);
+    if (!(link instanceof HTMLAnchorElement)) return; // SVG 里的 <a> 也会被选中，它的 href 不是字符串
+    const inputUrl = getBaseUrl(link);
 
     // 检查链接是否符合规则且尚未被标记为已访问
     if (shouldColorLink(inputUrl, state) && !Object.hasOwn(newLinks, inputUrl) && !isVisited(inputUrl)) {
@@ -123,12 +124,15 @@ function batchProcessWithTimeSlicing(linksToUpdate: Element[], onComplete?: () =
 
 // 更新单个链接的状态
 export function updateLinkStatus(link: Element, state: ScriptState): void {
+  // a[href] 也会选中 SVG 里的 <a>，它的 href 是 SVGAnimatedString 对象而不是字符串，直接跳过
+  if (!(link instanceof HTMLAnchorElement)) return;
+
   // 如果链接已经有 visited-link 类，跳过处理以提高性能
   // 这个检查避免了重复的DOM操作和URL处理
   if (link.classList.contains('visited-link')) return;
 
-  const originalHref = (link as HTMLAnchorElement).href;
-  const inputUrl = getBaseUrl(originalHref);
+  const originalHref = link.href;
+  const inputUrl = getBaseUrl(link);
   const shouldColor = shouldColorLink(inputUrl, state);
 
   if (state.generalSettings.debug) {
