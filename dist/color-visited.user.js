@@ -22323,7 +22323,7 @@ var _hoisted_5$3 = { class: "space-y-2" };
 var GeneralSettings_default = /* @__PURE__ */ defineComponent({
 	__name: "GeneralSettings",
 	props: { currentSettings: {} },
-	emits: ["save", "reset"],
+	emits: ["save"],
 	setup(__props, { expose: __expose, emit: __emit }) {
 		const props = __props;
 		const emit = __emit;
@@ -22472,7 +22472,7 @@ var _hoisted_30 = { class: "space-y-2 max-h-32 overflow-y-auto" };
 var PresetSettings_default = /* @__PURE__ */ defineComponent({
 	__name: "PresetSettings",
 	props: { currentPresetSettings: {} },
-	emits: ["save", "reset"],
+	emits: ["save"],
 	setup(__props, { expose: __expose, emit: __emit }) {
 		const props = __props;
 		const emit = __emit;
@@ -22616,7 +22616,7 @@ var ShortcutSettings_default = /* @__PURE__ */ defineComponent({
 		visible: { type: Boolean },
 		isActive: { type: Boolean }
 	},
-	emits: ["save", "reset"],
+	emits: ["save"],
 	setup(__props, { expose: __expose, emit: __emit }) {
 		const props = __props;
 		const emit = __emit;
@@ -22669,8 +22669,7 @@ var ShortcutSettings_default = /* @__PURE__ */ defineComponent({
 		};
 		const handleSave = () => {
 			if (hasNewKeyPress.value) {
-				if (isResetMode.value) emit("reset");
-				else emit("save", newSettings.value);
+				emit("save", { ...newSettings.value });
 				formData.value = { ...newSettings.value };
 				savedSettings.value = { ...newSettings.value };
 				hasNewKeyPress.value = false;
@@ -23588,36 +23587,17 @@ function removeCustomStyles() {
 	const styleElement = document.querySelector("#color-visited-style");
 	if (styleElement) styleElement.remove();
 }
-function showSettingsDialog(config) {
+function showSettingsDialog(state) {
 	eventBus.emit("dialog:show-settings", {
 		type: "settings",
 		payload: {
-			currentBatchKeySettings: config.batchKeySettings.current,
-			currentGeneralSettings: config.generalSettings.current,
-			currentPresetSettings: config.presetSettings.current,
-			currentSyncSettings: config.syncSettings.current,
-			isMac: config.isMac
+			currentBatchKeySettings: state.batchKeySettings,
+			currentGeneralSettings: state.generalSettings,
+			currentPresetSettings: state.presetSettings,
+			currentSyncSettings: state.syncSettings,
+			isMac
 		}
 	});
-	const handleSettingsSave = (event) => {
-		if (event.type === "batch-key" && event.settings) config.callbacks.onBatchKeySave(event.settings);
-		else if (event.type === "general" && event.settings) config.callbacks.onGeneralSave(event.settings);
-		else if (event.type === "preset" && event.states) config.callbacks.onPresetSave(event.states);
-		else if (event.type === "sync" && event.settings) config.callbacks.onSyncSave(event.settings);
-	};
-	const handleSettingsReset = (event) => {
-		if (event.type === "batch-key") config.callbacks.onBatchKeyReset();
-		else if (event.type === "general") config.callbacks.onGeneralReset();
-		else if (event.type === "preset") config.callbacks.onPresetReset();
-		else if (event.type === "sync") config.callbacks.onSyncReset();
-	};
-	eventBus.on("settings:save", handleSettingsSave);
-	eventBus.on("settings:reset", handleSettingsReset);
-	const cleanup = () => {
-		eventBus.off("settings:save", handleSettingsSave);
-		eventBus.off("settings:reset", handleSettingsReset);
-	};
-	return cleanup;
 }
 var _hoisted_1$1 = { class: "space-y-6" };
 var _hoisted_2$1 = { class: "space-y-4" };
@@ -23633,7 +23613,7 @@ var _hoisted_11 = { class: "flex justify-center pt-2" };
 var SyncSettings_default = /* @__PURE__ */ defineComponent({
 	__name: "SyncSettings",
 	props: { currentSettings: {} },
-	emits: ["save", "reset"],
+	emits: ["save"],
 	setup(__props, { expose: __expose, emit: __emit }) {
 		const props = __props;
 		const emit = __emit;
@@ -23800,13 +23780,9 @@ var SettingsDialog_default = /* @__PURE__ */ defineComponent({
 	emits: [
 		"update:modelValue",
 		"save",
-		"reset",
 		"generalSave",
-		"generalReset",
 		"presetSave",
-		"presetReset",
-		"syncSave",
-		"syncReset"
+		"syncSave"
 	],
 	setup(__props, { emit: __emit }) {
 		const props = __props;
@@ -23849,20 +23825,20 @@ var SettingsDialog_default = /* @__PURE__ */ defineComponent({
 			const _component_el_dialog = ElDialog;
 			return openBlock(), createBlock(_component_el_dialog, {
 				modelValue: visible.value,
-				"onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => visible.value = $event),
+				"onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => visible.value = $event),
 				width: "900px",
 				"close-on-click-modal": true,
 				"close-on-press-escape": false,
 				"body-style": { padding: "0" },
 				onClosed: handleClosed
 			}, {
-				header: withCtx(() => [..._cache[10] || (_cache[10] = [createBaseVNode("span", { class: "text-lg font-semibold" }, "设置", -1)])]),
+				header: withCtx(() => [..._cache[6] || (_cache[6] = [createBaseVNode("span", { class: "text-lg font-semibold" }, "设置", -1)])]),
 				footer: withCtx(() => [createBaseVNode("div", _hoisted_6, [createVNode(_component_el_button, {
 					onClick: handleReset,
 					size: "large",
 					plain: ""
 				}, {
-					default: withCtx(() => [..._cache[11] || (_cache[11] = [createTextVNode(" 重置为默认 ", -1)])]),
+					default: withCtx(() => [..._cache[7] || (_cache[7] = [createTextVNode(" 重置为默认 ", -1)])]),
 					_: 1
 				}), createVNode(_component_el_button, {
 					type: "primary",
@@ -23870,12 +23846,12 @@ var SettingsDialog_default = /* @__PURE__ */ defineComponent({
 					onClick: handleSave,
 					disabled: !canSave.value
 				}, {
-					default: withCtx(() => [..._cache[12] || (_cache[12] = [createTextVNode(" 保存设置 ", -1)])]),
+					default: withCtx(() => [..._cache[8] || (_cache[8] = [createTextVNode(" 保存设置 ", -1)])]),
 					_: 1
 				}, 8, ["disabled"])])]),
 				default: withCtx(() => [createBaseVNode("div", _hoisted_1, [createVNode(_component_el_tabs, {
 					modelValue: activeTab.value,
-					"onUpdate:modelValue": _cache[8] || (_cache[8] = ($event) => activeTab.value = $event),
+					"onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => activeTab.value = $event),
 					"tab-position": "left",
 					class: "h-full",
 					stretch: ""
@@ -23890,8 +23866,7 @@ var SettingsDialog_default = /* @__PURE__ */ defineComponent({
 								"current-settings": __props.generalSettings,
 								ref_key: "generalSettingsRef",
 								ref: generalSettingsRef,
-								onSave: _cache[0] || (_cache[0] = (settings) => emit("generalSave", settings)),
-								onReset: _cache[1] || (_cache[1] = () => emit("generalReset"))
+								onSave: _cache[0] || (_cache[0] = (settings) => emit("generalSave", settings))
 							}, null, 8, ["current-settings"])])]),
 							_: 1
 						}),
@@ -23904,8 +23879,7 @@ var SettingsDialog_default = /* @__PURE__ */ defineComponent({
 								"current-preset-settings": __props.currentPresetSettings,
 								ref_key: "presetSettingsRef",
 								ref: presetSettingsRef,
-								onSave: _cache[2] || (_cache[2] = (states) => emit("presetSave", states)),
-								onReset: _cache[3] || (_cache[3] = () => emit("presetReset"))
+								onSave: _cache[1] || (_cache[1] = (states) => emit("presetSave", states))
 							}, null, 8, ["current-preset-settings"])])]),
 							_: 1
 						}),
@@ -23921,8 +23895,7 @@ var SettingsDialog_default = /* @__PURE__ */ defineComponent({
 								"is-active": activeTab.value === "shortcut",
 								ref_key: "shortcutSettingsRef",
 								ref: shortcutSettingsRef,
-								onSave: _cache[4] || (_cache[4] = (settings) => emit("save", settings)),
-								onReset: _cache[5] || (_cache[5] = () => emit("reset"))
+								onSave: _cache[2] || (_cache[2] = (settings) => emit("save", settings))
 							}, null, 8, [
 								"current-settings",
 								"is-mac",
@@ -23940,8 +23913,7 @@ var SettingsDialog_default = /* @__PURE__ */ defineComponent({
 								"current-settings": __props.currentSyncSettings,
 								ref_key: "syncSettingsRef",
 								ref: syncSettingsRef,
-								onSave: _cache[6] || (_cache[6] = (settings) => emit("syncSave", settings)),
-								onReset: _cache[7] || (_cache[7] = () => emit("syncReset"))
+								onSave: _cache[3] || (_cache[3] = (settings) => emit("syncSave", settings))
 							}, null, 8, ["current-settings"])])]),
 							_: 1
 						})
@@ -23969,17 +23941,11 @@ var App_default = /* @__PURE__ */ defineComponent({
 				settings
 			});
 		};
-		const handleSettingsReset = () => {
-			eventBus.emit("settings:reset", { type: "batch-key" });
-		};
 		const handleGeneralSave = (settings) => {
 			eventBus.emit("settings:save", {
 				type: "general",
 				settings
 			});
-		};
-		const handleGeneralReset = () => {
-			eventBus.emit("settings:reset", { type: "general" });
 		};
 		const handlePresetSave = (states) => {
 			eventBus.emit("settings:save", {
@@ -23987,17 +23953,11 @@ var App_default = /* @__PURE__ */ defineComponent({
 				states
 			});
 		};
-		const handlePresetReset = () => {
-			eventBus.emit("settings:reset", { type: "preset" });
-		};
 		const handleSyncSave = (settings) => {
 			eventBus.emit("settings:save", {
 				type: "sync",
 				settings
 			});
-		};
-		const handleSyncReset = () => {
-			eventBus.emit("settings:reset", { type: "sync" });
 		};
 		onMounted(() => {
 			eventBus.on("dialog:show-settings", handleShowDialog);
@@ -24016,13 +23976,9 @@ var App_default = /* @__PURE__ */ defineComponent({
 				"current-sync-settings": dialogData.value.currentSyncSettings,
 				"is-mac": dialogData.value.isMac,
 				onSave: handleSettingsSave,
-				onReset: handleSettingsReset,
 				onGeneralSave: handleGeneralSave,
-				onGeneralReset: handleGeneralReset,
 				onPresetSave: handlePresetSave,
-				onPresetReset: handlePresetReset,
-				onSyncSave: handleSyncSave,
-				onSyncReset: handleSyncReset
+				onSyncSave: handleSyncSave
 			}, null, 8, [
 				"modelValue",
 				"current-settings",
@@ -24294,79 +24250,8 @@ function onUrlChange(callback) {
 	});
 	ensureDOMObserver();
 }
-var MenuManager = class {
-	state;
-	reinitializeScript;
-	constructor(state) {
-		this.state = state;
-	}
-	setCallbacks(reinitializeScript) {
-		this.reinitializeScript = reinitializeScript;
-	}
-	createSettingsCallbacks() {
-		const defaultGeneralSettings = DEFAULT_SETTINGS.general;
-		return {
-			onBatchKeySave: (newSettings) => {
-				this.state.batchKeySettings = newSettings;
-				saveUserSettings(this.state);
-			},
-			onBatchKeyReset: () => {
-				const defaultBatchKey = DEFAULT_SETTINGS.batchKey;
-				this.state.batchKeySettings = { ...defaultBatchKey };
-				saveUserSettings(this.state);
-			},
-			onGeneralSave: (newGeneralSettings) => {
-				this.state.generalSettings = newGeneralSettings;
-				saveUserSettings(this.state);
-				this.reinitializeScript?.(this.state);
-			},
-			onGeneralReset: () => {
-				this.state.generalSettings = { ...defaultGeneralSettings };
-				saveUserSettings(this.state);
-				this.reinitializeScript?.(this.state);
-			},
-			onPresetSave: (newPresetSettings) => {
-				this.state.presetSettings = newPresetSettings;
-				saveUserSettings(this.state);
-				this.reinitializeScript?.(this.state);
-			},
-			onPresetReset: () => {
-				const defaultStates = {};
-				Object.keys(PRESET_RULES).forEach((key) => {
-					defaultStates[key] = true;
-				});
-				this.state.presetSettings = defaultStates;
-				saveUserSettings(this.state);
-				this.reinitializeScript?.(this.state);
-			},
-			onSyncSave: (newSyncSettings) => {
-				this.state.syncSettings = newSyncSettings;
-				saveUserSettings(this.state);
-				this.registerMenuCommand();
-			},
-			onSyncReset: () => {
-				this.state.syncSettings = { ...DEFAULT_SETTINGS.sync };
-				saveUserSettings(this.state);
-				this.registerMenuCommand();
-			}
-		};
-	}
-	registerMenuCommand() {
-		const callbacks = this.createSettingsCallbacks();
-		_GM_registerMenuCommand("设置", () => {
-			showSettingsDialog({
-				batchKeySettings: { current: this.state.batchKeySettings },
-				generalSettings: { current: this.state.generalSettings },
-				presetSettings: { current: this.state.presetSettings },
-				syncSettings: { current: this.state.syncSettings },
-				isMac,
-				callbacks
-			});
-		});
-	}
-};
-function createMenuManager(state) {
-	return new MenuManager(state);
+function registerMenuCommand(state) {
+	_GM_registerMenuCommand("设置", () => showSettingsDialog(state));
 }
 function isTyping(event) {
 	if (event.isComposing) return true;
@@ -24438,6 +24323,14 @@ function setupGlobalEventListeners(state) {
 		console.log("同步完成，增量更新链接状态...");
 		if (isPageActive(state)) updateAllLinksStatus(state);
 	});
+	eventBus.on("settings:save", (event) => {
+		if (event.type === "general") state.generalSettings = event.settings;
+		else if (event.type === "preset") state.presetSettings = event.states;
+		else if (event.type === "batch-key") state.batchKeySettings = event.settings;
+		else state.syncSettings = event.settings;
+		saveUserSettings(state);
+		setupPage(state);
+	});
 }
 function setupPage(state) {
 	try {
@@ -24452,9 +24345,7 @@ function setupPage(state) {
 	}
 }
 function startScript(state) {
-	const menuManager = createMenuManager(state);
-	menuManager.setCallbacks(setupPage);
-	menuManager.registerMenuCommand();
+	registerMenuCommand(state);
 	initializeSync(state);
 	setupGlobalEventListeners(state);
 	setupPage(state);

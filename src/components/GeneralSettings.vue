@@ -65,7 +65,6 @@ interface Props {
 
 interface Emits {
   (e: 'save', settings: GeneralSettings): void
-  (e: 'reset'): void
 }
 
 const props = defineProps<Props>()

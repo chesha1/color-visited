@@ -6,7 +6,7 @@
 
 ## 怎么使用这份文档
 
-- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 B5、B6」。
+- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 B6、B7」。
 - 条目编号的含义：**B** = bug，**P** = 性能，**A** = 架构，**C** = 代码细节，**E** = 工程化，**D** = 需要你拍板的决策。
 - 每完成一项：
   - 从正文删掉这一条，并在文末「会话记录」里追加一行，写上提交号；
@@ -18,7 +18,7 @@
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 1 | 修 bug，加几个低风险的小优化 | B5–B9、P1、P3、A6 短期第 1 步 | 进行中 |
+| 1 | 修 bug，加几个低风险的小优化 | B6–B9、P1、P3、A6 短期第 1 步 | 进行中 |
 | 2 | 先搭安全网：测试 + 格式化 | E2、E1a | 未开始 |
 | 3 | 统一存储层，清理死代码 | A1、C7–C9 | 未开始 |
 | 4 | 核心生命周期 + 规则模型 | A2、A7、C1 | 未开始 |
@@ -30,8 +30,7 @@
 阶段之间的依赖：
 
 - 阶段 6 要在阶段 2 的测试完成之后做；
-- A3 依赖 A1；
-- B5 的代码会在 A3 中被整体删除。如果打算很快做 A3，B5 只需要最小限度的止血。
+- A3 依赖 A1。
 
 ## 待决策（需要你拍板）
 
@@ -47,7 +46,7 @@
 
 已完成的条目里，需要在真实浏览器里做、还没做的验证放在这里。
 
-目前没有：B1–B4 的手动验证已在 2026-10-10 全部通过。
+目前没有：B1–B5 的手动验证已在 2026-10-10 全部通过。
 
 ## 背景事实与约束
 
@@ -129,6 +128,9 @@
   - 参数类型是 `Pick<URL, 'href' | 'hostname'>`，`<a>` 元素和 `URL` 对象都能传。
   - 不用 `URL.parse`：它要 Chrome 126+、Firefox 126+、Safari 18+，在内核更旧的浏览器上会直接报错，让整个脚本失效。
   - SVG 里的 `<a>` 直接跳过，不染色也不记录：它的 href 是 `SVGAnimatedString` 对象，不是字符串。
+- **保存任何一类设置，都按新设置重新初始化页面（B5）。**
+  - 以前只有常规设置和预设网站会重新初始化页面，快捷键和同步设置只写存储。现在四类设置走同一条路径，和 A3 的目标一致（`settings:changed` 之后调用 `refresh()`）。
+  - 代价是保存快捷键或同步设置时，也要多跑一次 setupPage，多读一遍全量存储（见 P1）。保存是手动点的，这点耗时感觉不到。
 
 ### 结论的可信度
 
@@ -152,18 +154,6 @@
 ---
 
 ## 1. Bug
-
-- [ ] **B5 · 设置对话框的监听器泄漏，菜单被重复注册**
-  - 位置：
-    - `showSettingsDialog`，[ui.ts:140-191](../../src/core/ui.ts#L140-L191)：在 179-180 行注册监听；184-190 行返回清理函数，但这个返回值在 [menuManager.ts:89](../../src/core/menuManager.ts#L89) 被直接丢弃。
-    - 重复注册菜单发生在 [menuManager.ts:72](../../src/core/menuManager.ts#L72) 和 [78](../../src/core/menuManager.ts#L78)。
-  - 问题：
-    - 每点一次"设置"，就会多注册一组 `settings:save` 和 `settings:reset` 监听。打开 N 次之后，保存一次会执行 N 次 `saveUserSettings` 和 N 次 `setupPage`，每一次都要全量读写存储。
-    - 保存或重置同步设置时，代码会再次调用 `GM_registerMenuCommand('设置')`。Tampermonkey 在不传 id 时会新建菜单项，于是菜单里会出现重复的"设置"。
-  - 修法：监听器只在启动时注册一次；删掉两处重新注册菜单的代码，因为菜单文字固定是"设置"，没有需要更新的状态。A3 会把这整条链路删掉。
-  - 验证：
-    - 在同一页面打开设置 3 次，再保存常规设置。`saveUserSettings` 应该只执行 1 次（可以打断点确认）。
-    - 保存同步设置后，菜单里只有一个"设置"。
 
 - [ ] **B6 · `lastSyncTime` 会被旧值写回**
   - 位置：
@@ -241,7 +231,7 @@
     - 同一份设置存在两处：内存里的 `state` 和 GM 存储。
     - `'userSettings'` 在 state.ts 和 sync.ts 里被直接调用 GM API，共 6 处。
     - sync.ts 自己又写了一套 `getDefaultUserSettings`、`getSyncSettings`、`saveSyncSettings`（[sync.ts:49-56](../../src/core/sync.ts#L49-L56)、[911-921](../../src/core/sync.ts#L911-L921)），B6 就是这么产生的。
-    - "所有预设默认启用"的逻辑写了 3 遍：[config.ts:20-25](../../src/core/config.ts#L20-L25)、[menuManager.ts:58-61](../../src/core/menuManager.ts#L58-L61)、[PresetSettings.vue:182-186](../../src/components/PresetSettings.vue#L182-L186)。
+    - "所有预设默认启用"的逻辑写了 2 遍：[config.ts:20-25](../../src/core/config.ts#L20-L25)、[PresetSettings.vue:182-186](../../src/components/PresetSettings.vue#L182-L186)。menuManager.ts 里原来还有一份，已随 B5 删除。
   - 目标：让 `storage.ts` 成为唯一调用 GM 存储 API 的模块，再对外提供：
     - 设置的 key 常量；
     - `loadSettings()`：用 deepMerge 合并默认值，补上缺失的规则 key，清掉已经不存在的规则 key；
@@ -289,22 +279,19 @@
     - 模块之间没有循环依赖。
 
 - [ ] **A3 · 设置数据流改用 settings store**（依赖 A1）
+  - B5 已经完成了其中一部分：删掉了 MenuManager 类、`SettingsDialogConfig`、`{ current: X }` 包装和整条 reset 通道（重置只把表单填回默认值，再走保存），菜单回调现在只负责打开对话框。
   - 现状：
-    - **保存一个设置要绕很长一条链路：**
+    - **保存一个设置仍要绕一条链路：**
       1. 子组件 emit；
-      2. SettingsDialog 转发成 8 个事件；
-      3. App.vue 里的 8 个 handler 接收；
+      2. SettingsDialog 转发成 4 个事件；
+      3. App.vue 里的 4 个 handler 接收；
       4. 再通过 mitt 发出 `settings:save`；
-      5. ui.ts 用 switch 分发，中间还要 `as` 断言；
-      6. 交给 MenuManager 的回调；
-      7. 最后修改 state、保存，并调用 `setupPage`。
-    - **4 条 reset 通道里只有快捷键那一条在用**（只有 ShortcutSettings 会 `emit('reset')`）。general、preset、sync 三条在 SettingsDialog、App.vue、menuManager、ui.ts 四处都是死代码。
-    - `{ current: X }` 这层包装没有作用（[ui.ts:110-137](../../src/core/ui.ts#L110-L137)）。
-    - 常量 `isMac` 被当作 prop 一层层往下传。
+      5. script.ts 在启动时订阅的 handler 按 `type` 修改 state、保存，并调用 `setupPage`。
+    - 常量 `isMac` 被当作 prop 一层层往下传，`showSettingsDialog` 还把它放进了事件的 payload。
   - 目标：
     - `settings.ts` 导出一个 reactive store 和 `save(next)`。`save` 通过 A1 持久化，然后发出 `settings:changed`，core 收到后调用 `refresh()`。
-    - 菜单回调只负责打开对话框，并触发 UI 懒挂载（见 A6）。
-    - 删除 MenuManager 类、`SettingsDialogConfig`、`SettingsDialogPayload`、App.vue 的 8 个 handler，以及 `settings:save` 和 `settings:reset` 两个事件。
+    - 菜单回调在打开对话框时，触发 UI 懒挂载（见 A6）。
+    - 删除 `SettingsDialogPayload`、App.vue 的 4 个 handler，以及 `settings:save` 事件。
     - 组件直接 `import { isMac }`，不再通过 prop 传递。
   - 注意：把 Vue 响应式对象存进 GM 存储之前，要先 `toRaw`，再拷贝成普通对象。
 
@@ -412,7 +399,6 @@
 - [ ] **C8 · 类型整理**
   - `VisitedLinksData` 和 `VisitedLinks` 是同一个类型，合并成一个。
   - 只在 sync 内部使用的类型，移出全局的 types.ts。
-  - 如果做完 A3 后 `settings:save` 仍然存在，把它改成可辨识联合类型，去掉 `as` 断言（[ui.ts:154-163](../../src/core/ui.ts#L154-L163)）。
 - [ ] **C9 · 默认值改用工厂函数**
   - 现状：`DEFAULT_SETTINGS` 里有些字段是 getter，每次返回新副本；有些是共享对象，被直接当作 `GM_getValue` 的默认值（[state.ts:12-17](../../src/core/state.ts#L12-L17)），有被意外修改的风险。
   - 改法：
@@ -459,6 +445,7 @@
       - 不应触发：Ctrl+↑ 对 Ctrl+↓、Ctrl+Shift+V 对 Ctrl+V、1 对小键盘 1；焦点在 input、textarea、select、contenteditable（含其子元素，以及 open shadow root 里的这些元素）中；输入法正在组字。
     - `getBaseUrl`：各站点的归一化，用 `new URL(...)` 传入；`{ href: 'http://', hostname: '' }` 和 `{ href: '', hostname: '' }`（`<a>` 的 href 解析失败、被删掉时就是这样）应原样返回。调用方跳过 SVG 的 `<a>`，这一条要在 DOM 环境里测。
     - 规则匹配：写成表格驱动的测试，列出"URL → 应命中哪条规则、是否应该染色"。
+    - 设置对话框（端到端）：打开 N 次再保存，`userSettings` 只写 1 次、setupPage 只跑 1 次；保存同步设置后，`GM_registerMenuCommand` 只被调用过 1 次；快捷键页"重置为默认"后保存，存下来的是默认快捷键，按下能批量标记。
   - 提示：
     - sync.ts 是从 `vite-plugin-monkey/dist/client` import GM API 的，测试里需要用 `vi.mock` 替换掉；
     - 本机 Node 是 v26，原生支持 `CompressionStream`、`Blob`、`Response`。
@@ -467,6 +454,10 @@
     - storage.ts 的多标签页语义可以沿用 B1 时的模拟思路：mock 一个 GM 存储，后台按到达顺序应用写入，每个标签页一份缓存，`flush()` 时再广播。用不同的 query 导入 storage.ts，就能得到多个互相独立的"标签页"实例。
     - 上面 storage.ts 和快捷键的场景，B1–B3 时已经在 Node 和 headless Chrome 里用临时脚本验证过，脚本没有入库，需要改写成 Vitest 用例。
     - B4 时在 headless Chrome 里端到端地跑过构建产物：用 CDP 的 Fetch 拦截把 `https://www.v2ex.com` 的请求换成本地页面，GM API 用一个内存实现代替，SystemJS 取自 node_modules。脚本要等 HTML 解析完再注入（比如加 `defer`），否则 SystemJS 的自动导入会把入口模块再执行一遍。这套脚本同样没有入库。
+    - B5 时换了一种不用 CDP 的端到端方式，脚本同样没有入库：
+      - Node 起一个本地 https 服务（自签证书），headless Chrome 加上 `--host-resolver-rules=MAP www.v2ex.com 127.0.0.1:8443` 和 `--ignore-certificate-errors`，打开的 `https://www.v2ex.com/` 就是这个本地页面，脚本按激活页运行。
+      - 页面里依次放内存版 GM API、SystemJS（取自 node_modules）和构建产物（加 `defer`），再由一个驱动脚本点菜单、操作对话框，把结果写进 `<pre>`，用 `--dump-dom --virtual-time-budget=60000` 取出。
+      - 有两个坑。一是 Chrome 要用异步的 `execFile` 启动：同步调用会卡住同一进程里的 https 服务，拿到的是空白页。二是 `--virtual-time-budget` 下 rAF 不触发，Vue 的离场过渡永远结束不了，对话框关不掉，要把 rAF 换成 setTimeout。
 - [ ] **E3 · 整理 package.json**
   - license 写的是 `ISC`，而 userscript 头部写的是 `GPL-3.0-only`，两者不一致。
   - `main` 和 `description` 两个字段没有意义。
@@ -498,3 +489,4 @@
 | 2026-10-10 | — | de7cf13 | 根目录的 `visited-links.json` 移到 `test/fixtures/local/visited-links.v2.json`，不再入库，目录里加 README 说明两份样本；D1 只剩是否清理 git 历史；用 v2 样本跑 v3 往返时新发现 B9 |
 | 2026-10-10 | D1 关闭 | — | 用 git filter-branch 把 `visited-links.json` 从历史中删除，并 force push 了 main。只改写了从 76b0291 起的 17 个提交，提交号都变了，本文引用的已换成新的；更早的提交（包括唯一带签名的根提交）、`refactor/v2` 和 tag 不受影响。GitHub 上按旧提交号仍能访问，待联系 GitHub Support 清理 |
 | 2026-10-10 | B1–B4 的手动验证 | — | 在真实浏览器里全部通过，清空「待手动验证」 |
+| 2026-10-10 | B5（顺带完成 A3 的一部分和 C8 的一条） | 待提交 | 保存监听改为启动时在 script.ts 订阅一次，菜单只注册一次，删掉 MenuManager 类和 `SettingsDialogConfig`；删掉 reset 通道，快捷键页重置后也走保存；`settings:save` 改成可辨识联合类型；保存任何设置都重新初始化页面。headless Chrome 端到端对比新旧产物：打开 3 次后保存，旧版写 3 次存储、跑 3 次 setupPage，新版各 1 次；保存同步设置后，旧版菜单注册了 4 次，新版始终 1 次；手动验证在真实浏览器里通过 |

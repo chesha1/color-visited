@@ -42,7 +42,6 @@ interface Props {
 
 interface Emits {
   (e: 'save', settings: BatchKeySettings): void
-  (e: 'reset'): void
 }
 
 const props = defineProps<Props>()
@@ -115,14 +114,9 @@ const handleKeyDown = (e: KeyboardEvent) => {
 
 const handleSave = () => {
   if (hasNewKeyPress.value) {
-    if (isResetMode.value) {
-      // 如果是重置模式，直接触发父组件的重置事件
-      emit('reset')
-    } else {
-      // 否则正常保存，直接触发父组件的保存事件
-      emit('save', newSettings.value)
-    }
-    
+    // 点过重置的话 newSettings 已经是默认值，和录入的新快捷键一样保存即可
+    emit('save', { ...newSettings.value })
+
     // 保存后更新状态
     formData.value = { ...newSettings.value }
     savedSettings.value = { ...newSettings.value }

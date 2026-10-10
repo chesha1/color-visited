@@ -77,14 +77,11 @@ export type Events = {
     type: 'sync'
     payload: SyncDialogPayload
   }
-  'settings:save': {
-    type: 'batch-key' | 'general' | 'preset' | 'sync'
-    settings?: BatchKeySettings | GeneralSettings | SyncSettings
-    states?: Record<string, boolean>
-  }
-  'settings:reset': {
-    type: 'batch-key' | 'general' | 'preset' | 'sync'
-  }
+  'settings:save':
+    | { type: 'batch-key'; settings: BatchKeySettings }
+    | { type: 'general'; settings: GeneralSettings }
+    | { type: 'preset'; states: Record<string, boolean> }
+    | { type: 'sync'; settings: SyncSettings }
   'menu:update': {
     // 菜单更新事件
   }

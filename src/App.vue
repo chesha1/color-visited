@@ -28,22 +28,10 @@ const handleSettingsSave = (settings: BatchKeySettings) => {
   })
 }
 
-const handleSettingsReset = () => {
-  eventBus.emit('settings:reset', {
-    type: 'batch-key'
-  })
-}
-
 const handleGeneralSave = (settings: GeneralSettings) => {
   eventBus.emit('settings:save', {
     type: 'general',
     settings
-  })
-}
-
-const handleGeneralReset = () => {
-  eventBus.emit('settings:reset', {
-    type: 'general'
   })
 }
 
@@ -54,22 +42,10 @@ const handlePresetSave = (states: Record<string, boolean>) => {
   })
 }
 
-const handlePresetReset = () => {
-  eventBus.emit('settings:reset', {
-    type: 'preset'
-  })
-}
-
 const handleSyncSave = (settings: SyncSettings) => {
   eventBus.emit('settings:save', {
     type: 'sync',
     settings
-  })
-}
-
-const handleSyncReset = () => {
-  eventBus.emit('settings:reset', {
-    type: 'sync'
   })
 }
 
@@ -92,12 +68,8 @@ onUnmounted(() => {
     :current-sync-settings="dialogData.currentSyncSettings"
     :is-mac="dialogData.isMac"
     @save="handleSettingsSave"
-    @reset="handleSettingsReset"
     @general-save="handleGeneralSave"
-    @general-reset="handleGeneralReset"
     @preset-save="handlePresetSave"
-    @preset-reset="handlePresetReset"
     @sync-save="handleSyncSave"
-    @sync-reset="handleSyncReset"
   />
 </template>

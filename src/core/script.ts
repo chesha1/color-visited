@@ -4,7 +4,7 @@ import { showNotification, injectCustomStyles } from '@/core/ui';
 import { initializeScriptState } from '@/core/state';
 import type { ScriptState } from '@/types';
 import { isPageActive, onUrlChange } from '@/core/pageDetector';
-import { createMenuManager } from '@/core/menuManager';
+import { registerMenuCommand } from '@/core/menuManager';
 import { activateLinkFeatures, removeScript, updateAllLinksStatus } from '@/core/linkManager';
 import { setupBatchKeyListener, setupDOMObserver, setupLinkEventListeners } from '@/core/eventManager';
 import { saveUserSettings } from '@/core/state';
@@ -57,6 +57,17 @@ function setupGlobalEventListeners(state: ScriptState): void {
       updateAllLinksStatus(state);
     }
   });
+
+  // 设置对话框保存后写回存储，并按新设置重新初始化页面。
+  // 只在启动时订阅这一次：放在打开对话框的地方会每打开一次多一个监听，保存一次就执行好几遍
+  eventBus.on('settings:save', (event) => {
+    if (event.type === 'general') state.generalSettings = event.settings;
+    else if (event.type === 'preset') state.presetSettings = event.states;
+    else if (event.type === 'batch-key') state.batchKeySettings = event.settings;
+    else state.syncSettings = event.settings;
+    saveUserSettings(state);
+    setupPage(state);
+  });
 }
 
 // 页面级别的设置和初始化
@@ -77,11 +88,7 @@ function setupPage(state: ScriptState): void {
 
 // 脚本启动和全局初始化
 function startScript(state: ScriptState): void {
-  // 创建菜单管理器并设置脚本重初始化回调
-  const menuManager = createMenuManager(state);
-  menuManager.setCallbacks(setupPage);
-  menuManager.registerMenuCommand();
-
+  registerMenuCommand(state);
   initializeSync(state);
   setupGlobalEventListeners(state);
 

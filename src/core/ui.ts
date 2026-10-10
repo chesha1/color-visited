@@ -1,7 +1,8 @@
 // ================== UI 管理模块 ==================
 
 import { eventBus } from '@/core/eventBus';
-import type { BatchKeySettings, GeneralSettings, SyncSettings } from '@/types';
+import { isMac } from '@/core/utils';
+import type { ScriptState } from '@/types';
 import { ElMessage } from 'element-plus';
 import type { MessageProps } from 'element-plus';
 import 'element-plus/es/components/message/style/css';
@@ -104,89 +105,18 @@ export function removeCustomStyles(): void {
   }
 }
 
-// ================== 快捷键设置对话框 ==================
+// ================== 设置对话框 ==================
 
-// 设置对话框配置接口
-interface SettingsDialogConfig {
-  // 设置数据
-  batchKeySettings: {
-    current: BatchKeySettings;
-  };
-  generalSettings: {
-    current: GeneralSettings;
-  };
-  presetSettings: {
-    current: Record<string, boolean>;
-  };
-  syncSettings: {
-    current: SyncSettings;
-  };
-  // 系统信息
-  isMac: boolean;
-  // 回调函数
-  callbacks: {
-    onBatchKeySave: (settings: BatchKeySettings) => void;
-    onBatchKeyReset: () => void;
-    onGeneralSave: (settings: GeneralSettings) => void;
-    onGeneralReset: () => void;
-    onPresetSave: (states: Record<string, boolean>) => void;
-    onPresetReset: () => void;
-    onSyncSave: (settings: SyncSettings) => void;
-    onSyncReset: () => void;
-  };
-}
-
-// 显示设置弹窗（包含快捷键和常规设置）
-export function showSettingsDialog(config: SettingsDialogConfig): () => void {
-  // 通过事件总线发送显示对话框事件
+// 只负责打开对话框。对话框里的保存由 script.ts 在启动时统一订阅
+export function showSettingsDialog(state: ScriptState): void {
   eventBus.emit('dialog:show-settings', {
     type: 'settings',
     payload: {
-      currentBatchKeySettings: config.batchKeySettings.current,
-      currentGeneralSettings: config.generalSettings.current,
-      currentPresetSettings: config.presetSettings.current,
-      currentSyncSettings: config.syncSettings.current,
-      isMac: config.isMac
+      currentBatchKeySettings: state.batchKeySettings,
+      currentGeneralSettings: state.generalSettings,
+      currentPresetSettings: state.presetSettings,
+      currentSyncSettings: state.syncSettings,
+      isMac
     }
   });
-
-  // 监听设置保存事件
-  const handleSettingsSave = (event: { type: 'batch-key' | 'general' | 'preset' | 'sync'; settings?: BatchKeySettings | GeneralSettings | SyncSettings; states?: Record<string, boolean> }) => {
-    if (event.type === 'batch-key' && event.settings) {
-      config.callbacks.onBatchKeySave(event.settings as BatchKeySettings);
-    } else if (event.type === 'general' && event.settings) {
-      config.callbacks.onGeneralSave(event.settings as GeneralSettings);
-    } else if (event.type === 'preset' && event.states) {
-      config.callbacks.onPresetSave(event.states);
-    } else if (event.type === 'sync' && event.settings) {
-      config.callbacks.onSyncSave(event.settings as SyncSettings);
-    }
-  };
-
-  const handleSettingsReset = (event: { type: 'batch-key' | 'general' | 'preset' | 'sync' }) => {
-    if (event.type === 'batch-key') {
-      config.callbacks.onBatchKeyReset();
-    } else if (event.type === 'general') {
-      config.callbacks.onGeneralReset();
-    } else if (event.type === 'preset') {
-      config.callbacks.onPresetReset();
-    } else if (event.type === 'sync') {
-      config.callbacks.onSyncReset();
-    }
-  };
-
-  // 注册事件监听器
-  eventBus.on('settings:save', handleSettingsSave);
-  eventBus.on('settings:reset', handleSettingsReset);
-
-  // 在对话框关闭时清理事件监听器
-  // 这里可以通过一个一次性的事件来实现
-  const cleanup = () => {
-    eventBus.off('settings:save', handleSettingsSave);
-    eventBus.off('settings:reset', handleSettingsReset);
-  };
-
-  // 返回清理函数供外部使用
-  return cleanup;
 }
-

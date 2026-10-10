@@ -121,7 +121,6 @@ interface Props {
 
 interface Emits {
   (e: 'save', settings: SyncSettings): void
-  (e: 'reset'): void
 }
 
 const props = defineProps<Props>()

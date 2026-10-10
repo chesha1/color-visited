@@ -136,7 +136,6 @@ interface Props {
 
 interface Emits {
   (e: 'save', states: Record<string, boolean>): void
-  (e: 'reset'): void
 }
 
 const props = defineProps<Props>()

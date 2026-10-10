@@ -24,7 +24,6 @@
               :current-settings="generalSettings"
               ref="generalSettingsRef"
               @save="(settings) => emit('generalSave', settings)"
-              @reset="() => emit('generalReset')"
             />
           </div>
         </el-tab-pane>
@@ -34,7 +33,6 @@
               :current-preset-settings="currentPresetSettings"
               ref="presetSettingsRef"
               @save="(states) => emit('presetSave', states)"
-              @reset="() => emit('presetReset')"
             />
           </div>
         </el-tab-pane>
@@ -47,7 +45,6 @@
               :is-active="activeTab === 'shortcut'"
               ref="shortcutSettingsRef"
               @save="(settings) => emit('save', settings)"
-              @reset="() => emit('reset')"
             />
           </div>
         </el-tab-pane>
@@ -57,7 +54,6 @@
               :current-settings="currentSyncSettings"
               ref="syncSettingsRef"
               @save="(settings) => emit('syncSave', settings)"
-              @reset="() => emit('syncReset')"
             />
           </div>
         </el-tab-pane>
@@ -102,13 +98,9 @@ interface Props {
 interface Emits {
   (e: 'update:modelValue', value: boolean): void
   (e: 'save', settings: BatchKeySettings): void
-  (e: 'reset'): void
   (e: 'generalSave', settings: GeneralSettings): void
-  (e: 'generalReset'): void
   (e: 'presetSave', states: Record<string, boolean>): void
-  (e: 'presetReset'): void
   (e: 'syncSave', settings: SyncSettings): void
-  (e: 'syncReset'): void
 }
 
 const props = defineProps<Props>()
