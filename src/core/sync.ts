@@ -1105,7 +1105,7 @@ export function hasDataChanged(oldData: VisitedLinksData | SyncData, newData: Vi
   return !areVisitedLinksEqual(extractVisitedLinks(oldData), extractVisitedLinks(newData));
 }
 
-// 只保留首次访问不早于 cutoff 的记录，即还没过期的，和本地过期清理（deleteExpiredLinks）的判断一致
+// 只保留最近一次访问不早于 cutoff 的记录，即还没过期的，和本地过期清理（deleteExpiredLinks）的判断一致
 function pickUnexpiredLinks(links: VisitedLinksData, cutoff: number): VisitedLinksData {
   const unexpiredLinks: VisitedLinksData = {};
 

@@ -76,13 +76,9 @@ export function createLinkClickHandler(state: ScriptState): (event: Event) => vo
 
     if (!shouldColor) return; // 如果链接不符合匹配规则，返回
 
-    const isFirstVisit = recordVisit(inputUrl);
-    if (state.generalSettings.debug) {
-      console.log(`[handleLinkClick] 是否首次记录: ${isFirstVisit}`);
-    }
+    recordVisit(inputUrl);
 
-    // 已有的记录可能是其他标签页写入的，本页还没染色，所以不论是否首次记录都重新染色。
-    // 这一步会染上所有相同 URL 的链接（包括当前点击的元素）
+    // 染上所有相同 URL 的链接（包括当前点击的元素）
     updateAllLinksStatus(state);
   };
 }

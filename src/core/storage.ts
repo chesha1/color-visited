@@ -1,6 +1,7 @@
 // ================== 存储模块 ==================
 
-// 每条访问记录单独存成一个 GM 值：键是归一化后的 URL，值是首次访问的时间戳。
+// 每条访问记录单独存成一个 GM 值：键是归一化后的 URL，值是最近一次访问的时间戳，过期从这个时间算起。
+// 所有写入都经过 mergeLinks，只会把时间戳改大，所以各台设备不管按什么顺序同步，最后都是同一个值。
 // 记录之间互不相关，扩展后台按键应用各个标签页的写入，所以一次写入只改动自己那几条，
 // 多个标签页同时记录访问也不会互相覆盖。读取一律直接查存储，页面里不再保留一份会过时的副本。
 
@@ -39,11 +40,10 @@ export function isVisited(url: string): boolean {
   return GM_getValue(url) !== undefined;
 }
 
-// 记录一次访问，返回是否为首次记录；已有记录时保留首次访问的时间
-export function recordVisit(url: string): boolean {
-  if (isVisited(url)) return false;
-  GM_setValue(url, Date.now());
-  return true;
+// 记录一次访问，已有记录时把时间戳刷新为这次访问的时间。
+// 和同步合并走同一条规则：存储里的时间比现在还晚（其他设备的时钟偏快）时，不会被改小
+export function recordVisit(url: string): void {
+  mergeLinks({ [url]: Date.now() });
 }
 
 // 读出全部记录，供同步和过期清理使用
