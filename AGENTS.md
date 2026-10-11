@@ -16,6 +16,11 @@
 - 发版或“把版本号加一”时，默认只修改 userscript 里的版本号，例如 `vite.config.ts` 中 `userscript.version`。
 - `package.json` 的 `version` 默认不需要修改，除非用户明确要求。
 
+## 发版
+
+- 构建产物 `dist/` 不入库，不用手动构建、提交。
+- push 到 `main` 后，CI（`.github/workflows/release.yml`）会构建脚本。版本号还没发布过时，自动发一个 GitHub Release（tag 为 `v版本号`），Greasy Fork 收到 webhook 后跟着更新；版本号没变的提交只构建、不发布。
+
 ## Git Commit Message
 
 根据现有历史，仓库主流格式是：

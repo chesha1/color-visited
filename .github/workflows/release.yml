@@ -1,0 +1,50 @@
+# push 到 main 后构建脚本。产物头部的 @version 还没有对应的 release，就发一个；
+# Greasy Fork 通过仓库的 webhook 收到 release 事件后更新脚本，同步地址是
+# https://github.com/chesha1/color-visited/releases/latest/download/color-visited.user.js
+name: 发布
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency: release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/setup@v3
+        with:
+          version: 12
+          runtime: node@26
+          cache: true
+
+      - run: pnpm build
+
+      - name: 版本号没发布过就发布
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -n 's|^// @version *||p' dist/color-visited.user.js)
+          tag="v${version:?构建产物里没有 @version}"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo "$tag 已经发布过"
+            exit 0
+          fi
+
+          # Greasy Fork 收到 release 事件后不下载附件，而是 clone 仓库执行 git show <tag>:color-visited.user.js，
+          # 所以 tag 要指向含有构建产物的提交：在源码提交上再加一个提交，只挂在 tag 上，不进 main。
+          # 远端已有这个 tag 时（比如上次推了 tag、没建成 release），push 会失败，删掉远端的 tag 再重跑即可。
+          cp dist/color-visited.user.js .
+          git add color-visited.user.js
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "chore: 发布 $tag 的构建产物"
+          git tag "$tag"
+          git push origin "refs/tags/$tag"
+
+          gh release create "$tag" color-visited.user.js --verify-tag --title "$tag" --generate-notes
