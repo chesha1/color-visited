@@ -115,13 +115,14 @@ import type { SyncSettings } from '@/types'
 import { getLastSyncTime, onLastSyncTimeChange } from '@/core/storage'
 import { isGzipSyncSupported, normalizeGistId, testSyncConnection } from '@/core/sync'
 import { showNotification } from '@/core/ui'
+import { changedFields } from '@/core/utils'
 
 interface Props {
   currentSettings: SyncSettings
 }
 
 interface Emits {
-  (e: 'save', settings: SyncSettings): void
+  (e: 'save', settings: Partial<SyncSettings>): void
 }
 
 const props = defineProps<Props>()
@@ -199,7 +200,7 @@ const getFormData = (): SyncSettings => {
 const handleSave = () => {
   // 保存前把 Gist 网址归一化成纯 ID，并回填到表单
   formData.value.gistId = normalizeGistId(formData.value.gistId)
-  emit('save', { ...formData.value })
+  emit('save', changedFields(formData.value, savedSettings.value))
   // 更新已保存状态
   savedSettings.value = { ...formData.value }
 }

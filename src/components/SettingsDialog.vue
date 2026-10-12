@@ -100,9 +100,9 @@ interface Props {
 interface Emits {
   (e: 'update:modelValue', value: boolean): void
   (e: 'save', settings: BatchKeySettings): void
-  (e: 'generalSave', settings: GeneralSettings): void
+  (e: 'generalSave', settings: Partial<GeneralSettings>): void
   (e: 'presetSave', states: Record<string, boolean>): void
-  (e: 'syncSave', settings: SyncSettings): void
+  (e: 'syncSave', settings: Partial<SyncSettings>): void
 }
 
 const props = defineProps<Props>()

@@ -76,11 +76,12 @@ export type Events = {
     type: 'sync'
     payload: SyncDialogPayload
   }
+  // 只带设置对话框里改过的字段（快捷键是一个整体，改了就整个带上），由 script.ts 合并到当前设置上
   'settings:save':
     | { type: 'batch-key'; settings: BatchKeySettings }
-    | { type: 'general'; settings: GeneralSettings }
+    | { type: 'general'; settings: Partial<GeneralSettings> }
     | { type: 'preset'; states: Record<string, boolean> }
-    | { type: 'sync'; settings: SyncSettings }
+    | { type: 'sync'; settings: Partial<SyncSettings> }
   'menu:update': {
     // 菜单更新事件
   }

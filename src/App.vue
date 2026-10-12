@@ -28,7 +28,7 @@ const handleSettingsSave = (settings: BatchKeySettings) => {
   })
 }
 
-const handleGeneralSave = (settings: GeneralSettings) => {
+const handleGeneralSave = (settings: Partial<GeneralSettings>) => {
   eventBus.emit('settings:save', {
     type: 'general',
     settings
@@ -42,7 +42,7 @@ const handlePresetSave = (states: Record<string, boolean>) => {
   })
 }
 
-const handleSyncSave = (settings: SyncSettings) => {
+const handleSyncSave = (settings: Partial<SyncSettings>) => {
   eventBus.emit('settings:save', {
     type: 'sync',
     settings

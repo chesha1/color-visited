@@ -22,6 +22,18 @@ export const isMac = (() => {
   return /Mac|iPod|iPhone|iPad/.test(browserNavigator.userAgent);
 })();
 
+// ================== 设置工具 ==================
+
+// 挑出 draft 里和 base 不一样的字段。设置对话框保存时只交出这些字段：表单是打开对话框时的副本，
+// 没改过的字段在对话框开着时可能已经被其他标签页改掉了，拿副本里的旧值写回去会把那边的修改冲掉
+export function changedFields<T extends object>(draft: T, base: T): Partial<T> {
+  const changes: Partial<T> = {};
+  for (const key in draft) {
+    if (draft[key] !== base[key]) changes[key] = draft[key];
+  }
+  return changes;
+}
+
 // ================== URL 处理工具 ==================
 
 // 去除各种查询参数等的干扰

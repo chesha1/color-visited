@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { DEFAULT_SETTINGS } from '@/core/config'
+import { changedFields } from '@/core/utils'
 import type { GeneralSettings } from '@/types'
 
 interface Props {
@@ -63,7 +64,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'save', settings: GeneralSettings): void
+  (e: 'save', settings: Partial<GeneralSettings>): void
 }
 
 const props = defineProps<Props>()
@@ -104,7 +105,7 @@ const expirationDays = computed({
 })
 
 const handleSave = () => {
-  emit('save', { ...formData.value })
+  emit('save', changedFields(formData.value, savedSettings.value))
   // 更新已保存状态
   savedSettings.value = { ...formData.value }
 }

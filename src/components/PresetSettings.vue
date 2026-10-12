@@ -128,6 +128,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { PRESET_RULES } from '@/core/config'
+import { changedFields } from '@/core/utils'
 import type { PresetRules } from '@/types'
 
 interface Props {
@@ -170,7 +171,8 @@ const toggleAllPresets = (enabled: boolean) => {
 
 // 保存设置
 const handleSave = () => {
-  emit('save', { ...presetSettings.value })
+  // 交出的只有改过的开关，每个都有值。Partial 会给开关表的索引签名加上 undefined，这里去掉
+  emit('save', changedFields(presetSettings.value, savedPresetSettings.value) as Record<string, boolean>)
   // 更新保存的状态
   savedPresetSettings.value = { ...presetSettings.value }
 }

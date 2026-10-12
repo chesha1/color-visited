@@ -60,11 +60,13 @@ function setupGlobalEventListeners(state: ScriptState): void {
 
   // 设置对话框保存后写回存储，并按新设置重新初始化页面。
   // 只在启动时订阅这一次：放在打开对话框的地方会每打开一次多一个监听，保存一次就执行好几遍
+  // 对话框只交出改过的字段，合并到 state 的当前值上（state 跟着其他标签页的保存更新），没改过的字段保留当前值。
+  // 快捷键是一个整体，整个替换：按字段合并的话，这边改了修饰键、那边改了按键，会拼出一个谁都没设过的快捷键
   eventBus.on('settings:save', (event) => {
-    if (event.type === 'general') state.generalSettings = event.settings;
-    else if (event.type === 'preset') state.presetSettings = event.states;
+    if (event.type === 'general') state.generalSettings = { ...state.generalSettings, ...event.settings };
+    else if (event.type === 'preset') state.presetSettings = { ...state.presetSettings, ...event.states };
     else if (event.type === 'batch-key') state.batchKeySettings = event.settings;
-    else state.syncSettings = event.settings;
+    else state.syncSettings = { ...state.syncSettings, ...event.settings };
     saveUserSettings(state);
     setupPage(state);
   });
