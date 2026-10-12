@@ -1,5 +1,5 @@
 // ================== 导入配置 ==================
-import { syncOnStartup } from '@/core/sync';
+import { AUTO_SYNC_INTERVAL, syncWithCloud } from '@/core/sync';
 import { showNotification, injectCustomStyles } from '@/core/ui';
 import { initializeScriptState } from '@/core/state';
 import type { ScriptState } from '@/types';
@@ -8,25 +8,32 @@ import { registerMenuCommand } from '@/core/menuManager';
 import { activateLinkFeatures, removeScript, updateAllLinksStatus } from '@/core/linkManager';
 import { setupBatchKeyListener, setupDOMObserver, setupLinkEventListeners } from '@/core/eventManager';
 import { followUserSettings, saveUserSettings } from '@/core/state';
-import { deleteExpiredLinks, migrateLegacyLinks } from '@/core/storage';
+import { deleteExpiredLinks, getLastSyncTime, migrateLegacyLinks } from '@/core/storage';
 import { eventBus } from '@/core/eventBus';
 
 // ================== 核心启动函数 ==================
 
-// 初始化同步功能
+// 按当前设置同步一次，结果用通知告诉用户。manual 表示是设置页的"立即同步"，用户在等结果，成功了也提示
+function runSync(state: ScriptState, manual: boolean): Promise<void> {
+  return syncWithCloud(state.syncSettings, state.generalSettings.expirationTime)
+    .then(({ initialized }) => {
+      if (initialized) {
+        showNotification('已初始化云端同步数据', 'success');
+      } else if (manual) {
+        showNotification('同步完成', 'success');
+      }
+    })
+    .catch((error) => {
+      console.warn('同步失败:', error.message);
+      showNotification(`同步失败: ${error.message}`);
+    });
+}
+
+// 启用了同步时，在后台同步一次（不阻塞主流程）。距上次同步成功不到 AUTO_SYNC_INTERVAL 就跳过；
+// 失败不会更新 lastSyncTime，下次加载页面会再试
 function initializeSync(state: ScriptState): void {
-  // 如果启用同步，在后台进行启动同步（不阻塞主流程）
-  if (state.syncSettings.enabled) {
-    syncOnStartup(state.syncSettings, state.generalSettings.expirationTime)
-      .then(({ initialized }) => {
-        if (initialized) {
-          showNotification('已初始化云端同步数据', 'success');
-        }
-      })
-      .catch((error) => {
-        console.warn('后台同步失败:', error.message);
-        showNotification(`同步失败: ${error.message}`);
-      });
+  if (state.syncSettings.enabled && Date.now() - getLastSyncTime() >= AUTO_SYNC_INTERVAL) {
+    runSync(state, false);
   }
 }
 
@@ -46,6 +53,11 @@ function setupGlobalEventListeners(state: ScriptState): void {
   // 监听 URL 变化
   onUrlChange(() => {
     setupPage(state);
+  });
+
+  // 设置页的"立即同步"：不管上次同步是什么时候，马上同步一次。由这里执行，是因为只有 state 里的设置是最新的
+  eventBus.on('sync:request', ({ onSettled }) => {
+    runSync(state, true).finally(onSettled);
   });
 
   // 监听同步完成事件

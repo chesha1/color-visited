@@ -987,23 +987,9 @@ export async function testSyncConnection(token: string, gistId: string): Promise
   }
 }
 
-// 更新现有的 Gist
-export async function updateGist(token: string, gistId: string, data: SyncData | VisitedLinksData): Promise<void> {
+// 更新现有的 Gist。PATCH 要按文件名指定改哪个文件，fileName 用读取时拿到的（getGist），不再为它单独请求一次
+export async function updateGist(token: string, gistId: string, fileName: string, data: SyncData | VisitedLinksData): Promise<void> {
   try {
-    // 先获取现有 Gist 以确定文件名
-    const gistInfo = await fetch(`https://api.github.com/gists/${gistId}`, {
-      headers: {
-        Authorization: `token ${token}`,
-        Accept: GITHUB_ACCEPT_HEADER,
-      },
-    });
-
-    if (!gistInfo.ok) {
-      throw new Error(formatGitHubHttpError('获取 Gist 信息失败', gistInfo.status));
-    }
-
-    const gistData = await gistInfo.json() as GitHubGist;
-    const fileName = getFirstGistFileName(gistData);
     // 上传内容统一写成当前压缩包格式，旧明文格式只负责读取兼容。
     const serializedContent = await serializeVisitedLinksForGist(data);
 
@@ -1033,8 +1019,8 @@ export async function updateGist(token: string, gistId: string, data: SyncData |
   }
 }
 
-// 获取 Gist 内容，并按判定规则识别第一个文件
-export async function getGist(token: string, gistId: string): Promise<CloudSnapshot> {
+// 获取 Gist 内容，并按判定规则识别第一个文件；顺带返回它的文件名，上传时要用
+export async function getGist(token: string, gistId: string): Promise<CloudSnapshot & { fileName: string }> {
   try {
     const response = await fetch(`https://api.github.com/gists/${gistId}`, {
       headers: {
@@ -1050,43 +1036,12 @@ export async function getGist(token: string, gistId: string): Promise<CloudSnaps
 
     const result = await response.json() as GitHubGist;
     const { contentText, truncated } = await readFirstGistFileContent(token, result);
-    return await deserializeGistContent(contentText, truncated);
+    return { ...await deserializeGistContent(contentText, truncated), fileName: getFirstGistFileName(result) };
   }
   catch (error) {
     console.warn('获取 Gist 失败:', error);
     throw error;
   }
-}
-
-// ================== 云端数据操作 ==================
-
-// 上传数据到云端
-export async function uploadToCloud(syncSettings: SyncSettings, data: SyncData | VisitedLinksData): Promise<void> {
-  const { githubToken } = syncSettings;
-  const gistId = normalizeGistId(syncSettings.gistId);
-
-  if (!githubToken) {
-    throw new Error('GitHub 令牌未设置');
-  }
-
-  if (!gistId) {
-    throw new Error('Gist ID 未设置，请先创建 Gist 并在设置中填入 ID');
-  }
-
-  await updateGist(githubToken, gistId, data);
-}
-
-// 从云端下载数据
-export async function downloadFromCloud(syncSettings: SyncSettings): Promise<CloudSnapshot> {
-  const { githubToken } = syncSettings;
-  const gistId = normalizeGistId(syncSettings.gistId);
-
-  // 未设置时不判定云端内容，之后由 uploadToCloud 报「未设置」
-  if (!githubToken || !gistId) {
-    return { visitedLinks: {}, needsInitialization: false };
-  }
-
-  return await getGist(githubToken, gistId);
 }
 
 // ================== 数据合并和同步逻辑 ==================
@@ -1118,14 +1073,31 @@ function pickUnexpiredLinks(links: VisitedLinksData, cutoff: number): VisitedLin
   return unexpiredLinks;
 }
 
-// 启动时同步；initialized 表示本次把云端内容初始化成了同步格式，由调用方决定是否提示。
+// 加载页面时自动同步的最短间隔，距上次同步成功不到这么久就跳过（script.ts 判断），设置页的"立即同步"不受限制。
+// 每次同步都要下载、合并整份数据，有新记录时还要整份上传，不能每加载一个页面就来一次。
+// lastSyncTime 由所有标签页共用，所以这是整个浏览器合起来的频率
+export const AUTO_SYNC_INTERVAL = 1000 * 60 * 10;
+
+// 同步一次：先把云端数据合并进本地，合并后和云端不一致再整份上传。
+// initialized 表示本次把云端内容初始化成了同步格式，由调用方决定是否提示。
 // expirationTime 是本机设置的过期时间，过期的记录两个方向都不同步
-export async function syncOnStartup(syncSettings: SyncSettings, expirationTime: number): Promise<{ initialized: boolean }> {
+export async function syncWithCloud(syncSettings: SyncSettings, expirationTime: number): Promise<{ initialized: boolean }> {
   try {
+    const { githubToken } = syncSettings;
+    const gistId = normalizeGistId(syncSettings.gistId);
+
+    if (!githubToken) {
+      throw new Error('GitHub 令牌未设置');
+    }
+
+    if (!gistId) {
+      throw new Error('Gist ID 未设置，请先创建 Gist 并在设置中填入 ID');
+    }
+
     console.log('开始同步数据...');
 
     // 1. 从云端获取数据（这个过程可能较慢）
-    const cloud = await downloadFromCloud(syncSettings);
+    const cloud = await getGist(githubToken, gistId);
     if (cloud.needsInitialization) {
       console.log(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`);
     }
@@ -1144,7 +1116,7 @@ export async function syncOnStartup(syncSettings: SyncSettings, expirationTime: 
     // 云端需要初始化时，即使本地为空也写入一份同步格式。
     // 云端只是有记录到期，不会为此单独上传，它们会在下次上传时一并去掉
     if (cloud.needsInitialization || hasDataChanged(cloudLinks, mergedLinks)) {
-      await uploadToCloud(syncSettings, mergedLinks);
+      await updateGist(githubToken, gistId, cloud.fileName, mergedLinks);
       console.log(cloud.needsInitialization ? '已初始化云端同步数据' : '数据已同步并上传到云端');
     }
     else {

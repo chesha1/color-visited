@@ -5,7 +5,7 @@
 
 ## 怎么使用这份文档
 
-- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 P3、E8」。
+- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 E8、C14」。
 - 条目编号的含义：**B** = bug，**P** = 性能，**A** = 架构，**C** = 代码细节，**E** = 工程化，**D** = 需要你拍板的决策。
 - 本文只记还没做的事，以及做这些事要知道的背景。每完成一项：
   - 从正文删掉这一条，并更新「进度总览」；
@@ -19,7 +19,7 @@
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 1 | 几个低风险的小优化 | P3、A6 第 1 步 | 进行中 |
+| 1 | 几个低风险的小优化 | A6 第 1 步 | 进行中 |
 | 2 | 先搭安全网：测试 + 格式化 | E2、E1a | 未开始 |
 | 3 | 统一存储层，清理死代码 | A1、C7–C9 | 未开始 |
 | 4 | 核心生命周期 + 规则模型 | A2、A7 | 未开始 |
@@ -76,6 +76,7 @@
 - `lastSyncTime`：上次同步成功的时间戳（ms），没有这个键表示从未同步。
   - 只有 sync.ts 通过 storage.ts 的 `setLastSyncTime` 写它。
   - 设置页用 `getLastSyncTime` 读，再用 `onLastSyncTimeChange`（基于 `GM_addValueChangeListener`）跟着刷新。
+  - 加载页面时，距它不到 10 分钟（sync.ts 的 `AUTO_SYNC_INTERVAL`）就不同步，由 script.ts 的 `initializeSync` 判断。所有标签页共用这个键，所以是整个浏览器合起来 10 分钟最多自动同步一次。同步失败不更新它，下次加载页面会再试。设置页的"立即同步"不受这个限制。
 - `lastCleanupTime`：上次清理过期记录的时间戳（ms），没有这个键时，下次启动就清理。只有 storage.ts 的 `deleteExpiredLinks` 读写它。
 
 ### 构建与运行环境
@@ -110,7 +111,7 @@
 6. 继续支持读取以下旧格式：v2 压缩包、带 `visitedLinks` 字段的对象、键是网址且值是数字的明文对象。
 7. 自愈：剔除云端数据里已知的同步包污染键（`syncVersion`、`encoding`、`payload` 等）和不是有限数字的时间戳，并打印日志。本地数据不会被污染：不含冒号的键不会被当作记录读出来，`mergeLinks` 也拒绝写入这类键和非法时间戳。
 8. 合并时，每条 URL 取最大的时间戳，而且不能丢掉同步期间发生的点击：`mergeLinks` 直接和存储里的当前值逐条比较，本标签页和其他标签页在同步期间的写入都不会被覆盖。
-9. 只有合并后的数据和云端不一致（两边都去掉过期记录后再比），或需要初始化时，才上传（`syncOnStartup`）。云端只是有记录到期，不单独触发上传：否则几乎每次同步都要传一遍整份数据，过期时间不同的设备还会来回上传。
+9. 只有合并后的数据和云端不一致（两边都去掉过期记录后再比），或需要初始化时，才上传（`syncWithCloud`）。云端只是有记录到期，不单独触发上传：否则几乎每次同步都要传一遍整份数据，过期时间不同的设备还会来回上传。
 10. 上传时一律写成 v3 格式：gzip + base64 + 按 host 分组的前缀差分。同步模块内部始终使用平铺的 map（由 `loadLinks()` 组装）。
 11. 过期记录两个方向都不同步：合并云端数据前、上传前，都按本机的过期时间去掉，两边用同一个截止时间。
 
@@ -122,24 +123,12 @@
 
 ## 2. 性能
 
-- [ ] **P3 · 开启同步后，每次页面加载都会完整同步一次**
-  - 位置：`initializeSync`（[script.ts:17-31](../../src/core/script.ts#L17-L31)）、`syncOnStartup`（[sync.ts:1147-1213](../../src/core/sync.ts#L1147-L1213)）、`updateGist`（[sync.ts:1013-1056](../../src/core/sync.ts#L1013-L1056)）。
-  - 问题：
-    - 每个列表页加载时，都会 GET 整个 Gist，文件超过 1 MB 时还要从 raw_url 再下载一遍（真实数据去掉过期记录后约 680 KB，暂时不会超过）；
-    - 合并后只要和云端不一致，就调用 `updateGist`；
-    - `updateGist` 为了拿到文件名，又 GET 一次整个 Gist，然后 PATCH 整份数据；
-    - 网络请求返回后，合并完还要把全部记录读一遍（`loadLinks`），12.9 万条时约 40 ms。过期清理已经改成一天最多一次，这是开着同步时每次加载页面仍要做的唯一一次全量读；
-    - `lastSyncTime` 已经存下来了，却没有用来控制同步频率。它单独存一个键，所有标签页共用，节流时直接用 `getLastSyncTime()` 读即可。
-  - 修法：
-    1. 用 `lastSyncTime` 节流，比如 10 分钟内跳过同步；在设置里另外提供一个"立即同步"按钮。设置页显示的同步时间会跟着存储自动刷新，按钮不用再手动更新它。
-    2. 把第一次 GET 拿到的文件名传给更新步骤，省掉第二次 GET。
-    3. 用 ETag 加 `If-None-Match` 做条件请求。GitHub 返回 304 时不消耗限流额度。
-  - 验证：节流窗口内加载页面时，不发任何 GitHub 请求；一次上传只有 1 个 GET 和 1 个 PATCH。
+目前没有。
 
 ## 3. 架构
 
 - [ ] **A1 · 统一存储层 `storage.ts`**
-  - 访问记录、`lastSyncTime` 和 `lastCleanupTime` 已经只由 storage.ts 读写，sync.ts 也不碰 `userSettings`（同步设置由 script.ts 传给 `syncOnStartup`）。剩下的是 `userSettings` 这一半。
+  - 访问记录、`lastSyncTime` 和 `lastCleanupTime` 已经只由 storage.ts 读写，sync.ts 也不碰 `userSettings`（同步设置由 script.ts 传给 `syncWithCloud`）。剩下的是 `userSettings` 这一半。
   - 现状：
     - 同一份设置存在两处：内存里的 `state` 和 GM 存储。
     - `'userSettings'` 在 state.ts 里被直接调用 GM API，共 4 处：读一处，写两处，`followUserSettings` 订阅变化一处。
@@ -200,10 +189,12 @@
       4. 再通过 mitt 发出 `settings:save`；
       5. script.ts 在启动时订阅的 handler 按 `type` 修改 state、保存，并调用 `setupPage`。
     - 常量 `isMac` 被当作 prop 一层层往下传，`showSettingsDialog` 还把它放进了事件的 payload。
+    - 同步页的"立即同步"也要绕一下：SyncSettings 发出 `sync:request`，script.ts 按 state 里的设置同步，结束后调用事件里带的 `onSettled`，按钮靠它停止转圈。组件不能自己调用同步，因为它手里的设置是打开对话框时的副本：常规设置里刚保存的过期时间、其他标签页保存的同步设置，它都不知道。
   - 目标：
     - `settings.ts` 导出一个 reactive store 和 `save(changes)`。`save` 把改过的字段合并到 store 的当前值上（见「存储结构」里的 `userSettings`），通过 A1 持久化，然后发出 `settings:changed`，core 收到后调用 `refresh()`。
     - store 跟着存储更新：其他标签页保存后换成新值，再发出 `settings:changed`。现在是 state.ts 的 `followUserSettings` 在做，改用 A1 的 `onSettingsChange`。
     - 删除 `SettingsDialogPayload`、App.vue 的 4 个 handler，以及 `settings:save` 事件。
+    - "立即同步"直接用 store 里的设置调用同步，删掉 `sync:request` 事件。
     - 组件直接 `import { isMac }`，不再通过 prop 传递。
   - 注意：把 Vue 响应式对象存进 GM 存储之前，要先 `toRaw`，再拷贝成普通对象。
 
@@ -233,7 +224,7 @@
     - **"取出 visitedLinks"有 7 个职责重叠的函数：** `isVisitedLinksData`、`extractVisitedLinksFromUnknown`、`isSyncData`、`tryRepairVisitedLinksData`、`requireVisitedLinksData`、`extractVisitedLinksFromV2Payload`、`extractVisitedLinks`。
     - **类型过宽：** 写入相关的 API 接受 `SyncData | VisitedLinksData`，但所有调用方传的都是普通 map。
     - **zstd 分支是死代码：** 从引入压缩的 c3461a8 开始，写入一直用 gzip。
-    - **HTTP 请求方式不统一：** 有 5 处用 `fetch`，各自拼请求头，认证用 `token`；另有 1 处用 `GM_xmlhttpRequest`，认证用 `Bearer`。
+    - **HTTP 请求方式不统一：** 有 4 处用 `fetch`，各自拼请求头，认证用 `token`；另有 1 处用 `GM_xmlhttpRequest`，认证用 `Bearer`。
   - 目标：拆成 4 个文件。
     - `sync/github.ts`：只提供一个 `githubRequest()`。建议全部改用 `GM_xmlhttpRequest`，它不受页面 CORS/CSP 限制，但需要在 `connect` 里加上 `api.github.com`。
     - `sync/codec.ts`：v2/v3 编解码、压缩、base64。
@@ -354,6 +345,16 @@
         - 下面几种情况不上传：只是有记录到期、本地没有新的访问；只有云端有新数据；过期时间为 0；
         - 需要初始化时只上传有效记录；同步期间的点击照样上传；
         - 两台设备过期时间不同时，不会来回反复上传。
+      - 请求次数：要上传时只有 1 个 GET 和 1 个 PATCH，PATCH 用的是 GET 拿到的文件名；和云端一致时只有 1 个 GET；初始化空 Gist 是 GET、PATCH。
+      - 自动同步的间隔（端到端）：
+        - 存储里有 10 分钟之内的 `lastSyncTime` 时加载页面，不发任何 GitHub 请求；超过 10 分钟或没有这个键时同步一次，并更新它；
+        - A 标签页同步完再打开 B，B 不发请求，云端合并来的记录照样染色；
+        - 同步失败（比如 401）不更新 `lastSyncTime`，下次加载照常再试；开了同步但令牌或 Gist ID 没填，不发请求，提示没填，不更新 `lastSyncTime`。
+      - "立即同步"（端到端）：
+        - 在间隔之内也照常同步：提示"同步完成"，显示的最后同步时间刷新，云端合并来的记录染上色；失败时提示原因，不更新 `lastSyncTime`；
+        - 同步中按钮转圈、不能再点，结束后（成功或失败）恢复；同步中关掉对话框，同步照常完成，再打开时按钮是正常的；
+        - 同步没开、或表单里有没保存的修改时不能点，改回原值又能点；保存同步设置本身不发请求；
+        - 用的是最新保存的设置：同一次打开里先在常规设置改了过期时间并保存，再点立即同步，按新的过期时间筛；对话框开着时其他标签页换了 Gist，同步的是新的 Gist。
     - storage.ts 的多标签页语义：传播窗口内的并发写不丢；迁移可以重复执行，并能补进旧版本标签页写回的大键；同步期间的点击不丢；云端数据不能覆盖 `userSettings`；没有批量接口时退回逐条写。
     - 访问时间：再次点击会把时间戳刷新成这次点击的时间；存储里的时间比现在还晚时不改小；批量标记不改还没过期的记录的时间戳，过期还没删的刷新成标记时间。
     - 批量标记的撤销：只删时间戳还等于这次标记时间的记录，之前就有的、撤销前点开过的（本标签页中键点开，或其他标签页点开）都保留；过期还没删的记录被标记后撤销，记录删掉，仍不染色；同一个 URL 的所有链接都去掉颜色，刷新后仍是原色；按钮连点两下只撤销一次；没有批量接口时退回逐条删。
@@ -400,14 +401,14 @@
     - storage.ts 的多标签页语义：mock 一个 GM 存储，后台按到达顺序应用写入，每个标签页一份缓存，`flush()` 时再广播。用不同的 query 导入 storage.ts，就能得到多个互相独立的"标签页"实例。
     - 在 Node 里直接跑 sync.ts 和 storage.ts：
       - 用 esbuild 打成 ESM，`vite-plugin-monkey/dist/client` 换成内存版 GM，`fetch` 换成桩，云端内容用真实的 v3 样本。
-      - 按 script.ts 的顺序模拟页面加载：先调 `deleteExpiredLinks`，再调 `syncOnStartup`（不 await），最后再 await。清理一天最多一次，要测清理，存储里就不能有一天之内的 `lastCleanupTime`。
+      - 按 script.ts 的顺序模拟页面加载：先调 `deleteExpiredLinks`，再调 `syncWithCloud`（不 await），最后再 await。清理一天最多一次，要测清理，存储里就不能有一天之内的 `lastCleanupTime`。自动同步的间隔是 script.ts 判断的，直接调 `syncWithCloud` 不受它限制。
       - 要和改动前对比时，新旧两版各打一份，旧版的源码用 `git archive HEAD src` 导出。
     - 在 headless Chrome 里端到端地跑构建产物：
       - 需要激活页的场景：Node 起一个本地 https 服务（自签证书），headless Chrome 加上 `--host-resolver-rules=MAP www.v2ex.com 127.0.0.1:8443` 和 `--ignore-certificate-errors`，打开的 `https://www.v2ex.com/` 就是这个本地页面，脚本按激活页运行。不需要激活页的场景（同步、设置对话框）直接用 `file://` 页面就行，不用起 https 服务。
       - 页面里依次放：一段内联脚本，写入初始存储（时间戳按当前时间现算）和场景名；内存版 GM API；SystemJS（取自 node_modules）；构建产物；驱动脚本。驱动脚本点菜单、操作对话框，把结果写进 `<pre>`，用 `--dump-dom --virtual-time-budget=60000` 取出。
       - 构建产物要等 HTML 解析完再执行（加 `defer`），否则 SystemJS 的自动导入会把入口模块再执行一遍。
       - 内存版 GM API 要实现 `GM_addValueChangeListener`：写入后异步回调，本标签页的写入 `remote` 为 false；另外提供一个 `remoteSet`，用来模拟其他标签页的写入。
-      - `fetch` 换成桩。返回内容为空的 Gist 时，首次同步会走初始化流程，发出 GET、GET、PATCH 三个请求。要测超过 1 MB 的情况，Gist 桩返回截断的内容，`GM_xmlhttpRequest` 的桩再从本地服务取 raw_url 的完整内容。
+      - `fetch` 换成桩。加载页面时要同步的话，存储里不能有 10 分钟之内的 `lastSyncTime`。返回内容为空的 Gist 时，首次同步会走初始化流程，发出 GET、PATCH 两个请求。桩还可以返回错误状态码，或者晚几百毫秒返回，用来看"立即同步"按钮转圈。要测超过 1 MB 的情况，Gist 桩返回截断的内容，`GM_xmlhttpRequest` 的桩再从本地服务取 raw_url 的完整内容。
         - 云端要有记录时，内容用旧的明文格式（键是网址、值是时间戳）最省事，不用编码 v3，时间戳可以在桩里按当前时间现算。上传了几条，看 PATCH 内容外层包里的 `itemCount`，不用解压。
       - 每个场景写成一张步骤表（输入、失焦、点 ▲▼、按方向键、改颜色、重置、切标签、关闭再打开、保存），驱动脚本逐步执行，每个场景开一次 Chrome。输入是改输入框的值并派发 input；失焦按真实点击的顺序派发 change、调用 `blur()`。
       - 初始存储可以直接写异常值（比如 `expirationTime` 为 null），用来测页面加载时的行为（见上面的「存储里的过期时间是异常值」）。写不写 `lastCleanupTime`、写成几小时前还是一天多以前，决定这次加载会不会清理。

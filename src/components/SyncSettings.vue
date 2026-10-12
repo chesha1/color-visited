@@ -10,7 +10,7 @@
       <div class="flex items-center justify-between">
         <div>
           <label class="text-sm font-medium text-gray-900">启用数据同步</label>
-          <p class="text-sm text-gray-500">开启后将通过 GitHub Gist 同步数据</p>
+          <p class="text-sm text-gray-500">开启后加载页面时自动同步，{{ autoSyncMinutes }} 分钟内最多一次</p>
         </div>
         <el-switch
           v-model="formData.enabled"
@@ -93,7 +93,7 @@
         />
       </div>
 
-      <!-- 测试连接按钮 -->
+      <!-- 测试连接、立即同步按钮 -->
       <div class="flex justify-center pt-2">
         <el-button
           type="primary"
@@ -102,6 +102,13 @@
           @click="testConnection"
         >
           {{ testingConnection ? '测试中...' : '测试连接' }}
+        </el-button>
+        <el-button
+          :loading="syncing"
+          :disabled="!savedSettings.enabled || hasChanges"
+          @click="syncNow"
+        >
+          {{ syncing ? '同步中...' : '立即同步' }}
         </el-button>
       </div>
     </div>
@@ -112,8 +119,9 @@
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { DEFAULT_SETTINGS } from '@/core/config'
 import type { SyncSettings } from '@/types'
+import { eventBus } from '@/core/eventBus'
 import { getLastSyncTime, onLastSyncTimeChange } from '@/core/storage'
-import { isGzipSyncSupported, normalizeGistId, testSyncConnection } from '@/core/sync'
+import { AUTO_SYNC_INTERVAL, isGzipSyncSupported, normalizeGistId, testSyncConnection } from '@/core/sync'
 import { showNotification } from '@/core/ui'
 import { changedFields } from '@/core/utils'
 
@@ -140,6 +148,16 @@ const savedSettings = ref<SyncSettings>({ ...props.currentSettings })
 // 测试连接状态
 const testingConnection = ref(false)
 const gzipSupportAvailable = isGzipSyncSupported()
+
+const autoSyncMinutes = AUTO_SYNC_INTERVAL / 60000
+
+// 立即同步：不受自动同步间隔的限制，用已保存的同步设置马上同步一次，结果由通知提示，最后同步时间会自己刷新。
+// 表单里有没保存的修改时不能点，免得以为是按刚填的令牌或 Gist ID 同步的
+const syncing = ref(false)
+const syncNow = () => {
+  syncing.value = true
+  eventBus.emit('sync:request', { onSettled: () => { syncing.value = false } })
+}
 
 // 最后同步时间不是表单的一部分：直接读存储，并跟着存储变化，任何标签页同步完都会刷新显示
 const lastSyncTime = ref(getLastSyncTime())

@@ -85,6 +85,8 @@ export type Events = {
   'menu:update': {
     // 菜单更新事件
   }
+  // 设置页的"立即同步"，由 script.ts 按当前设置执行；同步结束后（成功或失败）调用 onSettled
+  'sync:request': { onSettled: () => void }
   'sync:completed': void
 }
 
