@@ -21,7 +21,7 @@
 |---|---|---|---|
 | 1 | 几个低风险的小优化 | P1、P3、A6 第 1 步 | 进行中 |
 | 2 | 先搭安全网：测试 + 格式化 | E2、E1a | 未开始 |
-| 3 | 统一存储层，清理死代码 | A1、B13、C7–C9 | 未开始 |
+| 3 | 统一存储层，清理死代码 | A1、C7–C9 | 未开始 |
 | 4 | 核心生命周期 + 规则模型 | A2、A7 | 未开始 |
 | 5 | 设置数据流 + 设置对话框 | A3、A4、B14、C12 | 未开始 |
 | 6 | 拆分 sync.ts | A5 | 未开始 |
@@ -32,7 +32,7 @@
 
 - 阶段 6 要在阶段 2 的测试完成之后做；
 - A3 依赖 A1；
-- B14 和 A4 一起做，B13 和 A1 一起做。这两条都有单独的小修法，可以提前修。
+- B14 和 A4 一起做，它也有单独的小修法，可以提前修。
 
 ## 待决策（需要你拍板）
 
@@ -69,6 +69,7 @@
   ```
   - v2.21.0 及以前 `sync` 里还有 `lastSyncTime`。老用户的存储里会残留这个字段，但已经没有代码读它，下次保存同步设置时就会去掉。
   - 保存时四类设置整块写回，所以内存里的设置必须跟着存储更新。现在由 state.ts 的 `followUserSettings` 订阅变化：其他标签页保存后（`remote` 为 true），把新值换进 `state`，重新初始化页面。本标签页自己的写入也会回调（VM 文档写明了这一点，TM 文档只说 `remote` 表示改动是否来自其他实例），这时 `remote` 为 false，直接跳过。改设置的数据流（A3）时要保留这一点。设置对话框里的表单不跟着更新，见 B14。
+  - 从存储读出的 `general.expirationTime` 要校验：不到 1 天（设置界面的下限，含 null、0、负数、缺字段）就换成默认的一年，否则过期清理会把记录删光。现在由 state.ts 的 `withValidExpirationTime` 做，启动时读设置和 `followUserSettings` 都经过它。它只改内存里的值，存储里的异常值要等下次保存设置时才被覆盖。
 - `lastSyncTime`：上次同步成功的时间戳（ms），没有这个键表示从未同步。
   - 只有 sync.ts 通过 storage.ts 的 `setLastSyncTime` 写它。
   - 设置页用 `getLastSyncTime` 读，再用 `onLastSyncTimeChange`（基于 `GM_addValueChangeListener`）跟着刷新。
@@ -112,14 +113,6 @@
 ---
 
 ## 1. Bug
-
-- [ ] **B13 · 存储里的过期时间是异常值时，每次加载页面都会删光记录**（和 A1 一起做）
-  - 位置：`initializeScriptState`（state.ts）、`deleteExpiredLinks`（storage.ts）。
-  - 问题：读设置时不校验。`general.expirationTime` 是 null、0 或负数时，`deleteExpiredLinks` 会把所有记录都算作过期（比如 `now - t > null` 为 true），每次加载激活页都把本地记录删光，null 和 0 都实测过。同步不受影响：这时所有记录都算过期，合并后的数据是空的，不会上传。
-    - 设置界面一直限制在 1–3650 天，正常使用写不出这种值，只可能来自手改存储或数据损坏。可能性很低，但一旦出现就会删光全部记录。
-    - 缺了这个字段反而没事：和 undefined 比较总是 false，什么都不删。
-  - 修法：A1 的 `loadSettings` 合并默认值时一起校验，过期时间不是正的有限数就用默认值。
-  - 验证：把存储里的 `expirationTime` 改成 null，加载页面后记录一条不少，设置页显示一年。
 
 - [ ] **B14 · 设置对话框开着时，其他标签页保存的设置会被这边同一类设置的保存冲掉**（和 A4 一起做）
   - 位置：四个设置组件里的 `formData`，以及 script.ts 里对 `settings:save` 的处理。
@@ -168,9 +161,9 @@
     - "所有预设默认启用"的逻辑写了 2 遍：[config.ts:20-25](../../src/core/config.ts#L20-L25)、[PresetSettings.vue:182-186](../../src/components/PresetSettings.vue#L182-L186)。
   - 目标：让 `storage.ts` 成为唯一调用 GM 存储 API 的模块，再对外提供：
     - 设置的 key 常量；
-    - `loadSettings()`：用 deepMerge 合并默认值，补上缺失的规则 key，清掉已经不存在的规则 key。如果 deepMerge 只保留默认值里有的字段，老用户 `userSettings.sync` 里残留的 `lastSyncTime` 也会顺带清掉；
+    - `loadSettings()`：用 deepMerge 合并默认值，补上缺失的规则 key，清掉已经不存在的规则 key。如果 deepMerge 只保留默认值里有的字段，老用户 `userSettings.sync` 里残留的 `lastSyncTime` 也会顺带清掉。过期时间的校验（state.ts 的 `withValidExpirationTime`，见「存储结构」）也搬进来；
     - `saveSettings()`；
-    - `onSettingsChange(listener)`：仿照 `onLastSyncTimeChange`，只回调其他标签页的写入。传出的值和 `loadSettings()` 一样合并默认值，否则还没刷新的旧版本标签页保存后，新增的规则 key 就缺了。
+    - `onSettingsChange(listener)`：仿照 `onLastSyncTimeChange`，只回调其他标签页的写入。传出的值要和 `loadSettings()` 经过同样的处理：不合并默认值的话，还没刷新的旧版本标签页保存后，新增的规则 key 就缺了；不校验过期时间的话，手改存储写进异常值时，开着的激活页会把记录删光。
   - 完成标准：`grep -rn "GM_getValue\|GM_setValue\|GM_addValueChangeListener" src` 只匹配到 storage.ts。
 
 - [ ] **A2 · 核心生命周期改成"激活 → dispose"**
@@ -399,6 +392,11 @@
       - 本标签页自己保存，页面只重新初始化 1 次，不会因为自己的写入再跑一遍。
       - 任一标签页保存任何一类设置，其他标签页改过的值都保留，刷新后也是。其他标签页把过期时间改长后，本标签页保存别的设置，不会写回旧的过期时间、再按它删记录。
       - 对话框开着时其他标签页保存了设置，这边在其他类里保存，不影响那边的修改（同一类见 B14）。
+    - 存储里的过期时间是异常值（端到端，在激活页上跑）：
+      - null、0、-5 天、365（把天数当毫秒填）、半天、缺字段：加载页面只删一年前的记录，设置页显示 365 天。存储里的值不变，只改颜色并保存后存成一年；
+      - 其他标签页写入这种值（比如手改存储），开着的激活页也只删一年前的记录；
+      - 开着同步时，两边都按一年筛掉过期记录，照常合并、上传；
+      - 1 天、9.6 天（B11 之前能存下小数天）、3650 天这些设置界面写得出的值，原样生效。
   - 测试接进 CI：在 release.yml 的 `pnpm build` 之前跑，测试不过就不发版。
   - 提示：
     - sync.ts 是从 `vite-plugin-monkey/dist/client` import GM API 的，测试里需要用 `vi.mock` 替换掉；
@@ -417,8 +415,9 @@
       - 构建产物要等 HTML 解析完再执行（加 `defer`），否则 SystemJS 的自动导入会把入口模块再执行一遍。
       - 内存版 GM API 要实现 `GM_addValueChangeListener`：写入后异步回调，本标签页的写入 `remote` 为 false；另外提供一个 `remoteSet`，用来模拟其他标签页的写入。
       - `fetch` 换成桩。返回内容为空的 Gist 时，首次同步会走初始化流程，发出 GET、GET、PATCH 三个请求。要测超过 1 MB 的情况，Gist 桩返回截断的内容，`GM_xmlhttpRequest` 的桩再从本地服务取 raw_url 的完整内容。
+        - 云端要有记录时，内容用旧的明文格式（键是网址、值是时间戳）最省事，不用编码 v3，时间戳可以在桩里按当前时间现算。上传了几条，看 PATCH 内容外层包里的 `itemCount`，不用解压。
       - 每个场景写成一张步骤表（输入、失焦、点 ▲▼、按方向键、改颜色、重置、切标签、关闭再打开、保存），驱动脚本逐步执行，每个场景开一次 Chrome。输入是改输入框的值并派发 input；失焦按真实点击的顺序派发 change、调用 `blur()`。
-      - 初始存储可以直接写异常值（比如 `expirationTime` 为 null），用来测页面加载时的行为（见 B13）。
+      - 初始存储可以直接写异常值（比如 `expirationTime` 为 null），用来测页面加载时的行为（见上面的「存储里的过期时间是异常值」）。
       - 要和改动前对比时，旧版产物用 `git archive` 导出的源码构建，`node_modules` 软链过去即可。
       - 有两个坑。一是 Chrome 要用异步的 `execFile` 启动：同步调用会卡住同一进程里的 https 服务，拿到的是空白页。二是 `--virtual-time-budget` 下 rAF 不触发，Vue 的离场过渡永远结束不了，对话框关不掉，要把 rAF 换成 setTimeout。
       - 看样式要截图：用 `--screenshot` 代替 `--dump-dom`，并把 unpkg.com 也映射到本地服务，返回 node_modules 里 2.14.7 的 `dist/index.css`。headless shell 没有中文字体：把 Windows 的 `/mnt/c/Windows/Fonts/msyh.ttc` 软链到一个单独的目录，写一份 fonts.conf 先 include 系统的 `/etc/fonts/fonts.conf`，再用 `<dir>` 加上这个目录，启动 Chrome 时把 `FONTCONFIG_FILE` 指向它。

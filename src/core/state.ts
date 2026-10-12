@@ -1,6 +1,14 @@
 import { DEFAULT_SETTINGS, PRESET_RULES } from '@/core/config';
-import type { ScriptState, UserSettings } from '@/types';
+import type { GeneralSettings, ScriptState, UserSettings } from '@/types';
 import { GM_addValueChangeListener, GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
+
+// 从存储读出的过期时间不到 1 天（设置界面的下限）时换成默认值。设置界面写不出这种值，只可能是手改了存储或者数据损坏，
+// 比如 null、0、负数，或者把天数直接当成毫秒填了进去。按这样的值清理，每次加载页面都会把记录删光
+function withValidExpirationTime(general: GeneralSettings): GeneralSettings {
+  const { expirationTime } = general;
+  if (Number.isFinite(expirationTime) && expirationTime >= 1000 * 60 * 60 * 24) return general;
+  return { ...general, expirationTime: DEFAULT_SETTINGS.general.expirationTime };
+}
 
 // 获取当前启用的预设列表
 export function getActivePresets(state: ScriptState): string[] {
@@ -32,7 +40,7 @@ export function initializeScriptState(): ScriptState {
   }
 
   return {
-    generalSettings: userSettings.general,
+    generalSettings: withValidExpirationTime(userSettings.general),
     presetSettings: userSettings.preset,
     batchKeySettings: userSettings.batch,
     syncSettings: userSettings.sync,
@@ -58,7 +66,7 @@ export function followUserSettings(state: ScriptState, onChange: () => void): vo
   GM_addValueChangeListener<UserSettings>('userSettings', (_key, _oldSettings, userSettings, remote) => {
     // 本标签页自己保存时也会回调，那时 state 已经是新值了
     if (!remote || !userSettings) return;
-    state.generalSettings = userSettings.general;
+    state.generalSettings = withValidExpirationTime(userSettings.general);
     state.presetSettings = userSettings.preset;
     state.batchKeySettings = userSettings.batch;
     state.syncSettings = userSettings.sync;
