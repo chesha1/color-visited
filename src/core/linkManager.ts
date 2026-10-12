@@ -4,120 +4,56 @@ import { shouldColorLink } from '@/core/pageDetector';
 import { showNotification, removeCustomStyles } from '@/core/ui';
 import { getBaseUrl, logStorageInfo } from '@/core/utils';
 import { clearLinkContext } from '@/core/domObserver';
-import { deleteExpiredLinks, isVisited, loadLinks, mergeLinks } from '@/core/storage';
+import { deleteExpiredLinks, deleteLinksIfUnchanged, isVisited, loadLinks, mergeLinks } from '@/core/storage';
 import type { ScriptState, VisitedLinks } from '@/types';
 
 // 批量染色当前页面上的所有符合规则的链接（仅供快捷键调用）
 export function batchAddLinks(state: ScriptState): void {
-  // 性能监控：记录开始时间
   const startTime = performance.now();
-
-  const newLinks: VisitedLinks = {};
   const now = Date.now();
-  let addedCount = 0;
+  const newLinks: VisitedLinks = {};
 
-  // 查找所有未标记的链接（排除已有 visited-link 类的链接）
-  // 使用 :not(.visited-link) 选择器可以显著提升性能，避免处理已标记的链接
   const links = document.querySelectorAll('a[href]:not(.visited-link)');
-  const linksToUpdate: Element[] = [];
-
-  if (state.generalSettings.debug) {
-    console.log(`[batchAddLinks] 开始批量处理，找到 ${links.length} 个未标记链接`);
-  }
-
-  // 第一遍：收集需要更新的链接，避免在DOM操作过程中修改数据
   links.forEach((link) => {
     if (!(link instanceof HTMLAnchorElement)) return; // SVG 里的 <a> 也会被选中，它的 href 不是字符串
-    const inputUrl = getBaseUrl(link);
+    const url = getBaseUrl(link);
+    if (!shouldColorLink(url, state)) return;
+    // 已有记录的不改时间戳：链接只是显示在页面上，不算访问
+    if (!Object.hasOwn(newLinks, url) && !isVisited(url)) newLinks[url] = now;
+    link.classList.add('visited-link');
+  });
 
-    // 检查链接是否符合规则且尚未被标记为已访问
-    if (shouldColorLink(inputUrl, state) && !Object.hasOwn(newLinks, inputUrl) && !isVisited(inputUrl)) {
-      newLinks[inputUrl] = now;
-      linksToUpdate.push(link);
-      addedCount++;
+  const addedCount = Object.keys(newLinks).length;
+  if (state.generalSettings.debug) {
+    console.log(`[batchAddLinks] 处理 ${links.length} 个链接，新增 ${addedCount} 条记录，耗时 ${(performance.now() - startTime).toFixed(2)}ms`);
+  }
+
+  if (addedCount === 0) {
+    showNotification('没有找到新的符合规则的链接可添加');
+    return;
+  }
+
+  mergeLinks(newLinks);
+  // 快捷键可能是误按的，通知上给一个撤销的机会
+  showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`, 'success', {
+    text: '撤销',
+    onClick: () => undoBatchAdd(newLinks),
+  });
+}
+
+// 撤销一次批量标记：删掉这次新增、之后没再点开过的记录，并去掉对应链接的颜色
+function undoBatchAdd(newLinks: VisitedLinks): void {
+  const deletedUrls = new Set(deleteLinksIfUnchanged(newLinks));
+
+  // updateAllLinksStatus 只加颜色不去颜色，这里单独去掉。同一个 URL 在页面上可能有好几个链接
+  document.querySelectorAll('a.visited-link').forEach((link) => {
+    if (link instanceof HTMLAnchorElement && deletedUrls.has(getBaseUrl(link))) {
+      link.classList.remove('visited-link');
     }
   });
 
-  // 第二遍：批量更新DOM
-  if (linksToUpdate.length > 0) {
-    // 保存新增的访问记录
-    mergeLinks(newLinks);
-
-    // 对于大量链接，使用 DocumentFragment 或分时处理
-    if (linksToUpdate.length > 1000) {
-      // 分时处理：对于超大量链接，分批在不同时隙处理，避免长时间阻塞
-      batchProcessWithTimeSlicing(linksToUpdate, () => {
-        // 处理完成后重新应用所有链接状态，模拟页面刷新的效果
-        updateAllLinksStatus(state);
-
-        // 处理完成后显示通知
-        const endTime = performance.now();
-        const processingTime = endTime - startTime;
-
-        if (state.generalSettings.debug) {
-          console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
-        }
-
-        showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
-      });
-    } else {
-      // 直接批量处理：现代浏览器对此已经有很好的优化
-      linksToUpdate.forEach(link => {
-        link.classList.add('visited-link');
-      });
-
-      // 批量添加完成后，重新应用所有链接状态，模拟页面刷新的效果
-      updateAllLinksStatus(state);
-
-      // 性能监控：计算处理时间
-      const endTime = performance.now();
-      const processingTime = endTime - startTime;
-
-      if (state.generalSettings.debug) {
-        console.log(`[BatchAddLinks 性能] 处理 ${links.length} 个链接，添加 ${addedCount} 个，耗时 ${processingTime.toFixed(2)}ms`);
-      }
-
-      showNotification(`已批量添加 ${addedCount} 个链接到已访问记录`);
-    }
-  }
-  else {
-    showNotification('没有找到新的符合规则的链接可添加');
-  }
-}
-
-// 分时处理函数：仅在链接数量极大时使用
-function batchProcessWithTimeSlicing(linksToUpdate: Element[], onComplete?: () => void): void {
-  const BATCH_SIZE = 200; // 更大的批次，减少调度开销
-  let currentIndex = 0;
-
-  function processNextBatch(): void {
-    const startTime = performance.now();
-    const endIndex = Math.min(currentIndex + BATCH_SIZE, linksToUpdate.length);
-
-    // 批量添加CSS类
-    for (let i = currentIndex; i < endIndex; i++) {
-      linksToUpdate[i].classList.add('visited-link');
-    }
-
-    currentIndex = endIndex;
-
-    // 如果处理时间超过5ms 或还有更多链接，让出控制权
-    const processingTime = performance.now() - startTime;
-    if (currentIndex < linksToUpdate.length && processingTime > 5) {
-      // 使用 setTimeout 而不是 requestAnimationFrame，减少不必要的延迟
-      setTimeout(processNextBatch, 0);
-    } else if (currentIndex < linksToUpdate.length) {
-      // 如果处理很快，继续同步处理
-      processNextBatch();
-    } else {
-      // 所有链接处理完成，执行完成回调
-      if (onComplete) {
-        onComplete();
-      }
-    }
-  }
-
-  processNextBatch();
+  const keptCount = Object.keys(newLinks).length - deletedUrls.size;
+  showNotification(`已撤销 ${deletedUrls.size} 个链接` + (keptCount > 0 ? `，${keptCount} 个点开过的保留` : ''));
 }
 
 // ================== 链接状态管理 ==================

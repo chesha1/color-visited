@@ -14,7 +14,7 @@
 - 🎯 **Smart Coloring** - Automatically tracks visited links and colors them light for easy identification
 - 🌐 **Wide Support** - Supports 20+ websites (V2EX, Zhihu, Bilibili, Reddit, etc.)
 - ⚙️ **Highly Customizable** - Adjustable coloring, expiration time, and enabled websites
-- ⌨️ **Quick Operations** - Keyboard shortcuts for batch marking links on current page
+- ⌨️ **Quick Operations** - Keyboard shortcuts for batch marking links on current page, with undo
 - ☁️ **Cross-device Sync** - Data synchronization via GitHub Gist
 - 🎨 **Perfect Adaptation** - Uses transparent color by default, compatible with various themes
 

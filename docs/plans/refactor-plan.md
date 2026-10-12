@@ -5,7 +5,7 @@
 
 ## 怎么使用这份文档
 
-- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 B8、B9」。
+- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 B9、P1」。
 - 条目编号的含义：**B** = bug，**P** = 性能，**A** = 架构，**C** = 代码细节，**E** = 工程化，**D** = 需要你拍板的决策。
 - 本文只记还没做的事，以及做这些事要知道的背景。每完成一项：
   - 从正文删掉这一条，并更新「进度总览」；
@@ -19,10 +19,10 @@
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 1 | 修 bug，加几个低风险的小优化 | B8、B9、P1、P3、A6 第 1 步 | 进行中 |
+| 1 | 修 bug，加几个低风险的小优化 | B9、P1、P3、A6 第 1 步 | 进行中 |
 | 2 | 先搭安全网：测试 + 格式化 | E2、E1a | 未开始 |
 | 3 | 统一存储层，清理死代码 | A1、B13、C7–C9 | 未开始 |
-| 4 | 核心生命周期 + 规则模型 | A2、A7、C1 | 未开始 |
+| 4 | 核心生命周期 + 规则模型 | A2、A7 | 未开始 |
 | 5 | 设置数据流 + 设置对话框 | A3、B10、A4、B12、C12 | 未开始 |
 | 6 | 拆分 sync.ts | A5 | 未开始 |
 | 7 | UI 样式隔离 + 懒挂载 | A6 第 2–4 步 | 未开始 |
@@ -56,6 +56,7 @@
 
 - 访问记录：每条单独存成一个 GM 值，键是归一化后的 URL，值是最近一次访问的时间戳（ms），过期从这个时间算起。只有 `src/core/storage.ts` 读写它们。
   - 所有写入（点击、批量标记、同步合并、迁移）都经过 `mergeLinks`，只会把时间戳改大。再次点击已访问的链接会刷新时间戳；批量标记只新增记录，不碰已有的。新增写入路径时也要保持"只改大"：同步合并取较大的时间戳，改小的值下次同步就会被改回去。
+  - 删除记录的只有两处：过期清理，和批量标记的撤销。撤销只删时间戳还等于那次标记时间的记录（`deleteLinksIfUnchanged`），靠的正是上一条里的两点：批量标记不碰已有的记录，点开会刷新时间戳。改这两点中的任何一个，都要连撤销一起看。
   - storage.ts 把含冒号的键都当作访问记录（URL 一定带协议头），所以**设置类的键不能含冒号**。
   - 旧版本（v2.21.0 及以前）把全部记录存在 `visitedLinks` 一个键里，结构是 `Record<URL, 时间戳>`。新版本启动时把它逐条合并进来再删掉，可以重复执行。
 - `userSettings` 的结构如下：
@@ -111,23 +112,6 @@
 ---
 
 ## 1. Bug
-
-- [ ] **B8 · 批量标记之后无法撤销**
-  - 位置：`batchAddLinks`（linkManager.ts）、`showNotification`（ui.ts）。
-  - 问题：按下快捷键后，页面上所有符合规则、还没访问过的链接会一次性写进存储，之后没有办法撤回：
-    - 设置里没有删除记录的入口，这些记录只能等过期，默认要一年；
-    - 开了同步的话，下次同步会把它们传到 Gist，带到所有设备上。
-
-    在输入框里按快捷键已经不会触发，但焦点其实不在输入框时误按，仍然会触发。换哪个默认键都避免不了这种误按。
-  - 修法：在"已批量添加 N 个链接"的通知上加一个"撤销"按钮，显示时间从 2 秒延长到 5 秒左右。点击后删掉这次新增、之后没再点开过的记录，并去掉对应链接的颜色；之前就访问过的链接、撤销前刚点开的链接都不受影响。
-    - 这次新增的记录就是 `batchAddLinks` 里的 `newLinks`，时间戳都是同一个 `now`。点开链接会把时间戳刷新成点击的时间，所以撤销时只删值还等于这个 `now` 的记录。在 storage.ts 里加一个这样按值删除的函数，返回实际删掉的 URL；删除复用私有的 `deleteLinks(urls)`（优先用 `GM_deleteValues`，旧版扩展退回逐条删）。
-    - `updateAllLinksStatus` 只加颜色、不去颜色，要单独去掉实际删掉的这些 URL 对应的所有链接上的 `visited-link` 类。同一个 URL 在页面上可能有好几个链接。
-    - 通知现在是纯文本的 ElMessage，要改成带按钮的内容（ElMessage 的 `message` 可以传 VNode）。
-    - 可以和 C1 一起做：先把 `batchAddLinks` 简化成一个循环，再加撤销。
-  - 已知局限（影响都很小）：
-    - 撤销只在通知显示的那几秒内有效。
-    - 如果这几秒里恰好有别的标签页加载页面、触发了同步，这批记录会先传到 Gist。同步是把两边的记录合在一起，本地删掉后，下次同步又会合并回来。
-  - 验证：在 V2EX 首页按快捷键批量标记，中键点开其中一个刚染色的链接，再点通知上的"撤销"。其余刚染色的链接应恢复原色，刷新后仍是原色；之前点过的链接和刚点开的那个保持染色。
 
 - [ ] **B9 · v3 编码会丢掉 URL 末尾空的 `#` 和 `?`**
   - 位置：`getV3GroupDescriptor`（sync.ts）。
@@ -311,7 +295,7 @@
     1. **把 main.ts 的动态 import 改成静态 `import css from '...?inline'`。** 验证：构建后，dist 头部不再有 systemjs 的 `@require`。
     2. **让 Element Plus 的样式只进 shadow root。**
        - AutoImport 和 Components 两处都改为 `ElementPlusResolver({ importStyle: false })`，并删掉 ui.ts 第 7 行的样式 import。
-       - 把样式以 inline 方式注入 shadow root，并把其中的 `:root` 替换成 `:host`。完整的 `element-plus/dist/index.css` 有 361 KB，会让产物明显变大；更省的做法是只 inline 用到的组件：`element-plus/theme-chalk/base.css`，加上 `el-dialog.css`、`el-button.css` 等。别漏了 `el-message.css`：通知不是模板里的组件，是代码里调用的。
+       - 把样式以 inline 方式注入 shadow root，并把其中的 `:root` 替换成 `:host`。完整的 `element-plus/dist/index.css` 有 361 KB，会让产物明显变大；更省的做法是只 inline 用到的组件：`element-plus/theme-chalk/base.css`，加上 `el-dialog.css`、`el-button.css` 等。别漏了 `el-message.css`：通知不是模板里的组件，是代码里调用的。通知上的"撤销"按钮也是在代码里渲染的 ElButton，靠的是 `el-button.css`。
        - 取色器加上 `:teleported="false"`，让面板留在 shadow root 里，否则宿主页面没有样式之后，面板就没有样式了。
        - 删掉 unpkg 的 link，以及 index.css 里手动补的变量。
        - 验证：`grep -c '_css(' dist/color-visited.user.js` 的结果为 0，宿主页面 head 里没有 el- 样式，对话框、取色器面板和通知的外观都不变。
@@ -340,12 +324,6 @@
 
 ## 4. 代码细节
 
-- [ ] **C1 · 简化 `batchAddLinks`**（[linkManager.ts:25-140](../../src/core/linkManager.ts#L25-L140)）
-  - 现在的问题：
-    - 两个分支的收尾代码是复制粘贴的；
-    - 超过 1000 条时才启用的时间分片属于过度设计，给 1000 个元素加 class 大约只要 1 ms；
-    - 最后还要整页重新扫描一次，只是为了补上 URL 重复的那些链接。
-  - 改法：只用一个循环——计算 URL，不匹配就跳过，没有记录就新增一条，然后加上 class。大约 20 行就够。
 - [ ] **C4 · 整理 debug 日志**
   - 现在有 18 处 `if (state.generalSettings.debug) console.log(...)`。开启 debug 后，每个链接会打出 7–9 行日志。统一改用一个 `log.debug()`。
   - 还有几处日志不受 debug 开关控制：[ShortcutSettings.vue:124-131](../../src/components/ShortcutSettings.vue#L124-L131)、[184-190](../../src/components/ShortcutSettings.vue#L184-L190)、[script.ts:54](../../src/core/script.ts#L54)、[91](../../src/core/script.ts#L91)。
@@ -412,6 +390,7 @@
         - 两台设备过期时间不同时，不会来回反复上传。
     - storage.ts 的多标签页语义：传播窗口内的并发写不丢；迁移可以重复执行，并能补进旧版本标签页写回的大键；同步期间的点击不丢；云端数据不能覆盖 `userSettings`；没有批量接口时退回逐条写。
     - 访问时间：再次点击会把时间戳刷新成这次点击的时间；存储里的时间比现在还晚时不改小；批量标记不改已有记录的时间戳。
+    - 批量标记的撤销：只删时间戳还等于这次标记时间的记录，之前就有的、撤销前点开过的（本标签页中键点开，或其他标签页点开）都保留；同一个 URL 的所有链接都去掉颜色，刷新后仍是原色；按钮连点两下只撤销一次；没有批量接口时退回逐条删。
     - 批量快捷键：
       - 应触发：方向键、Enter、Escape、F1 等特殊键；开着大写锁定；录入和按下时键盘布局不同；Mac 上的 ⌥⇧V。
       - 不应触发：Ctrl+↑ 对 Ctrl+↓、Ctrl+Shift+V 对 Ctrl+V、1 对小键盘 1；焦点在 input、textarea、select、contenteditable（含其子元素，以及 open shadow root 里的这些元素）中；输入法正在组字。
@@ -449,6 +428,9 @@
       - 要和改动前对比时，旧版产物用 `git archive` 导出的源码构建，`node_modules` 软链过去即可。
       - 有两个坑。一是 Chrome 要用异步的 `execFile` 启动：同步调用会卡住同一进程里的 https 服务，拿到的是空白页。二是 `--virtual-time-budget` 下 rAF 不触发，Vue 的离场过渡永远结束不了，对话框关不掉，要把 rAF 换成 setTimeout。
       - 看样式要截图：用 `--screenshot` 代替 `--dump-dom`，并把 unpkg.com 也映射到本地服务，返回 node_modules 里 2.14.7 的 `dist/index.css`。headless shell 没有中文字体：把 Windows 的 `/mnt/c/Windows/Fonts/msyh.ttc` 软链到一个单独的目录，写一份 fonts.conf 先 include 系统的 `/etc/fonts/fonts.conf`，再用 `<dir>` 加上这个目录，启动 Chrome 时把 `FONTCONFIG_FILE` 指向它。
+      - 另一种驱动方式是 CDP（B8 的撤销就是这样验证的）：headless Chrome 加上 `--remote-debugging-port`，用 Node 自带的 WebSocket 连上，用 `Input.dispatchKeyEvent`、`Input.dispatchMouseEvent` 发真实的按键和点击，中键点击也会触发 auxclick。可以随时用 `Page.captureScreenshot` 截图。不用 virtual time，rAF 照常触发。macOS 上自带中文字体，不用配 fontconfig。
+        - 内存版 GM API 可以存进页面的 localStorage，这样刷新后数据还在，能测"刷新后仍是原色"。
+        - `GM_setValues`、`GM_deleteValues` 要整批只写一次 localStorage。逐键写的话，1500 条要 180 ms，测出来的就不是脚本自己的耗时。
 - [ ] **E3 · 整理 package.json**
   - license 写的是 `ISC`，而 userscript 头部写的是 `GPL-3.0-only`，两者不一致。
   - `main` 和 `description` 两个字段没有意义。

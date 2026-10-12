@@ -3,14 +3,21 @@
 import { eventBus } from '@/core/eventBus';
 import { isMac } from '@/core/utils';
 import type { ScriptState } from '@/types';
-import { ElMessage } from 'element-plus';
+import { h } from 'vue';
+import { ElButton, ElMessage } from 'element-plus';
 import type { MessageProps } from 'element-plus';
 import 'element-plus/es/components/message/style/css';
 
 // ================== 通知组件 ==================
 
-// 显示通知
-export function showNotification(message: string, type?: MessageProps['type']): void {
+// 通知文字后面的操作按钮，比如批量标记后的"撤销"
+export interface NotificationAction {
+  text: string;
+  onClick: () => void;
+}
+
+// 显示通知。带操作按钮时多显示几秒，留出点按钮的时间（鼠标停在通知上时不会消失），点了按钮就关掉通知
+export function showNotification(message: string, type?: MessageProps['type'], action?: NotificationAction): void {
   // 如果没有指定类型，根据消息内容简单判断类型
   const messageType = type || (/失败|错误|error/i.test(message) ? 'error' : 'success');
 
@@ -18,10 +25,26 @@ export function showNotification(message: string, type?: MessageProps['type']): 
   const container = document.querySelector('#color-visited-root') as HTMLElement | null;
   const appendTarget = (container && (container.shadowRoot as unknown as HTMLElement)) || document.body;
 
-  ElMessage({
-    message,
+  const notification = ElMessage({
+    // message 传函数时，返回的内容渲染在通知的文字区域里
+    // 文字和按钮作为 flex 子项一起垂直居中。按钮放在文字行里的话，它按西文的 x-height 对齐，中文会比按钮高出 1–2px
+    message: action
+      ? () => h('span', { style: { display: 'flex', alignItems: 'center', gap: '12px' } }, [
+        message,
+        h(ElButton, {
+          link: true,
+          // 和通知文字同色，靠字重区分。ElButton 没有 error，对应的是 danger
+          type: messageType === 'error' ? 'danger' : messageType,
+          // 只响应第一次点击：通知淡出的过程中按钮还点得到
+          onClickOnce: () => {
+            notification.close();
+            action.onClick();
+          },
+        }, () => action.text),
+      ])
+      : message,
     type: messageType,
-    duration: 2000,
+    duration: action ? 5000 : 2000,
     showClose: true,
     grouping: true,
     offset: 20,

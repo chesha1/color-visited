@@ -76,6 +76,14 @@ export function deleteExpiredLinks(expirationTime: number): void {
   if (expiredUrls.length > 0) deleteLinks(expiredUrls);
 }
 
+// 撤销一批新增的记录：只删值还等于当时写入的时间戳的，返回实际删掉的 URL。
+// 之后又点开过的链接，时间戳已经刷新成点击的时间，会保留下来
+export function deleteLinksIfUnchanged(links: VisitedLinks): string[] {
+  const unchangedUrls = Object.keys(links).filter(url => GM_getValue(url) === links[url]);
+  if (unchangedUrls.length > 0) deleteLinks(unchangedUrls);
+  return unchangedUrls;
+}
+
 // 把旧版本的整块记录迁移成逐条存储。可以重复执行：中途关掉页面，
 // 或者还没刷新的旧版本标签页又写回了旧格式，下次启动都会再合并一遍
 export function migrateLegacyLinks(): void {
