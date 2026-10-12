@@ -7,7 +7,7 @@ import { isPageActive, onUrlChange } from '@/core/pageDetector';
 import { registerMenuCommand } from '@/core/menuManager';
 import { activateLinkFeatures, removeScript, updateAllLinksStatus } from '@/core/linkManager';
 import { setupBatchKeyListener, setupDOMObserver, setupLinkEventListeners } from '@/core/eventManager';
-import { saveUserSettings } from '@/core/state';
+import { followUserSettings, saveUserSettings } from '@/core/state';
 import { migrateLegacyLinks } from '@/core/storage';
 import { eventBus } from '@/core/eventBus';
 
@@ -68,6 +68,9 @@ function setupGlobalEventListeners(state: ScriptState): void {
     saveUserSettings(state);
     setupPage(state);
   });
+
+  // 其他标签页保存设置后，和本标签页保存时一样，按新设置重新初始化页面
+  followUserSettings(state, () => setupPage(state));
 }
 
 // 页面级别的设置和初始化

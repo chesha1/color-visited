@@ -9,7 +9,7 @@
 
 - 两种格式的外层都是 `{ syncVersion, encoding, payload, itemCount, updatedAt, originalBytes, compressedBytes }`，`payload` 是 gzip 之后再 base64 的 JSON。v2 里是平铺的「URL → 首次访问时间戳」；v3 先按 host 分组，组内路径排序后再做前缀差分。
 - 两份都能被当前的 sync.ts 完整解码，条数和 `itemCount` 一致（2026-10-10 验证）。
-- v2 里有 1 条以空 `#` 结尾的记录，按 v3 编码再解码会丢掉这个 `#`，往返测试在修好 B9 之前会失败（见[重构计划](../../../docs/plans/refactor-plan.md)）。
+- v2 里有 1 条以空 `#` 结尾的 linux.do 记录，是脏数据。v3 编码会丢掉 URL 末尾空的 `#`，这条往返后对不上，往返测试要先去掉它（见[重构计划](../../../docs/plans/refactor-plan.md)的 E2）。
 
 ## 用途
 

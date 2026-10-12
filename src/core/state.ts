@@ -1,6 +1,6 @@
 import { DEFAULT_SETTINGS, PRESET_RULES } from '@/core/config';
 import type { ScriptState, UserSettings } from '@/types';
-import { GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
+import { GM_addValueChangeListener, GM_getValue, GM_setValue } from 'vite-plugin-monkey/dist/client';
 
 // 获取当前启用的预设列表
 export function getActivePresets(state: ScriptState): string[] {
@@ -50,4 +50,18 @@ export function saveUserSettings(state: ScriptState): void {
     sync: state.syncSettings
   };
   GM_setValue('userSettings', userSettings);
+}
+
+// 其他标签页保存设置后，把新设置换进 state，再调用 onChange。
+// 保存时四类设置整块写回，state 不跟着存储更新的话，本标签页之后保存任何一类，都会连同其他几类的旧值一起写回去，冲掉其他标签页的修改
+export function followUserSettings(state: ScriptState, onChange: () => void): void {
+  GM_addValueChangeListener<UserSettings>('userSettings', (_key, _oldSettings, userSettings, remote) => {
+    // 本标签页自己保存时也会回调，那时 state 已经是新值了
+    if (!remote || !userSettings) return;
+    state.generalSettings = userSettings.general;
+    state.presetSettings = userSettings.preset;
+    state.batchKeySettings = userSettings.batch;
+    state.syncSettings = userSettings.sync;
+    onChange();
+  });
 }

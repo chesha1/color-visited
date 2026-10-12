@@ -5,25 +5,25 @@
 
 ## 怎么使用这份文档
 
-- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 B9、P1」。
+- 新会话开场可以直接说：「读 `docs/plans/refactor-plan.md`，继续做下一阶段」，或者「做 P1、P3」。
 - 条目编号的含义：**B** = bug，**P** = 性能，**A** = 架构，**C** = 代码细节，**E** = 工程化，**D** = 需要你拍板的决策。
 - 本文只记还没做的事，以及做这些事要知道的背景。每完成一项：
   - 从正文删掉这一条，并更新「进度总览」；
   - 做了什么、为什么这样取舍，写进提交信息，不在本文留记录。已完成的条目可以用 `git log --grep` 按编号查到提交；
   - 要在真实浏览器里手动验证的步骤，在对话里列给你，不写进本文；
   - 可以写成测试的场景放进 E2；「背景事实与约束」里的内容因此变了的，一并更新。
-- 新发现的问题按同样格式补进对应章节。编号顺延，删掉的编号不再复用，目前已用到 B13、P4、A7、C14、E8、D6。
+- 新发现的问题按同样格式补进对应章节。编号顺延，删掉的编号不再复用，目前已用到 B14、P4、A7、C14、E8、D6。
 - 仓库约定（包管理器、版本号位置、提交信息格式）见 [AGENTS.md](../../AGENTS.md)。
 
 ## 进度总览
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 1 | 修 bug，加几个低风险的小优化 | B9、P1、P3、A6 第 1 步 | 进行中 |
+| 1 | 几个低风险的小优化 | P1、P3、A6 第 1 步 | 进行中 |
 | 2 | 先搭安全网：测试 + 格式化 | E2、E1a | 未开始 |
 | 3 | 统一存储层，清理死代码 | A1、B13、C7–C9 | 未开始 |
 | 4 | 核心生命周期 + 规则模型 | A2、A7 | 未开始 |
-| 5 | 设置数据流 + 设置对话框 | A3、B10、A4、B12、C12 | 未开始 |
+| 5 | 设置数据流 + 设置对话框 | A3、A4、B12、B14、C12 | 未开始 |
 | 6 | 拆分 sync.ts | A5 | 未开始 |
 | 7 | UI 样式隔离 + 懒挂载 | A6 第 2–4 步 | 未开始 |
 | 随时 | 零散小项 | C4–C6、C10、C11、C14、E1b、E3、E4、E6–E8 | 未开始 |
@@ -32,8 +32,7 @@
 
 - 阶段 6 要在阶段 2 的测试完成之后做；
 - A3 依赖 A1；
-- B10 和 A3 一起做；
-- B12 和 A4 一起做，B13 和 A1 一起做。这两条都有单独的小修法，可以提前修。
+- B12、B14 和 A4 一起做，B13 和 A1 一起做。这三条都有单独的小修法，可以提前修。
 
 ## 待决策（需要你拍板）
 
@@ -69,6 +68,7 @@
   }
   ```
   - v2.21.0 及以前 `sync` 里还有 `lastSyncTime`。老用户的存储里会残留这个字段，但已经没有代码读它，下次保存同步设置时就会去掉。
+  - 保存时四类设置整块写回，所以内存里的设置必须跟着存储更新。现在由 state.ts 的 `followUserSettings` 订阅变化：其他标签页保存后（`remote` 为 true），把新值换进 `state`，重新初始化页面。本标签页自己的写入也会回调（VM 文档写明了这一点，TM 文档只说 `remote` 表示改动是否来自其他实例），这时 `remote` 为 false，直接跳过。改设置的数据流（A3）时要保留这一点。设置对话框里的表单不跟着更新，见 B14。
 - `lastSyncTime`：上次同步成功的时间戳（ms），没有这个键表示从未同步。
   - 只有 sync.ts 通过 storage.ts 的 `setLastSyncTime` 写它。
   - 设置页用 `getLastSyncTime` 读，再用 `onLastSyncTimeChange`（基于 `GM_addValueChangeListener`）跟着刷新。
@@ -113,24 +113,6 @@
 
 ## 1. Bug
 
-- [ ] **B9 · v3 编码会丢掉 URL 末尾空的 `#` 和 `?`**
-  - 位置：`getV3GroupDescriptor`（sync.ts）。
-  - 问题：它用 `pathname + search + hash` 拼回路径。URL 以空的 `#` 或 `?` 结尾时，`hash`、`search` 返回空字符串，这个字符就丢了。URL 里的用户名和密码（`user:pw@`）也会丢，因为 `host` 不包含这一部分。
-    - 实际数据：v2 样本里有 1 条 linux.do 的链接以 `#` 结尾，云端存的是去掉 `#` 的版本，原样的那条只在本地。其他设备上这条记录对不上，影响很小。
-  - 修法：拼出来的结果和原 URL 不一样时，改放进 raw 分组（`V3_RAW_GROUP_KEY`）原样保存。raw 分组是和 v3 一起引入的（76b0291），能读 v3 的版本都认识。
-  - 验证：用 `test/fixtures/local/` 里的 v2 样本跑 v3 往返测试（见 E2），`decode(encode(x))` 应和 `x` 完全一致，条数和每条的时间戳都不变。
-
-- [ ] **B10 · 两个标签页都保存过设置时，后保存的会冲掉先保存的**（和 A3 一起做）
-  - 位置：`initializeScriptState`、`saveUserSettings`（state.ts），以及 script.ts 里对 `settings:save` 的处理。
-  - 问题：每个标签页只在启动时把 `userSettings` 读进 `state`，之后不再更新。保存任何一类设置，都会把 `state` 里的四类设置整块写回。
-    - 例：标签页 A 先打开。在标签页 B 里改了颜色并保存，再回到 A 改快捷键并保存，A 会把旧颜色一起写回去，B 的改动就丢了。在 headless Chrome 里用内存版 GM API 复现过。
-    - 在刷新之前，A 的设置页显示的是旧值，页面也一直按旧设置染色。
-    - 用户自己改的设置没法像 `lastSyncTime` 那样单独存一个键、只由一方写入，只能让内存里的设置跟着存储更新。
-  - 修法：settings store 用 `GM_addValueChangeListener('userSettings', …)` 订阅变化。其他标签页保存后，本标签页更新 store 并调用 `refresh()`。storage.ts 的 `onLastSyncTimeChange` 用的是同一个机制。
-    - 本标签页自己的写入也会触发回调，这时 `remote` 为 false。VM 文档写明了这一点，TM 文档只说 `remote` 表示改动是否来自其他实例。
-  - 验证：开两个标签页 A、B。在 B 里改颜色并保存，A 的链接颜色应跟着变；再在 A 里改快捷键并保存，刷新 B，颜色仍是 B 改的那个。
-  - 和数据有关的一种情况：B 把过期时间改长后，A 再保存任何设置，会把旧的、较短的过期时间写回去，A 重新初始化页面时就按它删记录。
-
 - [ ] **B12 · 关掉设置对话框不会丢弃没保存的修改，之后保存别的设置时会一起存下**（最好和 A4 一起做）
   - 位置：ui.ts 的 `showSettingsDialog`、App.vue 的 `handleShowDialog`，以及四个设置组件里监听 `currentSettings` 的 watch。
   - 问题：对话框第一次打开后就一直挂载着，表单里没保存的修改会留在原处。重新打开时，传进去的还是同一个设置对象，组件里的 watch 不会触发，表单不会按存储重置。
@@ -147,11 +129,21 @@
   - 修法：A1 的 `loadSettings` 合并默认值时一起校验，过期时间不是正的有限数就用默认值。
   - 验证：把存储里的 `expirationTime` 改成 null，加载页面后记录一条不少，设置页显示一年。
 
+- [ ] **B14 · 设置对话框开着时，其他标签页保存的设置会被这边同一类设置的保存冲掉**（和 A4 一起做）
+  - 位置：四个设置组件里的 `formData`，以及 script.ts 里对 `settings:save` 的处理。
+  - 问题：表单是对话框打开时从 `state` 拷贝的。对话框开着时其他标签页保存了设置，`state` 会跟着更新（见「存储结构」里的 `userSettings`），表单不会。这时保存哪一类，就把这一类的表单整块写回去，没改过的字段写的也是旧值。
+    - 例：标签页 A 打开设置不关。在标签页 B 里改颜色并保存，A 的页面跟着换成新颜色。回到 A，在常规设置里改调试模式并保存，颜色又被写回旧值，B 也跟着变回去。在 headless Chrome 里实测过。
+    - 在其他类里保存不受影响：这时在快捷键页保存，颜色仍是 B 改的那个。
+    - A 开着的对话框里显示的也是旧值，关掉再打开才是新值。
+  - 修法：A4 保存时只写草稿里改过的字段（和打开对话框时的快照比），合并到 store 的当前值上，没改过的字段不写。这样对话框开着时不用改草稿，正在编辑的内容也不会丢。A4 改成一次保存所有 tab 之后，如果整份写回草稿，四类设置都会有这个问题。
+    - 只修这一条的话：其他标签页保存后，让开着的对话框按新的 `state` 重置表单，和重新打开一样。代价是正在编辑、还没保存的内容会丢掉。
+  - 验证：开两个标签页 A、B。A 打开设置不关；在 B 里改颜色并保存；回到 A，在常规设置里改调试模式并保存，颜色仍是 B 改的那个。
+
 ## 2. 性能
 
 - [ ] **P1 · 每次 setupPage 都全量读两遍存储**
   - 位置：`activateLinkFeatures`（[linkManager.ts:220-225](../../src/core/linkManager.ts#L220-L225)）、`deleteExpiredLinks`（storage.ts）、`logStorageInfo`（[utils.ts:59-78](../../src/core/utils.ts#L59-L78)）。
-  - 问题：页面加载、SPA 跳转、每次保存设置时，都要全量枚举两遍存储（`GM_listValues` 加逐条 `GM_getValue`）：
+  - 问题：页面加载、SPA 跳转、每次保存设置时（其他标签页保存设置时，每个开着的激活页也各跑一次），都要全量枚举两遍存储（`GM_listValues` 加逐条 `GM_getValue`）：
     1. 过期清理一遍；
     2. `logStorageInfo` 一遍。这一遍只是为了打一行日志，还要把全部数据 stringify 一遍算大小，而且不受 debug 开关控制。
 
@@ -180,13 +172,14 @@
   - 访问记录和 `lastSyncTime` 已经只由 storage.ts 读写，sync.ts 也不碰 `userSettings`（同步设置由 script.ts 传给 `syncOnStartup`）。剩下的是 `userSettings` 这一半。
   - 现状：
     - 同一份设置存在两处：内存里的 `state` 和 GM 存储。
-    - `'userSettings'` 在 state.ts 里被直接调用 GM API，共 3 处。
+    - `'userSettings'` 在 state.ts 里被直接调用 GM API，共 4 处：读一处，写两处，`followUserSettings` 订阅变化一处。
     - "所有预设默认启用"的逻辑写了 2 遍：[config.ts:20-25](../../src/core/config.ts#L20-L25)、[PresetSettings.vue:182-186](../../src/components/PresetSettings.vue#L182-L186)。
   - 目标：让 `storage.ts` 成为唯一调用 GM 存储 API 的模块，再对外提供：
     - 设置的 key 常量；
     - `loadSettings()`：用 deepMerge 合并默认值，补上缺失的规则 key，清掉已经不存在的规则 key。如果 deepMerge 只保留默认值里有的字段，老用户 `userSettings.sync` 里残留的 `lastSyncTime` 也会顺带清掉；
-    - `saveSettings()`。
-  - 完成标准：`grep -rn "GM_getValue\|GM_setValue" src` 只匹配到 storage.ts。
+    - `saveSettings()`；
+    - `onSettingsChange(listener)`：仿照 `onLastSyncTimeChange`，只回调其他标签页的写入。传出的值和 `loadSettings()` 一样合并默认值，否则还没刷新的旧版本标签页保存后，新增的规则 key 就缺了。
+  - 完成标准：`grep -rn "GM_getValue\|GM_setValue\|GM_addValueChangeListener" src` 只匹配到 storage.ts。
 
 - [ ] **A2 · 核心生命周期改成"激活 → dispose"**
   - 现状：
@@ -239,7 +232,7 @@
     - 常量 `isMac` 被当作 prop 一层层往下传，`showSettingsDialog` 还把它放进了事件的 payload。
   - 目标：
     - `settings.ts` 导出一个 reactive store 和 `save(next)`。`save` 通过 A1 持久化，然后发出 `settings:changed`，core 收到后调用 `refresh()`。
-    - store 订阅 `userSettings` 的变化，其他标签页保存后跟着更新（见 B10）。
+    - store 跟着存储更新：其他标签页保存后换成新值，再发出 `settings:changed`。现在是 state.ts 的 `followUserSettings` 在做，改用 A1 的 `onSettingsChange`。
     - 删除 `SettingsDialogPayload`、App.vue 的 4 个 handler，以及 `settings:save` 事件。
     - 组件直接 `import { isMac }`，不再通过 prop 传递。
   - 注意：把 Vue 响应式对象存进 GM 存储之前，要先 `toRaw`，再拷贝成普通对象。
@@ -257,6 +250,7 @@
     - SettingsDialog 打开时，从 store 拷贝出一份完整的 draft；
     - 各个 tab 组件只接收 draft 中属于自己的那一部分，用 v-model 编辑；
     - 整个对话框只有一个 `hasChanges`，"保存"按钮一次保存所有 tab；
+    - 保存时只写草稿里改过的字段，合并到 store 的当前值上（见 B14）；
     - ShortcutSettings 现在用 3 个 ref 和 2 个 flag 管理状态，改为直接编辑 `draft.shortcut`。
   - 完成标准：组件里不再有 `defineExpose`，也不再按 activeTab 分支处理。
 
@@ -378,7 +372,7 @@
 - [ ] **E2 · 引入 Vitest**
   - 优先覆盖：
     - sync：
-      - v3 往返测试，即 `decode(encode(x))` 应等于 `x`，比较时不能看键的顺序（v3 会按 host 重新排序）；修好 B9 之前，v2 样本里会有 1 条过不了；
+      - v3 往返测试，即 `decode(encode(x))` 应等于 `x`，比较时不能看键的顺序（v3 会按 host 重新排序）。v3 编码会丢掉 URL 末尾空的 `#` 和 `?`，这类记录极少，不修；v2 样本里有 1 条，比较前先去掉；
       - v2 格式和旧明文格式的读取；
       - 自愈逻辑；
       - 「同步模块的行为不变量」中的每一个分支；
@@ -405,6 +399,11 @@
         - 原来存的不是默认值（比如 30 天）时，回到的是 30 天；
         - 同时改了颜色的话，颜色照常保存，过期时间不变；
         - 1 及以上的输入照常保存，超出的记录照常删除；天数是 1 时点"▼"，回到保存的天数。
+    - 多标签页的设置（端到端，开两个标签页）：
+      - 其他标签页保存后，本标签页不刷新就按新设置工作：链接换成新颜色；当前站点被停用时去掉染色，再启用时恢复；新的批量快捷键能用。页面只重新初始化 1 次。之后打开设置显示的是新值，打开过又关上的对话框也一样。
+      - 本标签页自己保存，页面只重新初始化 1 次，不会因为自己的写入再跑一遍。
+      - 任一标签页保存任何一类设置，其他标签页改过的值都保留，刷新后也是。其他标签页把过期时间改长后，本标签页保存别的设置，不会写回旧的过期时间、再按它删记录。
+      - 对话框开着时其他标签页保存了设置，这边在其他类里保存，不影响那边的修改（同一类见 B14）。
   - 测试接进 CI：在 release.yml 的 `pnpm build` 之前跑，测试不过就不发版。
   - 提示：
     - sync.ts 是从 `vite-plugin-monkey/dist/client` import GM API 的，测试里需要用 `vi.mock` 替换掉；
@@ -431,6 +430,7 @@
       - 另一种驱动方式是 CDP（B8 的撤销就是这样验证的）：headless Chrome 加上 `--remote-debugging-port`，用 Node 自带的 WebSocket 连上，用 `Input.dispatchKeyEvent`、`Input.dispatchMouseEvent` 发真实的按键和点击，中键点击也会触发 auxclick。可以随时用 `Page.captureScreenshot` 截图。不用 virtual time，rAF 照常触发。macOS 上自带中文字体，不用配 fontconfig。
         - 内存版 GM API 可以存进页面的 localStorage，这样刷新后数据还在，能测"刷新后仍是原色"。
         - `GM_setValues`、`GM_deleteValues` 要整批只写一次 localStorage。逐键写的话，1500 条要 180 ms，测出来的就不是脚本自己的耗时。
+        - 多标签页（B10 就是这样验证的）：在同一个 Chrome 里用 `Target.createTarget` 开两个标签页。内存版 GM 存在 localStorage 里时，其他标签页的写入会通过 `storage` 事件到达，在这里以 `remote: true` 回调监听器，和用户脚本管理器的广播一致。初始存储由一个不加载脚本的同源页面写入。
 - [ ] **E3 · 整理 package.json**
   - license 写的是 `ISC`，而 userscript 头部写的是 `GPL-3.0-only`，两者不一致。
   - `main` 和 `description` 两个字段没有意义。
