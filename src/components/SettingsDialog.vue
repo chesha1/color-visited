@@ -1,10 +1,12 @@
 <template>
+  <!-- 关掉后销毁里面的表单，下次打开时按当前设置重新创建：表单一直留着的话，没保存的修改会留到下次打开，保存别的设置时被一起存下 -->
   <el-dialog
     v-model="visible"
     width="900px"
     :close-on-click-modal="true"
     :close-on-press-escape="false"
     :body-style="{ padding: '0' }"
+    destroy-on-close
     @closed="handleClosed"
   >
     <template #header>
