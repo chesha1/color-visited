@@ -36,8 +36,11 @@ function deleteLinks(urls: string[]): void {
   else for (const url of urls) GM_deleteValue(url);
 }
 
-export function isVisited(url: string): boolean {
-  return GM_getValue(url) !== undefined;
+// 有没有还没过期的记录。过期的记录读的时候就当作没有，不等清理删掉：
+// 清理一天最多一次，改短过期时间后也要马上不再染色
+export function isVisited(url: string, expirationTime: number): boolean {
+  const time = GM_getValue<number | undefined>(url);
+  return time !== undefined && Date.now() - time <= expirationTime;
 }
 
 // 记录一次访问，已有记录时把时间戳刷新为这次访问的时间。
@@ -69,8 +72,16 @@ export function mergeLinks(links: VisitedLinks): number {
   return count;
 }
 
+// 上次清理过期记录的时间（ms）。清理要把全部记录读一遍，十几万条时要几十毫秒；
+// 而过期的记录 isVisited 已经当作没有了，晚点删不影响染色，只是多占些存储，所以所有标签页合起来一天最多清理一次
+const LAST_CLEANUP_TIME_KEY = 'lastCleanupTime';
+const CLEANUP_INTERVAL = 1000 * 60 * 60 * 24;
+
 export function deleteExpiredLinks(expirationTime: number): void {
   const now = Date.now();
+  if (now - GM_getValue(LAST_CLEANUP_TIME_KEY, 0) < CLEANUP_INTERVAL) return;
+  GM_setValue(LAST_CLEANUP_TIME_KEY, now);
+
   const links = loadLinks();
   const expiredUrls = Object.keys(links).filter(url => now - links[url] > expirationTime);
   if (expiredUrls.length > 0) deleteLinks(expiredUrls);

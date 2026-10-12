@@ -4,7 +4,7 @@ import { shouldColorLink } from '@/core/pageDetector';
 import { showNotification, removeCustomStyles } from '@/core/ui';
 import { getBaseUrl, logStorageInfo } from '@/core/utils';
 import { clearLinkContext } from '@/core/domObserver';
-import { deleteExpiredLinks, deleteLinksIfUnchanged, isVisited, loadLinks, mergeLinks } from '@/core/storage';
+import { deleteLinksIfUnchanged, isVisited, loadLinks, mergeLinks } from '@/core/storage';
 import type { ScriptState, VisitedLinks } from '@/types';
 
 // 批量染色当前页面上的所有符合规则的链接（仅供快捷键调用）
@@ -18,8 +18,8 @@ export function batchAddLinks(state: ScriptState): void {
     if (!(link instanceof HTMLAnchorElement)) return; // SVG 里的 <a> 也会被选中，它的 href 不是字符串
     const url = getBaseUrl(link);
     if (!shouldColorLink(url, state)) return;
-    // 已有记录的不改时间戳：链接只是显示在页面上，不算访问
-    if (!Object.hasOwn(newLinks, url) && !isVisited(url)) newLinks[url] = now;
+    // 还没过期的记录不改时间戳：链接只是显示在页面上，不算访问
+    if (!Object.hasOwn(newLinks, url) && !isVisited(url, state.generalSettings.expirationTime)) newLinks[url] = now;
     link.classList.add('visited-link');
   });
 
@@ -80,7 +80,7 @@ export function updateLinkStatus(link: Element, state: ScriptState): void {
   if (!shouldColor) return;
 
   // 添加 visited-link 类名
-  const visited = isVisited(inputUrl);
+  const visited = isVisited(inputUrl, state.generalSettings.expirationTime);
   if (state.generalSettings.debug) {
     console.log(`[updateLinkStatus] 是否已访问: ${visited}`);
   }
@@ -131,14 +131,13 @@ export function removeScript(state: ScriptState): void {
 
 // ================== 核心链接功能 ==================
 
-// 激活链接功能 - 启动存储管理、状态更新、DOM监听、事件处理
+// 激活链接功能 - 状态更新、DOM监听、事件处理
 export function activateLinkFeatures(
   state: ScriptState,
   setupDOMObserver: (state: ScriptState) => MutationObserver,
   setupLinkEventListeners: (state: ScriptState) => ((event: Event) => void)
 ): void {
-  deleteExpiredLinks(state.generalSettings.expirationTime); // 删除过期的链接
-  logStorageInfo(loadLinks()); // 显示存储信息
+  if (state.generalSettings.debug) logStorageInfo(loadLinks()); // 显示存储信息，要把全部记录读一遍，只在调试模式下做
   updateAllLinksStatus(state); // 更新链接状态
 
   // 设置全局 DOM 观察器（仅首次创建）

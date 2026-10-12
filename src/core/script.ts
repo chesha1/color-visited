@@ -8,7 +8,7 @@ import { registerMenuCommand } from '@/core/menuManager';
 import { activateLinkFeatures, removeScript, updateAllLinksStatus } from '@/core/linkManager';
 import { setupBatchKeyListener, setupDOMObserver, setupLinkEventListeners } from '@/core/eventManager';
 import { followUserSettings, saveUserSettings } from '@/core/state';
-import { migrateLegacyLinks } from '@/core/storage';
+import { deleteExpiredLinks, migrateLegacyLinks } from '@/core/storage';
 import { eventBus } from '@/core/eventBus';
 
 // ================== 核心启动函数 ==================
@@ -111,6 +111,9 @@ export function startColorVisitedScript(): void {
 
   // 初始化脚本状态
   const state = initializeScriptState();
+
+  // 清理过期的记录，所有标签页合起来一天最多一次。染色不依赖它，所以不放在每次初始化页面时做
+  deleteExpiredLinks(state.generalSettings.expirationTime);
 
   // 执行脚本启动流程
   startScript(state);

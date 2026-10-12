@@ -1105,7 +1105,7 @@ export function hasDataChanged(oldData: VisitedLinksData | SyncData, newData: Vi
   return !areVisitedLinksEqual(extractVisitedLinks(oldData), extractVisitedLinks(newData));
 }
 
-// 只保留最近一次访问不早于 cutoff 的记录，即还没过期的，和本地过期清理（deleteExpiredLinks）的判断一致
+// 只保留最近一次访问不早于 cutoff 的记录，即还没过期的，和本地染色（isVisited）、过期清理（deleteExpiredLinks）的判断一致
 function pickUnexpiredLinks(links: VisitedLinksData, cutoff: number): VisitedLinksData {
   const unexpiredLinks: VisitedLinksData = {};
 
@@ -1130,8 +1130,8 @@ export async function syncOnStartup(syncSettings: SyncSettings, expirationTime: 
       console.log(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`);
     }
 
-    // 2. 过期的记录两个方向都不同步，两边按同一个截止时间判断。否则云端的过期记录会被合并进本地、重新染色，
-    // 激活页面时被删掉，下次同步又被合并回来；上传时也会原样带回云端，永远删不干净
+    // 2. 过期的记录两个方向都不同步，两边按同一个截止时间判断。否则云端的过期记录会被合并进本地，
+    // 过期清理时被删掉，下次同步又被合并回来；上传时也会原样带回云端，永远删不干净
     const cutoff = Date.now() - expirationTime;
     const cloudLinks = pickUnexpiredLinks(cloud.visitedLinks, cutoff);
 
