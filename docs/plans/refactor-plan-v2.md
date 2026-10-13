@@ -21,7 +21,6 @@
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 1 | 马上能修的 bug | B18 | 进行中 |
 | 2 | 安全网：测试、格式、CI | E9、E10、E11 | 未开始 |
 | 3 | UI 外壳 | A8（B19 看 D7） | 未开始 |
 | 4 | 站点规则 | A9（含 B20、B21） | 未开始 |
@@ -45,15 +44,19 @@
 - [ ] **D7 · Tailwind 留不留**（做 A8 之前定）
   - 现状：
     - 设置界面同时用 Element Plus 和 Tailwind。组件里大约有 105 处 class 属性，一半在预设页的装饰卡片上。产物里的 Tailwind CSS 约 18 KB。
-    - Tailwind v4 在 shadow root 里有 B19 的问题，边框、阴影、渐变都不显示。从 2025-07 改用 Tailwind 起就是这样，一直没被发现。
+    - 设置界面里有不少 Tailwind 类不生效（B19）：边框、阴影、渐变都不显示，写在 Element Plus 组件上的类也有 4 处被组件自己的样式盖掉。从 2025-07 改用 Tailwind 起就是这样，一直没被发现。
     - Tailwind 会扫描整个仓库找类名，文档、工作流里的普通单词也会生成工具类：`.contents` 来自 release.yml，`.inline` 来自计划文档。src 里 CSS 字符串和属性中的 `container`、`filter`、`shadow` 也生成了用不到的规则。
   - 选项 1（推荐）：去掉 Tailwind。
     - 布局改用 Element Plus 的组件，再给各组件写 scoped CSS（同样会经 A8 收进 shadow root）。
     - 删掉 `tailwindcss`、`@tailwindcss/vite` 和 tailwind.css。B19 和扫描问题一起消失。
-    - 代价：要改写这大约 105 处 class，预设页的卡片样式要重做。卡片上的边框、阴影、渐变现在本来就没显示。
+    - 代价：要改写这大约 105 处 class，预设页的卡片样式要重做。卡片上的边框、阴影、渐变，以及 B19 里那 4 处写在组件上的类，现在本来就没生效。
   - 选项 2：保留。
     - 注入 shadow root 时，去掉 `@layer properties` 外层的 `@supports` 条件，让变量的初始值无条件生效。
     - 把 `@import "tailwindcss";` 改成 `@import "tailwindcss" source("..");`，只扫描 src。
+    - Element Plus 的 CSS 放进一个 layer，排在 Tailwind 的 `base` 之后、`utilities` 之前（先声明 `@layer theme, base, element-plus, components, utilities;`）。
+      - Chrome 146 实测，这样 B19 里那 4 处类都生效，按钮、开关的样式照旧。
+      - 排在 `base` 前面不行：preflight 的 `button{background-color:#0000}` 会盖掉按钮的背景。
+      - 箭头上两个互相冲突的颜色类，改成二选一。
 - [ ] **D8 · 版本号只留一个来源**
   - 现状：userscript 的版本号写在 vite.config.ts 里，package.json 的 `version` 一直是 1.0.0。AGENTS.md 规定发版时只改前者。
   - 建议：
@@ -202,16 +205,21 @@
 
 ## 1. Bug
 
-- [ ] **B18 · 预设网站页的展开箭头不显示**
-  - 现状：PresetSettings.vue 的模板里用了 `<ArrowRight />`（[第 50 行](../../src/components/PresetSettings.vue#L50)），但它既没有被 import，也没有全局注册：ElementPlusResolver 只解析 `El` 开头的组件。构建产物里是 `resolveComponent("ArrowRight")`，运行时解析不到，渲染出来是一个空的 `<arrowright>` 元素。
-  - 修法：`pnpm add @element-plus/icons-vue`，在组件里 import 这个图标。element-plus 本来就依赖这个包，产物里已经有这个图标，不会增加体积。
-
-- [ ] **B19 · 设置界面里 Tailwind 的边框、阴影、渐变都不显示**
+- [ ] **B19 · 设置界面里有不少 Tailwind 类不生效**
   - 现状：
-    - Tailwind v4 的 `border`、`shadow-*`、渐变等工具类，依赖 `@property` 注册的变量初始值，比如 `.border{border-style:var(--tw-border-style)}`。而 `@property` 在 shadow root 里不生效。
-    - Tailwind 自带一个回退块，但它包在一个只针对旧版 Safari/Firefox 的 `@supports` 里，Chrome 用不上。
-    - Chrome 146 实测，同一份 CSS：放在 shadow root 里时，`.border` 的 `border-style` 是 `none`，`shadow-sm` 和渐变也都是 `none`；放在 document 里时是 `solid`。
-    - 所以设置界面里各个卡片和分隔线的边框、阴影，以及预设页统计框的渐变，现在都没有显示。只有一个例外：宿主网站自己也用 Tailwind v4 时，它在 document 里注册的 `@property` 对 shadow root 也有效。验证时别挑这种网站。
+    - **边框、阴影、渐变都不显示。**
+      - Tailwind v4 的 `border`、`shadow-*`、渐变等工具类，依赖 `@property` 注册的变量初始值，比如 `.border{border-style:var(--tw-border-style)}`。而 `@property` 在 shadow root 里不生效。
+      - Tailwind 自带一个回退块，但它包在一个只针对旧版 Safari/Firefox 的 `@supports` 里，Chrome 用不上。
+      - Chrome 146 实测，同一份 CSS：放在 shadow root 里时，`.border` 的 `border-style` 是 `none`，`shadow-sm` 和渐变也都是 `none`；放在 document 里时是 `solid`。
+      - 所以设置界面里各个卡片和分隔线的边框、阴影，以及预设页统计框的渐变，现在都没有显示。只有一个例外：宿主网站自己也用 Tailwind v4 时，它在 document 里注册的 `@property` 对 shadow root 也有效。验证时别挑这种网站。
+    - **写在 Element Plus 组件上的类，和组件自己的样式设了同一个属性时不生效。**
+      - Tailwind 的工具类都在 `@layer utilities` 里，Element Plus 的 CSS 不在任何 layer 里。不在 layer 里的规则总是赢，和特异性、先后顺序无关。
+      - Chrome 146 实测有 4 处：
+        - 预设页展开箭头（`el-icon`）上的 `text-gray-400` 和展开时加的 `text-blue-500`，都被 `.el-icon{color:var(--color)}` 盖掉，箭头是继承来的正文颜色；
+        - 过期时间输入框（`el-input-number`）的 `w-32` 没生效，宽度是 Element Plus 默认的 180px；
+        - 同步页"设置步骤"卡片（`el-card`）的 `bg-blue-50` 没生效，是白色；
+        - 常规、快捷键两页表单（`el-form`）上的 `space-y-6` 没生效，表单项的间距是 Element Plus 的 18px。
+      - 箭头上的两个颜色类本身也冲突：生成的 CSS 里 `.text-gray-400` 排在 `.text-blue-500` 后面，就算盖过了 Element Plus，展开后也还是灰色。
   - 修法：看 D7。
 
 - [ ] **B20 · SPA 站点上，从没被 include 的页面进来后，站内跳到列表页也不染色**

@@ -127,6 +127,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { ArrowRight } from '@element-plus/icons-vue'
 import { PRESET_RULES } from '@/core/config'
 import { changedFields } from '@/core/utils'
 import type { PresetRules } from '@/types'
