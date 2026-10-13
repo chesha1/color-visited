@@ -51,28 +51,29 @@ export function ensureDOMObserver(): MutationObserver {
             let newLinksCount = 0;
             let attrLinksCount = 0;
             mutations.forEach((mutation: MutationRecord): void => {
-                // 处理新增节点
+                // 处理新增节点。带着标记插进来的链接也要重新判断：移出 DOM 之后再改的 href，observer 收不到；
+                // 克隆出来的链接也带着原来的标记
                 if (mutation.type === 'childList') {
                     mutation.addedNodes.forEach((node: Node): void => {
                         if (node.nodeType !== Node.ELEMENT_NODE) return;
                         const element = node as Element;
                         // 检查节点本身是否是链接
-                        if (element.tagName === 'A' && element.hasAttribute('href') && !element.classList.contains('visited-link')) {
+                        if (element.tagName === 'A' && element.hasAttribute('href')) {
                             updateLinkStatus(element, state);
                             newLinksCount++;
                         }
                         // 检查子节点中的链接
-                        const newLinks = element.querySelectorAll('a[href]:not(.visited-link)');
+                        const newLinks = element.querySelectorAll('a[href]');
                         newLinksCount += newLinks.length;
                         newLinks.forEach((link: Element): void => {
                             updateLinkStatus(link, state);
                         });
                     });
                 }
-                // 处理 href 属性变化
+                // 处理 href 属性变化，已经染色的链接也要重新判断
                 else if (mutation.type === 'attributes' && mutation.attributeName === 'href') {
                     const target = mutation.target as Element;
-                    if (target.tagName === 'A' && !target.classList.contains('visited-link')) {
+                    if (target.tagName === 'A') {
                         updateLinkStatus(target, state);
                         attrLinksCount++;
                     }

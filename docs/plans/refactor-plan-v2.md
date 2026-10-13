@@ -21,7 +21,7 @@
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 1 | 马上能修的 bug | B17、B18 | 进行中 |
+| 1 | 马上能修的 bug | B18 | 进行中 |
 | 2 | 安全网：测试、格式、CI | E9、E10、E11 | 未开始 |
 | 3 | UI 外壳 | A8（B19 看 D7） | 未开始 |
 | 4 | 站点规则 | A9（含 B20、B21） | 未开始 |
@@ -111,6 +111,8 @@
 
 - **设置只有一条更新路径。** 本标签页保存时，`saveSettings` 把改动合并到存储里的当前值上，写回后通知订阅者。其他标签页写入后，storage 的订阅拿到新值，规范化之后同样通知订阅者。页面只订阅一次：`onSettingsChange(refresh)`。
 - **页面颜色只跟着存储走。** colorizer 只在两种时候改标记：一是扫描新出现的链接或 href 变了的链接，二是收到本标签页访问记录的增删通知。点击、批量标记、撤销、同步合并都只写存储，不碰 DOM。
+  - 扫描时不看链接原来有没有标记，一律按当前的 href 重新判断。翻页、"换一批"、虚拟滚动这类列表会复用 `<a>` 元素，只换 href；移出 DOM 之后再改的 href，observer 收不到，只能在插回来时判断；克隆出来的链接也带着原来的标记。
+  - 重新判断的结果和现在一样时不写 DOM：每个新插入的链接都要判断一遍，而 `classList.add`、`remove`、`setAttribute` 即使值没变，页面上的 MutationObserver 也会收到一次变化。现在用的是 `classList.toggle(name, force)`，标记换成 data 属性后对应 `toggleAttribute(name, force)`（Chrome 146 实测，这两个在状态没变时都不产生变化记录）。
 - **激活一次，释放一次。** `activate` 里添加的监听器共用一个 AbortController，再加上 observer、订阅和样式，都在它返回的 dispose 里释放。不再有全局的 handler 引用，也不再有 observer 上下文。
 - **UI 用到时才创建。** 没打开过设置、也没弹过通知的页面上，没有 shadow root，也没有 Vue 应用。打包进来的 CSS 都只进 shadow root，宿主页面上只有染色用的那一段样式。
 
@@ -199,11 +201,6 @@
 ---
 
 ## 1. Bug
-
-- [ ] **B17 · 已经染色的链接换了 href 后，不会重新判断**
-  - 现状：observer 处理 href 变化时，会跳过已经带 `visited-link` 的链接（[domObserver.ts:73-79](../../src/core/domObserver.ts#L73-L79)），`updateLinkStatus` 开头也会跳过它们。翻页、"换一批"、虚拟滚动这类列表会复用 `<a>` 元素：把一个已访问的链接改成未访问的 href 之后，它还保持着颜色。
-  - 修法：href 变化时不看现有的标记，先去掉，再按新的 href 判断。A12 重写 observer 时要保留这一点。
-  - 完成标准：在 DOM 里测：把已染色链接的 href 改成未访问的地址，颜色去掉；改回已访问的地址，颜色又染上。
 
 - [ ] **B18 · 预设网站页的展开箭头不显示**
   - 现状：PresetSettings.vue 的模板里用了 `<ArrowRight />`（[第 50 行](../../src/components/PresetSettings.vue#L50)），但它既没有被 import，也没有全局注册：ElementPlusResolver 只解析 `El` 开头的组件。构建产物里是 `resolveComponent("ArrowRight")`，运行时解析不到，渲染出来是一个空的 `<arrowright>` 元素。
@@ -397,7 +394,7 @@
       const ac = new AbortController();
       const style = injectStyle(settings.general.color);
       markAll();
-      const observer = observeLinks(site);              // 新出现的链接；href 变化时不看现有标记，重新判断（B17）
+      const observer = observeLinks(site);              // 新出现的、href 变了的链接：不看现有标记，按当前 href 重新判断
       const unsubscribe = onLinksChange(updateMarks);   // 本标签页的记录增删 → 给对应 URL 的所有链接加上或去掉标记
       document.addEventListener('click', onClick, { capture: true, signal: ac.signal });
       document.addEventListener('auxclick', onClick, { capture: true, signal: ac.signal });
@@ -423,7 +420,7 @@
     - SPA 跳转：激活页 → 非激活页 → 激活页；
     - 其他标签页改了设置后，按新设置重新染色；
     - 同步合并来的记录染上色；
-    - href 改变后，标记跟着变；
+    - href 改变后，标记跟着变，移出 DOM 改完再插回来的也一样；
     - 在输入框里按批量快捷键，不触发标记。
 
 - [ ] **A13 · 拆分同步模块**（依赖 E9：先用测试锁住「同步的行为不变量」）

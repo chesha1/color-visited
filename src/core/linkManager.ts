@@ -58,14 +58,11 @@ function undoBatchAdd(newLinks: VisitedLinks): void {
 
 // ================== 链接状态管理 ==================
 
-// 更新单个链接的状态
+// 按链接现在的 href 更新标记：该染的加上，不该染的去掉。
+// 不看链接原来有没有标记：翻页、"换一批"、虚拟滚动这类列表会复用 <a> 元素，只换 href，原来的标记可能已经不对了
 export function updateLinkStatus(link: Element, state: ScriptState): void {
   // a[href] 也会选中 SVG 里的 <a>，它的 href 是 SVGAnimatedString 对象而不是字符串，直接跳过
   if (!(link instanceof HTMLAnchorElement)) return;
-
-  // 如果链接已经有 visited-link 类，跳过处理以提高性能
-  // 这个检查避免了重复的DOM操作和URL处理
-  if (link.classList.contains('visited-link')) return;
 
   const originalHref = link.href;
   const inputUrl = getBaseUrl(link);
@@ -77,24 +74,20 @@ export function updateLinkStatus(link: Element, state: ScriptState): void {
     console.log(`[updateLinkStatus] shouldColorLink结果: ${shouldColor}`);
   }
 
-  if (!shouldColor) return;
-
-  // 添加 visited-link 类名
-  const visited = isVisited(inputUrl, state.generalSettings.expirationTime);
-  if (state.generalSettings.debug) {
+  const visited = shouldColor && isVisited(inputUrl, state.generalSettings.expirationTime);
+  if (state.generalSettings.debug && shouldColor) {
     console.log(`[updateLinkStatus] 是否已访问: ${visited}`);
   }
 
-  if (visited) {
-    link.classList.add('visited-link');
-    if (state.generalSettings.debug) console.log(`[updateLinkStatus] ${inputUrl} class added`);
-  }
+  // 用带第二个参数的 toggle：标记已经是这个状态时不改 class。add、remove 即使没变也会改写一次 class，
+  // 页面上监听 class 的代码就会收到变化，而这里每个新插入的链接都要走一遍
+  link.classList.toggle('visited-link', visited);
 }
 
 // 批量更新页面中所有链接的状态
 export function updateAllLinksStatus(state: ScriptState): void {
-  // 只查找还没有 visited-link 类的链接，避免重复处理，提高性能
-  // 在大量链接的页面上，这个优化可以减少90%以上的不必要DOM操作
+  // 只查找还没有 visited-link 类的链接，避免重复处理，提高性能。
+  // 调用它时访问记录只增不减（点击、同步合并），已经染色的链接不会因此变成不该染；href 变了的由 observer 重新判断
   document.querySelectorAll('a[href]:not(.visited-link)').forEach((link) => {
     updateLinkStatus(link, state);
   });
