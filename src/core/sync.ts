@@ -530,23 +530,29 @@ function getCommonPrefixLength(left: string, right: string): number {
   return index;
 }
 
-// 把完整 URL 拆成“分组键 + 可差分文本”；解析失败时退回 raw 分组，避免单条脏数据阻断整批同步。
+// 把完整 URL 拆成“分组键 + 可差分文本”，解码时把分组键还原成 origin，再接上文本。
+// 文本是从原字符串上截掉 origin 剩下的部分，所以能逐字还原。不要改用 pathname + search + hash 拼：
+// 末尾空的 ? 或 # 会丢掉，还原出的键对不上，之后每次同步都要整份上传。
+// 不以「origin + /」开头的（mailto: 这类没有 host 的，或者解析失败的）整条放进 raw 分组，
+// 否则解码时路径不以 / 开头会报错，整批同步都失败。
 function getV3GroupDescriptor(url: string): { groupKey: string; text: string } {
   try {
-    const parsedUrl = new URL(url);
-    const text = `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
-    const groupKey = parsedUrl.protocol === 'https:'
-      ? parsedUrl.host
-      : `${parsedUrl.protocol}//${parsedUrl.host}`;
+    const { protocol, host } = new URL(url);
+    const groupKey = protocol === 'https:' ? host : `${protocol}//${host}`;
+    const origin = getOriginFromV3GroupKey(groupKey);
 
-    return { groupKey, text };
+    if (url.startsWith(`${origin}/`)) {
+      return { groupKey, text: url.slice(origin.length) };
+    }
   }
   catch {
-    return {
-      groupKey: V3_RAW_GROUP_KEY,
-      text: url
-    };
+    // 解析失败，放进 raw 分组
   }
+
+  return {
+    groupKey: V3_RAW_GROUP_KEY,
+    text: url
+  };
 }
 
 // 把 v3 分组键还原成完整 origin，供解码阶段重建平铺 URL。
