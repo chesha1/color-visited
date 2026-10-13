@@ -39,17 +39,6 @@ function initializeSync(state: ScriptState): void {
 
 // 设置全局事件监听器
 function setupGlobalEventListeners(state: ScriptState): void {
-  // 监听预设状态更新事件
-  window.addEventListener('preset-states-updated', (event: Event) => {
-    const customEvent = event as CustomEvent<{ presetSettings: Record<string, boolean> }>;
-    const { presetSettings: newPresetSettings } = customEvent.detail;
-    state.presetSettings = newPresetSettings;
-    saveUserSettings(state);
-
-    // 重新设置页面以应用新的预设配置
-    setupPage(state);
-  });
-
   // 监听 URL 变化
   onUrlChange(() => {
     setupPage(state);

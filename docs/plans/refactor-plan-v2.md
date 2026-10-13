@@ -1,6 +1,6 @@
 # color-visited 重构计划 v2
 
-> 基于提交 `cc63a81`（2026-10-13）的代码从头梳理，取代旧版 [refactor-plan.md](refactor-plan.md)。旧版里没做完的条目都重新评估过，去向见文末附录。这一版确认后删掉旧版；需要查旧版内容（比如端到端测试的做法）时用 `git show cc63a81:docs/plans/refactor-plan.md`。
+> 基于提交 `cc63a81`（2026-10-13）的代码从头梳理，取代旧版 refactor-plan.md，旧版里没做完的条目都重新评估过。旧版已删除：查它的内容（比如端到端测试的做法）用 `git show cc63a81:docs/plans/refactor-plan.md`；旧版各条目在本文里的去向，见 `git show 9dbdb84:docs/plans/refactor-plan-v2.md` 的附录。
 > 文中行号都指 `cc63a81`。代码改动后行号会漂移，请以函数名定位；需要对照原文时用 `git show cc63a81:<路径>`。
 
 ## 怎么使用这份文档
@@ -21,7 +21,7 @@
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 1 | 马上能修的 bug | B15、B17、B18 | 未开始 |
+| 1 | 马上能修的 bug | B17、B18 | 进行中 |
 | 2 | 安全网：测试、格式、CI，顺带修 B16 | E9、B16、E10、E11 | 未开始 |
 | 3 | UI 外壳 | A8（B19 看 D7） | 未开始 |
 | 4 | 站点规则 | A9（含 B20、B21） | 未开始 |
@@ -77,7 +77,7 @@
 3. **和运行环境之间的边界没守住。**
    - Element Plus 的样式泄漏到宿主页面。
    - 每个页面都要从 unpkg 加载一份 CSS，启动还依赖 jsdelivr 上的 SystemJS。
-   - 脚本默认和宿主页面跑在同一个 JS 环境里，页面能触发脚本的监听器，也能 hook 同步时用的 `fetch`（B15、A14）。
+   - 脚本默认和宿主页面跑在同一个 JS 环境里，页面能 hook 同步时用的 `fetch`（A14）。
 4. **站点规则把三件事混在了一起。**
    - 注入范围（`@include`）、激活范围（`pages`）、链接归一化（`getBaseUrl`）本该分开声明。
    - 注入范围的粒度选错了：在 SPA 站点上，如果是从没被 include 的页面进来的，脚本根本不在（B20）。
@@ -177,7 +177,7 @@
 ### 运行平台
 
 - **SPA 跳转检测的方式不能换。** 用户脚本没法 hook 页面的 `history.pushState`，SPA 跳转只能在 MutationObserver 的回调里比较 `location.href` 来发现。这个检测在非激活页上也必须一直运行：v2.19.4 修过从非激活页跳到激活页时监听失效的问题。
-- **注入环境。** Tampermonkey 目前不写 `@sandbox` 时默认是 `raw`，注入页面的 MAIN_WORLD；Violentmonkey 的 `@inject-into` 默认是 `auto`，也是先试页面环境。在页面环境里，脚本用的 `window`、`fetch` 就是页面的那一份，页面脚本可以触发它们，也可以 hook 它们（见 B15、A14）。
+- **注入环境。** Tampermonkey 目前不写 `@sandbox` 时默认是 `raw`，注入页面的 MAIN_WORLD；Violentmonkey 的 `@inject-into` 默认是 `auto`，也是先试页面环境。在页面环境里，脚本用的 `window`、`fetch` 就是页面的那一份，页面脚本可以 hook 它们（见 A14）。
 - **GM 存储的语义。** `GM_getValue` 返回的是副本；GM 存储由所有标签页共享。
   - 每个标签页有一份同步读取用的缓存。写入先进本标签页的缓存，再发给扩展后台，由后台按到达顺序应用并广播给其他标签页。所以不同键的并发写入互不影响，同一个键是后写覆盖先写。
   - `GM_getValues`、`GM_setValues`、`GM_deleteValues` 需要 Tampermonkey 5.3+ 或 Violentmonkey 2.19.1+，storage.ts 在旧版本上退回逐条写。
@@ -198,15 +198,6 @@
 ---
 
 ## 1. Bug
-
-- [ ] **B15 · 宿主页面能改写设置，还能让脚本以后每次启动都失败**
-  - 现状：
-    - `setupGlobalEventListeners` 在 `window` 上监听 `preset-states-updated`（[script.ts:43-51](../../src/core/script.ts#L43-L51)），收到后就把 `detail.presetSettings` 写进 `userSettings` 并保存。
-    - 代码里没有任何地方触发这个事件。但脚本默认和宿主页面跑在同一个 JS 环境里（见「运行平台」），页面脚本调一次 `window.dispatchEvent(new CustomEvent('preset-states-updated', { detail }))` 就能触发它：
-      - 可以任意改写各站点的开关。改动写进了存储，所有站点都受影响。
-      - 传入 `{ presetSettings: null }` 的话，下次启动时 `initializeScriptState` 会执行 `key in null` 并抛错（[state.ts:31](../../src/core/state.ts#L31)）。之后脚本在所有站点上都起不来，"设置"菜单也不会注册，只能去管理器里手改存储。
-  - 修法：删掉这个监听。A10 让读取设置时做完整的规范化之后，存储里的坏值也不会再让启动失败。A14 再把脚本和页面的 JS 环境隔开。
-  - 完成标准：`grep -rn "preset-states-updated" src` 没有结果。
 
 - [ ] **B16 · 同步编码不能逐字往返，本地有末尾带 `#` 的记录时，每次同步都整份上传**（和 E9 一起做）
   - 现状：
@@ -333,7 +324,7 @@
     - 内存里有一份 `state`（和 handler 引用一起混在 `ScriptState` 里）。保存设置有两条路，做的是同一件事：
       - 本标签页保存：`settings:save` 事件 → script.ts 合并 → `saveUserSettings` → `setupPage`；
       - 其他标签页保存：`followUserSettings` → 替换 `state` → `setupPage`。
-    - 读取时只补了新站点的 key（还要写回存储），并校验了过期时间。字段缺失或类型不对时没有兜底，比如 `preset` 是 `null` 时，启动会直接抛错（B15）。
+    - 读取时只补了新站点的 key（还要写回存储），并校验了过期时间。字段缺失或类型不对时没有兜底，比如 `preset` 是 `null` 时，`initializeScriptState` 执行 `key in null` 会抛错（[state.ts:31](../../src/core/state.ts#L31)），脚本在所有站点上都起不来，"设置"菜单也不会注册。
     - `DEFAULT_SETTINGS` 里，一部分字段是 getter，每次返回新对象；另一部分是共享对象，会被直接当作 `GM_getValue` 的默认值返回出去，有被意外修改的风险。
     - "所有站点默认启用"的逻辑写了两遍：config.ts 和 PresetSettings.vue。
   - 做法：
@@ -487,7 +478,7 @@
 - [ ] **A14 · 和宿主页面的 JS 环境隔开**（依赖 A8、A12、A13）
   - 现状：
     - 两个管理器默认都把脚本注入页面环境（见「运行平台」），脚本的 `window`、`fetch` 和各种原型都和宿主页面共享。
-    - 脚本并不需要访问页面里的任何 JS 对象，却因此暴露了两件事：页面脚本能触发脚本的监听器（B15）；也能 hook 脚本发请求用的函数，拿到 GitHub 令牌。
+    - 脚本并不需要访问页面里的任何 JS 对象，却因此让页面脚本能 hook 脚本发请求用的函数，拿到 GitHub 令牌。
     - 另外，shadow root 是 open 的：对话框开着时，页面脚本能读到令牌输入框里的值。
   - 做法：
     - 脚本头部加上 `@sandbox DOM`（TM：只要 DOM 访问，在隔离环境里运行）和 `@inject-into content`（VM：注入内容脚本的环境）。vite-plugin-monkey 两个字段都支持。
@@ -587,34 +578,3 @@
 - **把其他标签页记下的访问实时染到当前页上。** 记录是逐键存储的，没法订阅全部的键；刷新页面就能看到。
 - **给 shadow DOM 里的链接染色（比如新版 reddit）。** 这是新功能，不在重构的范围内。
 - **去掉 Element Plus。** D3 已定。
-
-## 附：旧版条目的去向
-
-旧版删掉之后，这一节也一起删掉。
-
-| 旧版 | 去向 |
-|---|---|
-| A1 统一存储层 | A10 |
-| A2 核心生命周期 | A12 |
-| A3 settings store | A10、A11。不再用 Vue 的响应式 store：对话框每次打开都拷贝一份草稿，core 只需要 `getSettings` 和 `onSettingsChange` |
-| A4 对话框共用草稿 | A11，改成每次打开都新建一个应用，不再靠 `destroy-on-close` |
-| A5 拆分 sync.ts | A13，另外补上了换用 `GM_xmlhttpRequest` 的安全理由，外层包只校验要用的字段，去掉 gzip 检测 |
-| A6 UI 打包与样式隔离 | A8，用 `cssSideEffects` 收集样式，不再手列组件样式；取色器用 `append-to`，不用 `teleported=false`；第 4 步并入 B19、D7 |
-| A7 站点规则模型 | A9，注入范围单独声明；归一化按 host 查表，不挂在站点上 |
-| C4 debug 日志 | A12 |
-| C5 通知类型 | A8 |
-| C6 样式注入 | C15，改用 `@layer`，不用 `:is()` |
-| C7 死代码 | `preset-states-updated` 并入 B15，其余随所在文件的重写一起删掉 |
-| C8 类型整理 | 在 A10、A12、A13 里拆散 types.ts |
-| C9 默认值工厂 | A10 |
-| C10 统一命名 | 随重写解决：新模块按职责命名，代码里的设置字段名和存储保持一致 |
-| C11 代码风格 | E10 |
-| C12 PresetSettings | A11 |
-| C14 isMac 判空 | A10 |
-| E1 ESLint | E10（格式化）、E12（规则） |
-| E2 Vitest | E9；端到端场景和测试做法仍引用旧版 |
-| E3 package.json | E13、D8 |
-| E4 重复的类型检查 | E13 |
-| E6 CLAUDE.md | E14 |
-| E7 tsconfig | E13 |
-| E8 Tailwind 只扫描 src | D7 |
