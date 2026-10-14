@@ -14,6 +14,9 @@
   - 做了什么、为什么这样取舍，写进提交信息（列一行「重构计划文档：完成 Xn」），不在本文留记录；
   - 要在真实浏览器里手动验证的步骤，列在对话里，不写进本文；能自动化的写成测试；
   - 「约束」里的内容因此变了的，一并更新。
+- 测试：`pnpm test` 跑 test/ 下的 Vitest 测试，在 Node 里跑，GM 存储和 GitHub 都换成了 test/fakes/ 里的假实现。
+  - 依赖真实 DOM 的场景（染色、observer、`isTyping`、对话框、多标签页）测不了，沿用 headless Chrome 的做法，见旧版 E2 的「提示」。旧版 E2 里列出的端到端场景，仍是做 A10–A12 时的回归清单。
+  - 以后如果要把这些也自动化，可以考虑 Vitest 的 browser mode，不在本计划内。
 - D 项由你决定，动手前先问。
 - 仓库约定（pnpm、版本号、提交信息格式）见 [AGENTS.md](../../AGENTS.md)。
 
@@ -21,7 +24,7 @@
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 2 | 安全网：测试、格式、CI | E9、E10、E11 | 未开始 |
+| 2 | 安全网：格式、CI | E10、E11 | 进行中 |
 | 3 | UI 外壳 | A8（B19 看 D7） | 未开始 |
 | 4 | 站点规则 | A9（含 B20、B21） | 未开始 |
 | 5 | 存储与设置 | A10 | 未开始 |
@@ -33,9 +36,8 @@
 
 阶段之间的依赖：
 
-- A9、A13 要在 E9 之后，先用测试锁住归一化的输出和同步的行为。
 - A11 依赖 A8、A10。A12 依赖 A9、A10、A11：A11 先去掉 UI 对事件总线的依赖，A12 才能把它整个删掉。
-- A13 只依赖 E9，可以和阶段 3–7 交错着做。
+- A13 不依赖其他条目，可以和阶段 3–7 交错着做。
 - A14 依赖 A8（shadow root）、A12（`isTyping`）、A13（请求改走 `GM_xmlhttpRequest`）。
 - E12、E14 放在 A12 之后，免得改了马上又被删掉的代码。
 
@@ -85,7 +87,7 @@
    - 注入范围的粒度选错了：在 SPA 站点上，如果是从没被 include 的页面进来的，脚本根本不在（B20）。
    - 归一化和规则分开写，漏掉了 south-plus 的一个域名（B21）。
 5. **同步模块的复杂度花在了诊断代码上**，编解码的正确性（逐字往返）反而没守住。
-6. **没有测试，lint 没有配规则。**
+6. **lint 没有配规则。**
 
 ## 目标架构
 
@@ -131,7 +133,7 @@
     - 过期清理：要把全部记录读一遍，所以所有标签页合起来一天最多一次，时间记在 `lastCleanupTime`。不要把它放回每次初始化页面的路径上。
     - 批量标记的撤销：只删时间戳仍等于那次标记时间的记录（`deleteLinksIfUnchanged`）。这依赖两点：批量标记不碰还没过期的记录；点击会刷新时间戳。改其中任何一点，都要连撤销一起看。
   - v2.21.0 及以前把全部记录存在 `visitedLinks` 一个键里。新版本启动时把它逐条合并进来再删掉，可以重复执行。这段迁移保留。
-- **归一化的输出就是存储键，站点 id 就是 `userSettings.preset` 的键。** 改了哪一个，已有的数据就对不上。A9 之前先用 E9 的黄金表把它们锁住。
+- **归一化的输出就是存储键，站点 id 就是 `userSettings.preset` 的键。** 改了哪一个，已有的数据就对不上。现在的输出由 test/normalize.test.ts 的黄金表锁住，站点 id 由 test/sites.test.ts 锁住。
 - **`userSettings`**：存在一个 GM 值里，字段名都已经持久化了，不能改：
   ```ts
   {
@@ -154,7 +156,7 @@
   - 读：v3 和 v2 压缩包（压缩算法只有 gzip），以及旧的明文格式（键是网址、值是数字的对象，或者带 `visitedLinks` 字段的对象）。
   - 写：一律写 v3。外层包的 7 个字段都要写（`syncVersion`、`encoding`、`payload`、`itemCount`、`updatedAt`、`originalBytes`、`compressedBytes`），因为旧版本读取时会校验全部字段。`payload` 是先按 host 分组、组内再做前缀差分的 JSON，gzip 之后再 base64。
 
-### 同步的行为不变量（A13 之前先用测试锁住）
+### 同步的行为不变量（每一条都有 test/sync/ 里的测试锁住）
 
 1. HTTP 请求失败时必须抛错，不能当作"云端为空"，否则紧接着就会用本地数据覆盖云端。
 2. 遇到不认识的 `syncVersion`（通常来自更新版本的脚本）时抛错，不覆盖云端。
@@ -269,7 +271,7 @@
     - 没打开过设置、也没弹过通知的页面上，没有 `#color-visited-root`；宿主页面的 `<head>` 里没有 Element Plus 的样式；
     - 对话框、取色器面板、通知（含"撤销"按钮）里，Element Plus 组件的外观不变（截图对比）。
 
-- [ ] **A9 · 站点规则：注入范围、激活范围、归一化分开声明**（依赖 E9 的归一化黄金表）
+- [ ] **A9 · 站点规则：注入范围、激活范围、归一化分开声明**
   - 现状：
     - 每个站点只有 `pages` 和 `patterns` 两个字段。`pages` 既是激活范围，又直接用来生成 `@include`。注入范围因此和激活范围一样窄，在 SPA 站点上，如果是从别的页面进来的，脚本就不在（B20）。
     - 归一化写在 utils.ts 的 `getBaseUrl` 里，是一串按链接 hostname 分派的 if，和规则表分开放。新增站点有时要改两个文件，而且容易漏掉（B21）。
@@ -304,7 +306,7 @@
     - 站点是否启用由 `preset[id] !== false` 判断（见 A10），这个判断只写一处。sites.ts 不能 import settings.ts（Node 会执行它），所以 `findActiveSite` 直接接收 preset 表。
     - 去掉冗余的正则和 `description` 字段。
   - 完成标准：
-    - E9 的归一化黄金表，除了 B21 那一行，逐字不变；站点匹配表照常通过；
+    - test/normalize.test.ts 的黄金表、test/sites.test.ts 的站点匹配表，只改调用的函数（`normalizeUrl`、新的站点表），表里的行不动。黄金表里只有 B21 那一行（bbs.imoutolove.me）的期望值改成归一化之后的；
     - 设置页显示的是 `name`；`@include` 和 `@match` 加起来比现在的 88 条少。
 
 - [ ] **A10 · 存储与设置：设置只有一个来源、一条更新路径**
@@ -342,7 +344,7 @@
     - 测试覆盖：
       - 规范化：空存储；`preset` 为 null；缺字段；类型不对；过期时间为 null、0、负数、365（把天数当毫秒填）、半天、缺字段时，都换成一年；1 天、9.6 天、3650 天原样保留。
       - `saveSettings` 只合并改过的字段，快捷键整个替换。
-      - 本标签页保存、其他标签页写入，各通知一次。
+      - 本标签页保存、其他标签页写入，各通知一次。其他标签页的写入用 test/fakes/gm.ts 的 `setValueFromOtherTab` 模拟。
 
 - [ ] **A11 · 设置对话框：每次打开都新建，一份草稿，一次保存**（依赖 A8、A10）
   - 现状：
@@ -431,7 +433,7 @@
     - href 改变后，标记跟着变，移出 DOM 改完再插回来的也一样；
     - 在输入框里按批量快捷键，不触发标记。
 
-- [ ] **A13 · 拆分同步模块**（依赖 E9：先用测试锁住「同步的行为不变量」）
+- [ ] **A13 · 拆分同步模块**
   - 现状：sync.ts 共 1139 行，大约一半是校验和诊断代码。
     - **同样的检查写了两套。** `isXxx` 一套、`describeXxx` 一套，比如 `isV3PathRecordValue` 和 `describeV3PathRecord`，`isCompressedSyncEnvelope` 和 `describeCompressedEnvelopeShape`。"校验通过"还是用哨兵字符串 `'[prefixLength, suffix, timestamp]'` 来表示的。
     - **"取出 visitedLinks"有 7 个职责重叠的函数。** 自愈规则（剔除同步包字段和非数字的时间戳）和 storage.ts 过滤键值的规则其实是同一件事，写了两遍。
@@ -461,7 +463,9 @@
     - 删掉 zstd 分支、gzip 支持检测、设置页里相关的显示、`SyncData` 的写入路径，以及 types.ts 里的同步类型。
     - 如果在 A12 之前做，`syncWithCloud` 结束后照旧发出 `sync:completed` 事件。
   - 完成标准：
-    - E9 的同步测试全部照常通过，请求次数不变；
+    - test/sync/ 的测试全部照常通过（包括请求次数）。
+      - 只改 test/sync/helpers.ts：`encode`、`decode` 改成直接调 codec.ts，sync.ts 为测试导出的 `serializeVisitedLinksForGist`、`deserializeGistContent` 跟着删掉。
+      - 假的 GitHub 同时接管了 `fetch` 和 `GM_xmlhttpRequest`，请求方式换了，测试不用改。
     - 在真实的 Gist 上把"测试连接"和"立即同步"各试一次，覆盖令牌错误、Gist ID 错误和正常三种情况。
 
 - [ ] **A14 · 和宿主页面的 JS 环境隔开**（依赖 A8、A12、A13）
@@ -496,37 +500,11 @@
 
 ## 4. 工程化
 
-- [ ] **E9 · 引入 Vitest，先锁住和数据有关的行为**
-  - 配置：
-    - 单独写一个 `vitest.config.ts`，只配 `@` 别名，不加载 monkey 插件。
-    - 用 `vi.mock('vite-plugin-monkey/dist/client')` 换成内存版的 GM：用 Map 实现，要带 `GM_addValueChangeListener`，再提供一个模拟其他标签页写入的 helper。`fetch` 和 `GM_xmlhttpRequest` 换成桩。
-    - 测试放在 `test/` 下，加一个 `pnpm test` 脚本。
-    - 依赖 `test/fixtures/local/` 里样本的用例，在文件不存在时跳过（`it.skipIf`）：CI 和新 clone 里都没有这些文件。
-  - 按优先级：
-    1. **同步编解码。**
-       - 往返（不变量 10）：两份样本，以及带末尾 `#`、带末尾 `?`、没有路径、不是 https、`mailto:`、解析不了的键，`decode(encode(x))` 都逐字相等；
-       - v2 格式和旧明文格式能读；
-       - 「同步的行为不变量」1–6 的每个分支。
-    2. **同步流程。**
-       - 不变量 7、8、9、11 的每一条；
-       - 不上传的几种情况：只有云端有新数据；只是有记录到期；过期时间不同的两台设备不来回上传；
-       - 同步期间的写入不丢。
-    3. **归一化黄金表。** 每个站点挑几条有代表性的原始 href，记下现在 `getBaseUrl` 的输出。A9 之后，这张表只能加行，不能改已有的行（B21 那一行除外）。
-    4. **站点匹配表。** 页面 URL → 命中哪个站点；链接 URL → 要不要染色。
-    5. **storage。**
-       - `mergeLinks` 只把时间戳改大，并过滤掉非法的键和值；
-       - `deleteLinksIfUnchanged`；
-       - 清理一天最多一次；
-       - 迁移可以重复执行；
-       - 没有批量接口时退回逐条写。
-    6. **快捷键匹配表。**
-    - A10 之后补上设置的测试（见 A10）。
-  - 依赖真实 DOM 的场景（染色、observer、`isTyping`、对话框、多标签页），沿用 headless Chrome 的做法，见旧版 E2 的「提示」。旧版 E2 里列出的端到端场景，仍是做 A10–A12 时的回归清单。以后如果要把这些也自动化，可以考虑 Vitest 的 browser mode，不在本计划内。
-
 - [ ] **E10 · 统一代码格式**
   - 现状：main.ts 和 domObserver.ts 用 4 空格缩进，其他文件用 2 空格；有的文件写分号，有的不写。`@stylistic` 只注册了插件，没有配任何规则。
   - 做法：
     - 用 `stylistic.configs.customize({ indent: 2, quotes: 'single', semi: … })` 覆盖 .ts 和 .vue 文件，分号统一成一种（.ts 文件里多数写分号）。
+    - lint 现在只检查 src（lint 脚本的 glob 和 eslint.config.mjs 的 `files` 都只写了 src），把 test/ 和 vitest.config.ts 也加进去。
     - 用 `pnpm lint` 一次改完，单独作为一次提交，只含格式变化。之后的新代码都按它写。
   - 注意：`pnpm lint` 自带 `--fix`，第一次运行会改动大量文件。
 

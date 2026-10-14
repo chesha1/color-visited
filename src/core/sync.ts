@@ -707,7 +707,7 @@ async function readFirstGistFileContent(token: string, gist: GitHubGist): Promis
 }
 
 // 上传前统一把输入收敛成干净的 visitedLinks，再编码成当前 v3 压缩包格式。
-async function serializeVisitedLinksForGist(data: SyncData | VisitedLinksData): Promise<string> {
+export async function serializeVisitedLinksForGist(data: SyncData | VisitedLinksData): Promise<string> {
   const visitedLinks = requireVisitedLinksData(data, '上传前数据').visitedLinks;
   const v3Payload = encodeV3GroupedPayload(visitedLinks);
   const jsonText = JSON.stringify(v3Payload);
@@ -835,7 +835,7 @@ function createUninitializedSnapshot(emptyReason: string, truncated: boolean): C
 
 // 读取 Gist 文本内容：只认我们写过的格式（v2/v3 压缩包和旧版明文），认出来就正常读，读坏了就报错且不动云端；
 // 其他内容都不是同步数据，交给 createUninitializedSnapshot 当作空处理。
-async function deserializeGistContent(contentText: string, truncated: boolean): Promise<CloudSnapshot> {
+export async function deserializeGistContent(contentText: string, truncated: boolean): Promise<CloudSnapshot> {
   if (contentText.trim() === '') {
     return createUninitializedSnapshot('内容为空', truncated);
   }
