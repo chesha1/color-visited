@@ -1,47 +1,47 @@
 // ================== UI 管理模块 ==================
 
-import { eventBus } from '@/core/eventBus';
-import { isMac } from '@/core/utils';
-import type { ScriptState } from '@/types';
-import { h } from 'vue';
-import { ElButton, ElMessage } from 'element-plus';
-import type { MessageProps } from 'element-plus';
-import 'element-plus/es/components/message/style/css';
+import { eventBus } from '@/core/eventBus'
+import { isMac } from '@/core/utils'
+import type { ScriptState } from '@/types'
+import { h } from 'vue'
+import { ElButton, ElMessage } from 'element-plus'
+import type { MessageProps } from 'element-plus'
+import 'element-plus/es/components/message/style/css'
 
 // ================== 通知组件 ==================
 
 // 通知文字后面的操作按钮，比如批量标记后的"撤销"
 export interface NotificationAction {
-  text: string;
-  onClick: () => void;
+  text: string
+  onClick: () => void
 }
 
 // 显示通知。带操作按钮时多显示几秒，留出点按钮的时间（鼠标停在通知上时不会消失），点了按钮就关掉通知
 export function showNotification(message: string, type?: MessageProps['type'], action?: NotificationAction): void {
   // 如果没有指定类型，根据消息内容简单判断类型
-  const messageType = type || (/失败|错误|error/i.test(message) ? 'error' : 'success');
+  const messageType = type || (/失败|错误|error/i.test(message) ? 'error' : 'success')
 
   // 尝试获取 Shadow DOM 根节点，若不存在则退回 document.body
-  const container = document.querySelector('#color-visited-root') as HTMLElement | null;
-  const appendTarget = (container && (container.shadowRoot as unknown as HTMLElement)) || document.body;
+  const container = document.querySelector('#color-visited-root') as HTMLElement | null
+  const appendTarget = (container && (container.shadowRoot as unknown as HTMLElement)) || document.body
 
   const notification = ElMessage({
     // message 传函数时，返回的内容渲染在通知的文字区域里
     // 文字和按钮作为 flex 子项一起垂直居中。按钮放在文字行里的话，它按西文的 x-height 对齐，中文会比按钮高出 1–2px
     message: action
       ? () => h('span', { style: { display: 'flex', alignItems: 'center', gap: '12px' } }, [
-        message,
-        h(ElButton, {
-          link: true,
-          // 和通知文字同色，靠字重区分。ElButton 没有 error，对应的是 danger
-          type: messageType === 'error' ? 'danger' : messageType,
-          // 只响应第一次点击：通知淡出的过程中按钮还点得到
-          onClickOnce: () => {
-            notification.close();
-            action.onClick();
-          },
-        }, () => action.text),
-      ])
+          message,
+          h(ElButton, {
+            link: true,
+            // 和通知文字同色，靠字重区分。ElButton 没有 error，对应的是 danger
+            type: messageType === 'error' ? 'danger' : messageType,
+            // 只响应第一次点击：通知淡出的过程中按钮还点得到
+            onClickOnce: () => {
+              notification.close()
+              action.onClick()
+            },
+          }, () => action.text),
+        ])
       : message,
     type: messageType,
     duration: action ? 5000 : 2000,
@@ -50,7 +50,7 @@ export function showNotification(message: string, type?: MessageProps['type'], a
     offset: 20,
     // 将 Message 组件挂载到 Shadow DOM 中
     appendTo: appendTarget as HTMLElement,
-  });
+  })
 }
 
 // ================== 样式管理 ==================
@@ -58,22 +58,22 @@ export function showNotification(message: string, type?: MessageProps['type'], a
 // 在文档中注入一段自定义的 CSS 样式，针对这个类名的元素及其所有子元素，设置颜色样式，使用更高的选择器优先级和 !important
 // 直接使用 link.style.color 会被后续的样式覆盖，所以这么做
 export function injectCustomStyles(color?: string): void {
-  const linkColor = color || 'rgba(0,0,0,0)';
+  const linkColor = color || 'rgba(0,0,0,0)'
 
   // 检查是否已存在样式元素
-  let existingStyle = document.querySelector('#color-visited-style') as HTMLStyleElement;
+  let existingStyle = document.querySelector('#color-visited-style') as HTMLStyleElement
 
   if (existingStyle) {
     // 如果已存在，更新其内容而不是直接返回
-    existingStyle.innerHTML = generateStyleContent(linkColor);
-    return;
+    existingStyle.innerHTML = generateStyleContent(linkColor)
+    return
   }
 
   // 如果不存在，创建新的样式元素
-  const style = document.createElement('style');
-  style.id = 'color-visited-style';
-  style.innerHTML = generateStyleContent(linkColor);
-  document.head.appendChild(style);
+  const style = document.createElement('style')
+  style.id = 'color-visited-style'
+  style.innerHTML = generateStyleContent(linkColor)
+  document.head.appendChild(style)
 }
 
 // 生成样式内容：使用更高的特异性和多种选择器来确保样式优先级
@@ -117,14 +117,14 @@ function generateStyleContent(linkColor: string): string {
     a.visited-link img {
       filter: opacity(0.1) !important;
     }
-  `;
+  `
 }
 
 // 移除注入的样式
 export function removeCustomStyles(): void {
-  const styleElement = document.querySelector('#color-visited-style');
+  const styleElement = document.querySelector('#color-visited-style')
   if (styleElement) {
-    styleElement.remove();
+    styleElement.remove()
   }
 }
 
@@ -139,7 +139,7 @@ export function showSettingsDialog(state: ScriptState): void {
       currentGeneralSettings: state.generalSettings,
       currentPresetSettings: state.presetSettings,
       currentSyncSettings: state.syncSettings,
-      isMac
-    }
-  });
+      isMac,
+    },
+  })
 }

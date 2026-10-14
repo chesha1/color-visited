@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { getBaseUrl } from '@/core/utils';
-import { PRESET_RULES } from '@/shared/presetRules';
+import { describe, expect, it } from 'vitest'
+import { getBaseUrl } from '@/core/utils'
+import { PRESET_RULES } from '@/shared/presetRules'
 
 // 站点匹配表，锁住的是规则表本身：哪些页面上激活哪个站点，激活后哪些链接要染色。
 // 期望值里的站点 id 也是 userSettings.preset 里的键，改名会重置用户的开关，所以这里写的都是原名。
@@ -8,13 +8,13 @@ import { PRESET_RULES } from '@/shared/presetRules';
 
 // 规则命中这个页面的所有站点。一个页面只应该属于一个站点
 function sitesOfPage(url: string): string[] {
-  return Object.keys(PRESET_RULES).filter(id => PRESET_RULES[id].pages.some(pattern => pattern.test(url)));
+  return Object.keys(PRESET_RULES).filter((id) => PRESET_RULES[id].pages.some((pattern) => pattern.test(url)))
 }
 
 // 在这个站点的页面上，这个链接要不要染色：先归一化，再和规则比
 function shouldColor(site: string, href: string): boolean {
-  const url = getBaseUrl(new URL(href));
-  return PRESET_RULES[site].patterns.some(pattern => pattern.test(url));
+  const url = getBaseUrl(new URL(href))
+  return PRESET_RULES[site].patterns.some((pattern) => pattern.test(url))
 }
 
 describe('页面 → 激活哪个站点', () => {
@@ -126,8 +126,8 @@ describe('页面 → 激活哪个站点', () => {
     ['https://www.zhihu.com/hot', 'zhihu'],
     ['https://www.zhihu.com/people/someone/answers', 'zhihu'],
   ])('%s → %s', (url, site) => {
-    expect(sitesOfPage(url)).toEqual([site]);
-  });
+    expect(sitesOfPage(url)).toEqual([site])
+  })
 
   // 详情页、帖子页这些不在 pages 里，不激活
   it.each([
@@ -160,9 +160,9 @@ describe('页面 → 激活哪个站点', () => {
     'https://www.zhihu.com/question/12345678',
     'https://github.com/',
   ])('%s → 不激活', (url) => {
-    expect(sitesOfPage(url)).toEqual([]);
-  });
-});
+    expect(sitesOfPage(url)).toEqual([])
+  })
+})
 
 describe('站点的页面上，哪些链接要染色', () => {
   it.each([
@@ -210,8 +210,8 @@ describe('站点的页面上，哪些链接要染色', () => {
     ['zhihu', 'https://www.zhihu.com/question/12345678'],
     ['zhihu', 'https://zhuanlan.zhihu.com/p/123456789'],
   ])('%s：%s → 染色', (site, href) => {
-    expect(shouldColor(site, href)).toBe(true);
-  });
+    expect(shouldColor(site, href)).toBe(true)
+  })
 
   it.each([
     ['36kr', 'https://36kr.com/information/web_news/'],
@@ -247,6 +247,6 @@ describe('站点的页面上，哪些链接要染色', () => {
     ['一亩三分地', 'https://www.1point3acres.com/bbs/forum-145-1.html'],
     ['zhihu', 'https://www.zhihu.com/people/someone'],
   ])('%s：%s → 不染色', (site, href) => {
-    expect(shouldColor(site, href)).toBe(false);
-  });
-});
+    expect(shouldColor(site, href)).toBe(false)
+  })
+})

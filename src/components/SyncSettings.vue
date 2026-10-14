@@ -140,7 +140,7 @@ const emit = defineEmits<Emits>()
 const formData = ref<SyncSettings>({
   enabled: props.currentSettings.enabled,
   githubToken: props.currentSettings.githubToken,
-  gistId: props.currentSettings.gistId
+  gistId: props.currentSettings.gistId,
 })
 // 保存的状态 - 用于比较是否有变更
 const savedSettings = ref<SyncSettings>({ ...props.currentSettings })
@@ -156,12 +156,18 @@ const autoSyncMinutes = AUTO_SYNC_INTERVAL / 60000
 const syncing = ref(false)
 const syncNow = () => {
   syncing.value = true
-  eventBus.emit('sync:request', { onSettled: () => { syncing.value = false } })
+  eventBus.emit('sync:request', {
+    onSettled: () => {
+      syncing.value = false
+    },
+  })
 }
 
 // 最后同步时间不是表单的一部分：直接读存储，并跟着存储变化，任何标签页同步完都会刷新显示
 const lastSyncTime = ref(getLastSyncTime())
-onUnmounted(onLastSyncTimeChange(time => { lastSyncTime.value = time }))
+onUnmounted(onLastSyncTimeChange((time) => {
+  lastSyncTime.value = time
+}))
 
 // 计算属性：格式化最后同步时间
 const lastSyncTimeFormatted = computed(() => {
@@ -174,9 +180,9 @@ const lastSyncTimeFormatted = computed(() => {
 // 检测是否有变更
 const hasChanges = computed(() => {
   return (
-    formData.value.enabled !== savedSettings.value.enabled ||
-    formData.value.githubToken !== savedSettings.value.githubToken ||
-    formData.value.gistId !== savedSettings.value.gistId
+    formData.value.enabled !== savedSettings.value.enabled
+    || formData.value.githubToken !== savedSettings.value.githubToken
+    || formData.value.gistId !== savedSettings.value.gistId
   )
 })
 
@@ -187,7 +193,6 @@ const gzipSupportAlertTitle = computed(() => {
 
   return '当前浏览器不支持 gzip Compression Streams，启用同步后将无法使用同步存储 v3。请升级浏览器或切换到支持该能力的环境。'
 })
-
 
 // 测试连接
 const testConnection = async () => {
@@ -202,7 +207,7 @@ const testConnection = async () => {
     const result = await testSyncConnection(formData.value.githubToken, normalizeGistId(formData.value.gistId))
     showNotification(result.message, result.level)
   } catch (error: unknown) {
-    const err = error as Error;
+    const err = error as Error
     showNotification('连接失败: ' + err.message, 'error')
   } finally {
     testingConnection.value = false
@@ -233,7 +238,7 @@ defineExpose({
   save: handleSave,
   reset: handleReset,
   getFormData,
-  hasChanges
+  hasChanges,
 })
 
 // 监听 props 变化，更新表单数据和保存状态
@@ -243,10 +248,10 @@ watch(
     formData.value = {
       enabled: newSettings.enabled,
       githubToken: newSettings.githubToken,
-      gistId: newSettings.gistId
+      gistId: newSettings.gistId,
     }
     savedSettings.value = { ...newSettings }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 )
 </script>

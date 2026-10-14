@@ -18,14 +18,15 @@
   - 依赖真实 DOM 的场景（染色、observer、`isTyping`、对话框、多标签页）测不了，沿用 headless Chrome 的做法，见旧版 E2 的「提示」。旧版 E2 里列出的端到端场景，仍是做 A10–A12 时的回归清单。
   - 以后如果要把这些也自动化，可以考虑 Vitest 的 browser mode，不在本计划内。
 - D 项由你决定，动手前先问。
+- 取舍时简单、干净优先。只有用户感觉得到的问题才专门优化（比如「数据规模」里每次注入的开销）；不为几 KB 体积或一点点性能，把代码和配置搞复杂。D7（保留 Tailwind）就是按这条定的。
 - 仓库约定（pnpm、版本号、提交信息格式）见 [AGENTS.md](../../AGENTS.md)。
 
 ## 进度总览
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 2 | 安全网：格式、CI | E10、E11 | 进行中 |
-| 3 | UI 外壳 | A8（B19 看 D7） | 未开始 |
+| 2 | 安全网：CI | E11 | 进行中 |
+| 3 | UI 外壳 | A8（含 B19） | 未开始 |
 | 4 | 站点规则 | A9（含 B20、B21） | 未开始 |
 | 5 | 存储与设置 | A10 | 未开始 |
 | 6 | 设置对话框 | A11 | 未开始 |
@@ -43,22 +44,6 @@
 
 ## 待决策（需要你拍板）
 
-- [ ] **D7 · Tailwind 留不留**（做 A8 之前定）
-  - 现状：
-    - 设置界面同时用 Element Plus 和 Tailwind。组件里大约有 105 处 class 属性，一半在预设页的装饰卡片上。产物里的 Tailwind CSS 约 18 KB。
-    - 设置界面里有不少 Tailwind 类不生效（B19）：边框、阴影、渐变都不显示，写在 Element Plus 组件上的类也有 4 处被组件自己的样式盖掉。从 2025-07 改用 Tailwind 起就是这样，一直没被发现。
-    - Tailwind 会扫描整个仓库找类名，文档、工作流里的普通单词也会生成工具类：`.contents` 来自 release.yml，`.inline` 来自计划文档。src 里 CSS 字符串和属性中的 `container`、`filter`、`shadow` 也生成了用不到的规则。
-  - 选项 1（推荐）：去掉 Tailwind。
-    - 布局改用 Element Plus 的组件，再给各组件写 scoped CSS（同样会经 A8 收进 shadow root）。
-    - 删掉 `tailwindcss`、`@tailwindcss/vite` 和 tailwind.css。B19 和扫描问题一起消失。
-    - 代价：要改写这大约 105 处 class，预设页的卡片样式要重做。卡片上的边框、阴影、渐变，以及 B19 里那 4 处写在组件上的类，现在本来就没生效。
-  - 选项 2：保留。
-    - 注入 shadow root 时，去掉 `@layer properties` 外层的 `@supports` 条件，让变量的初始值无条件生效。
-    - 把 `@import "tailwindcss";` 改成 `@import "tailwindcss" source("..");`，只扫描 src。
-    - Element Plus 的 CSS 放进一个 layer，排在 Tailwind 的 `base` 之后、`utilities` 之前（先声明 `@layer theme, base, element-plus, components, utilities;`）。
-      - Chrome 146 实测，这样 B19 里那 4 处类都生效，按钮、开关的样式照旧。
-      - 排在 `base` 前面不行：preflight 的 `button{background-color:#0000}` 会盖掉按钮的背景。
-      - 箭头上两个互相冲突的颜色类，改成二选一。
 - [ ] **D8 · 版本号只留一个来源**
   - 现状：userscript 的版本号写在 vite.config.ts 里，package.json 的 `version` 一直是 1.0.0。AGENTS.md 规定发版时只改前者。
   - 建议：
@@ -180,6 +165,7 @@
   - 产物文件名 `color-visited.user.js` 不能改，头部要保留 `@version`。
   - tag 指向 CI 另加的、放着构建产物的提交：Greasy Fork 收到 release 事件后，是用 `git show <tag>:color-visited.user.js` 取脚本的。
 - **UI 继续用 Element Plus**（D3 已定）。不手写组件替代它，也不用原生的 confirm、alert。
+- **设置界面的布局和装饰继续用 Tailwind**（D7 已定）。不为体积去掉它，也不为省几 KB 去调它的产物，理由见「考虑过、不做的」。
 - **GM 权限声明。** vite-plugin-monkey 会根据代码里 import 的 `GM_*` 自动生成 `@grant`。`GM_xmlhttpRequest` 要访问的域名，需要加进 `connect`。
 
 ### 运行平台
@@ -208,7 +194,7 @@
 ## 1. Bug
 
 - [ ] **B19 · 设置界面里有不少 Tailwind 类不生效**
-  - 现状：
+  - 现状：从 2025-07 改用 Tailwind 起就是这样，一直没被发现。
     - **边框、阴影、渐变都不显示。**
       - Tailwind v4 的 `border`、`shadow-*`、渐变等工具类，依赖 `@property` 注册的变量初始值，比如 `.border{border-style:var(--tw-border-style)}`。而 `@property` 在 shadow root 里不生效。
       - Tailwind 自带一个回退块，但它包在一个只针对旧版 Safari/Firefox 的 `@supports` 里，Chrome 用不上。
@@ -222,7 +208,15 @@
         - 同步页"设置步骤"卡片（`el-card`）的 `bg-blue-50` 没生效，是白色；
         - 常规、快捷键两页表单（`el-form`）上的 `space-y-6` 没生效，表单项的间距是 Element Plus 的 18px。
       - 箭头上的两个颜色类本身也冲突：生成的 CSS 里 `.text-gray-400` 排在 `.text-blue-500` 后面，就算盖过了 Element Plus，展开后也还是灰色。
-  - 修法：看 D7。
+  - 修法：在 A8 里做，shadow root 里的 CSS 由 `ui/root.ts` 写入。
+    - 先写 Tailwind 的 CSS。写之前，把 `@layer properties` 里那层 `@supports (…)` 换成 `@media all`，让变量的初始值无条件生效。Tailwind 没有这个开关，只能做一次字符串替换。
+    - 再把 A8 收集到的其余 CSS（Element Plus 的组件样式、SFC 的 `<style>`）整个包进 `@layer components{…}`，接在 Tailwind 的 CSS 后面。
+      - Tailwind 的层依次是 properties、theme、base、components、utilities，所以 Element Plus 排在 preflight（base）之后、工具类之前。
+      - 排在 base 前面不行：preflight 的 `button{background-color:#0000}` 会盖掉按钮的背景。
+      - 不要另外声明层的顺序。比如先写一句 `@layer theme, base, element-plus, components, utilities;`，没列进去的 properties 就排到了最后，上一步放开的初始值会盖掉工具类设置的 `--tw-shadow`、`--tw-gradient-*`，阴影和渐变照样不显示。
+    - 箭头的两个颜色类改成二选一：`expanded ? 'text-blue-500' : 'text-gray-400'`。
+    - Chrome 146 里用产物中的 CSS 实测：按这样写，那 4 处类都生效，边框、阴影、渐变都显示，按钮、开关的样式照旧。
+    - 做完后，把这个写入顺序和那次替换记进「约束」：改动它们，B19 会悄悄回来。
 
 - [ ] **B20 · SPA 站点上，从没被 include 的页面进来后，站内跳到列表页也不染色**
   - 现状：
@@ -258,18 +252,21 @@
        - 这个函数会被 `toString()` 之后内联进产物，所以不能引用模块作用域，只能写到 `globalThis` 上一个带命名空间的键里（比如 `Symbol.for('color-visited/css')`）。
        - 代码里直接用的组件 resolver 看不到：通知用的 `ElMessage`，以及渲染"撤销"按钮的 `ElButton`。照旧显式 import 它们的 `style/css`，这些样式同样会进缓冲区。
        - 删掉 unpkg 的 link，以及 index.css 里手动补的变量。
-       - 开发模式（`pnpm dev`）下，CSS 由 Vite 插进 `document.head`，`cssSideEffects` 不生效。要在 `import.meta.env.DEV` 下把这些 `<style>` 复制进 shadow root。
+       - 开发模式（`pnpm dev`）下，CSS 由 Vite 插进 `document.head`，`cssSideEffects` 不生效。要在 `import.meta.env.DEV` 下把这些 `<style>` 复制进 shadow root，同样包进 `@layer components{…}`（见 B19）。
     3. 取色器用 `append-to` 指向 shadow root 里的一个元素（2.14.7 支持这个属性）。不要用 `:teleported="false"`：那样面板会留在 tab 的滚动容器里，可能被裁掉。
     4. 用到时才创建：
        - `ui/root.ts` 在第一次打开设置或弹通知时，才创建宿主元素和 shadow root。
        - `ui/notify.ts` 提供 `notify(message, type, action?)`，`type` 必填。
        - 这两个文件不 import 任何 `.vue`。Vue 应用要到打开设置时才创建。
     5. 删掉 AutoImport 插件和 auto-imports.d.ts。
-    6. Tailwind 按 D7 的决定处理（B19）。
+    6. Tailwind（D7 已定保留）：
+       - 按 B19 的修法写进 shadow root。
+       - `@import "tailwindcss";` 改成 `@import "tailwindcss" source("..");`，只扫描 src。现在它扫描整个仓库，文档、工作流里的普通单词也会生成工具类（`.contents` 来自 release.yml，`.inline` 来自计划文档），改文档就会改变产物。
+       - src 里也有几个词被误当成类名（`filter`、`container`、`shadow`、`visible`），不用管，见「考虑过、不做的」。
   - 完成标准：
     - 产物头部没有 `@require` 和 `GM_addStyle`，产物里没有 `unpkg.com`；
     - 没打开过设置、也没弹过通知的页面上，没有 `#color-visited-root`；宿主页面的 `<head>` 里没有 Element Plus 的样式；
-    - 对话框、取色器面板、通知（含"撤销"按钮）里，Element Plus 组件的外观不变（截图对比）。
+    - 对话框、取色器面板、通知（含"撤销"按钮）里，Element Plus 组件的外观不变；B19 列出的边框、阴影、渐变和那 4 处类都显示出来（截图对比）。
 
 - [ ] **A9 · 站点规则：注入范围、激活范围、归一化分开声明**
   - 现状：
@@ -500,17 +497,9 @@
 
 ## 4. 工程化
 
-- [ ] **E10 · 统一代码格式**
-  - 现状：main.ts 和 domObserver.ts 用 4 空格缩进，其他文件用 2 空格；有的文件写分号，有的不写。`@stylistic` 只注册了插件，没有配任何规则。
-  - 做法：
-    - 用 `stylistic.configs.customize({ indent: 2, quotes: 'single', semi: … })` 覆盖 .ts 和 .vue 文件，分号统一成一种（.ts 文件里多数写分号）。
-    - lint 现在只检查 src（lint 脚本的 glob 和 eslint.config.mjs 的 `files` 都只写了 src），把 test/ 和 vitest.config.ts 也加进去。
-    - 用 `pnpm lint` 一次改完，单独作为一次提交，只含格式变化。之后的新代码都按它写。
-  - 注意：`pnpm lint` 自带 `--fix`，第一次运行会改动大量文件。
-
 - [ ] **E11 · CI 跑测试和 lint**
   - 在 release.yml 的 `pnpm build` 之前，先跑 `pnpm test`，再跑不带 `--fix` 的 eslint。任何一步失败都不发版。
-  - 可以加一个不带 `--fix` 的 `lint:check` 脚本，也可以在 CI 里直接调用 eslint。
+  - 检查哪些文件由 eslint.config.mjs 的 `files` 决定，`pnpm lint` 就是 `eslint --fix`，不带参数。所以 CI 里直接跑 `pnpm exec eslint` 就行，也可以加一个 `lint:check` 脚本。
 
 - [ ] **E12 · ESLint 规则**（A12 之后）
   - 现状：Vue 那段配置只注册了插件，没有任何规则；TS 部分只启用了 `@eslint/js` 的 recommended，还关掉了 `no-unused-vars`。
@@ -545,3 +534,7 @@
 - **把其他标签页记下的访问实时染到当前页上。** 记录是逐键存储的，没法订阅全部的键；刷新页面就能看到。
 - **给 shadow DOM 里的链接染色（比如新版 reddit）。** 这是新功能，不在重构的范围内。
 - **去掉 Element Plus。** D3 已定。
+- **去掉 Tailwind。** D7 已定保留。
+  - 体积不是理由：按 2026-10-14 的构建，它的 CSS 约 18 KB，只占整个脚本（932 KB）的 2%。大头是 Element Plus 连同它的依赖（约 67%）和 Vue（约 21%）。
+  - B19 在保留它的前提下就能修好。去掉它反而要改写约 105 处 class、重做预设页的卡片。
+- **为了体积去压 Tailwind 的产物。** 比如用 `@source not inline(…)` 排掉 src 里误生成的类（合计 1.6 KB，其中 `filter` 一个就带出 13 条 `@property`），或者去掉 preflight（3.9 KB）。最多从 18 KB 压到 12.6 KB，却要维护一张词表，还得重新检查整个界面。

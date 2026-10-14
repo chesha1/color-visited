@@ -22,7 +22,7 @@
           </el-input>
         </div>
       </el-form-item>
-      
+
       <el-form-item label="过期时间">
         <div class="space-y-2">
           <div class="flex items-center gap-2">
@@ -38,7 +38,7 @@
           <div class="text-xs text-gray-500">设置已访问链接的记录保留时间</div>
         </div>
       </el-form-item>
-      
+
       <el-form-item label="调试模式">
         <div class="space-y-2">
           <el-switch
@@ -101,7 +101,7 @@ const expirationDays = computed({
     formData.value.expirationTime = days == null || days < 1 || !Number.isInteger(days)
       ? savedSettings.value.expirationTime
       : days * 1000 * 60 * 60 * 24
-  }
+  },
 })
 
 const handleSave = () => {
@@ -126,6 +126,6 @@ defineExpose({
   save: handleSave,
   reset: handleReset,
   getFormData: () => ({ ...formData.value }),
-  hasChanges
+  hasChanges,
 })
 </script>

@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { getBaseUrl } from '@/core/utils';
+import { describe, expect, it } from 'vitest'
+import { getBaseUrl } from '@/core/utils'
 
 // 归一化的黄金表：左边是 <a> 的 href，右边是现在归一化的结果，也就是存进存储的键。
 // 结果一变，已经存下的记录就对不上了，所以这张表只能加行，不能改已有的行。
 // 唯一的例外是 bbs.imoutolove.me 那一行，等它补上 south-plus 的归一化时改
 function normalize(href: string): string {
-  return getBaseUrl(new URL(href));
+  return getBaseUrl(new URL(href))
 }
 
 describe('归一化黄金表', () => {
@@ -96,11 +96,11 @@ describe('归一化黄金表', () => {
     ['https://zhuanlan.zhihu.com/p/123456789?utm_source=wechat', 'https://zhuanlan.zhihu.com/p/123456789?utm_source=wechat'],
     ['mailto:hn@ycombinator.com', 'mailto:hn@ycombinator.com'],
   ])('%s', (href, expected) => {
-    expect(new URL(href).href, '左边要写成浏览器给出的 <a>.href 的样子').toBe(href);
-    expect(normalize(href)).toBe(expected);
-  });
+    expect(new URL(href).href, '左边要写成浏览器给出的 <a>.href 的样子').toBe(href)
+    expect(normalize(href)).toBe(expected)
+  })
 
   it('href 解析不了时（<a> 的 hostname 是空字符串）原样返回', () => {
-    expect(getBaseUrl({ href: 'http://exa mple.com/t/1?p=2', hostname: '' })).toBe('http://exa mple.com/t/1?p=2');
-  });
-});
+    expect(getBaseUrl({ href: 'http://exa mple.com/t/1?p=2', hostname: '' })).toBe('http://exa mple.com/t/1?p=2')
+  })
+})

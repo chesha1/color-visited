@@ -21,7 +21,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/36kr\.com\/newsflashes\/\d+$/, // 快讯详情页
     ],
   },
-  'bahamut': {
+  bahamut: {
     pages: [
       /^https:\/\/forum\.gamer\.com\.tw\/(A|B|G1)\.php\?bsn=.*/, // 各个板块首页
     ],
@@ -29,7 +29,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/forum\.gamer\.com\.tw\/C\.php\?bsn=.*/, // 帖子
     ],
   },
-  'bilibili': {
+  bilibili: {
     pages: [
       // TODO: 动态页挂载不上，以后再研究研究
       // /https:\/\/t\.bilibili\.com.*/,
@@ -43,7 +43,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.bilibili\.com\/video\/BV.*/, // 视频详情页
     ],
   },
-  'bloomberg': {
+  bloomberg: {
     pages: [
       /^https:\/\/www\.bloomberg\.com\/?$/, // 首页
       /^https:\/\/www\.bloomberg\.com\/.*/, // 任意页面
@@ -61,7 +61,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.economist\.com\/.+\/\d{4}\/\d{2}\/\d{2}\/.*$/, // 日期型文章页
     ],
   },
-  'chiphell': {
+  chiphell: {
     pages: [
       /^https:\/\/www\.chiphell\.com\/forum-.*/,
     ],
@@ -69,7 +69,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.chiphell\.com\/thread-.*/,
     ],
   },
-  'douban': {
+  douban: {
     pages: [
       /^https:\/\/www\.douban\.com\/group\/.*/, // 小组首页
     ],
@@ -85,7 +85,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/forums\.e-hentai\.org\/index\.php\?showtopic=\d+/, // 帖子页面
     ],
   },
-  'ehentai': {
+  ehentai: {
     pages: [
       /^https:\/\/e-hentai\.org\/?$/, // 首页
       /^https:\/\/exhentai\.org\/?$/, // 首页
@@ -106,7 +106,7 @@ export const PRESET_RULES: PresetRules = {
     ],
   },
   // TODO: 很纯粹的网站，纯静态资源，暂时无能为力，后续研究一下
-  'hacg': {
+  hacg: {
     pages: [
       /^https:\/\/www\.hacg\.me\/wp\/$/, // 首页
       /^https:\/\/www\.hacg\.me\/wp\/[a-zA-Z].*/, // 分类目录页
@@ -115,7 +115,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.hacg\.me\/wp\/\d+\.html/, // 文章页
     ],
   },
-  'hanime1': {
+  hanime1: {
     pages: [
       /^https:\/\/hanime1\.me\/$/, // 首页
       /^https:\/\/hanime1\.me\/search.*/, // 搜索页
@@ -135,7 +135,7 @@ export const PRESET_RULES: PresetRules = {
       /^(?!https:\/\/news\.ycombinator\.com).*/, // 任意链接，除了 news.ycombinator.com 域名
     ],
   },
-  'hostloc': {
+  hostloc: {
     pages: [
       /^https:\/\/hostloc\.com\/forum-.*/, // 板块首页
     ],
@@ -143,7 +143,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/hostloc\.com\/thread.*/, // 帖子
     ],
   },
-  'hupu': {
+  hupu: {
     pages: [
       /^https:\/\/bbs\.hupu\.com\/[a-zA-Z].*/, // 各个板块首页
     ],
@@ -151,7 +151,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/bbs\.hupu\.com\/\d+\.html/, // 帖子
     ],
   },
-  'juejin': {
+  juejin: {
     pages: [
       /^https:\/\/juejin\.cn\/(\?sort=.*)?$/, // 首页（含排序参数）
       /^https:\/\/juejin\.cn\/(hot|following|backend|frontend|android|ios|ai|freebie|career|article).*/, // 各分类页面
@@ -160,7 +160,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/juejin\.cn\/post\/.*/, // 文章页
     ],
   },
-  'linuxdo': {
+  linuxdo: {
     pages: [
       /^https:\/\/linux\.do\/?$/, // 首页
       /^https:\/\/linux\.do\/(latest|new|top|hot|categories)/, // 首页的几个页签
@@ -170,7 +170,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/linux\.do\/t\/topic\/.*/,
     ],
   },
-  '美卡论坛': {
+  美卡论坛: {
     pages: [
       /^https:\/\/www\.uscardforum\.com\/?$/, // 首页
       /^https:\/\/www\.uscardforum\.com\/c\/.*/, // 分类页
@@ -179,7 +179,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.uscardforum\.com\/t\/topic\/\d+/, // 帖子
     ],
   },
-  'nga': {
+  nga: {
     pages: [
       /^https:\/\/bbs\.nga\.cn\/thread\.php\?(fid|stid).*/,
       /^https:\/\/ngabbs\.com\/thread\.php\?(fid|stid).*/,
@@ -191,7 +191,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/nga\.178\.com\/read\.php\?tid.*/,
     ],
   },
-  'nodeseek': {
+  nodeseek: {
     pages: [
       /^https:\/\/www\.nodeseek\.com\/?$/, // 首页
       /^https:\/\/www\.nodeseek\.com\/categories\/.*/, // 各个板块
@@ -201,7 +201,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.nodeseek\.com\/post-.*/, // 帖子
     ],
   },
-  'pixiv': {
+  pixiv: {
     pages: [
       /^https:\/\/www\.pixiv\.net\/$/, // 首页
       /^https:\/\/www\.pixiv\.net\/illustration.*/, // 插画页面
@@ -219,7 +219,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.pixiv\.net\/novel\/show\.php\?id=\d+/, // 小说详情页
     ],
   },
-  'pornhub': {
+  pornhub: {
     pages: [
       /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/model\/.*/, // 模特主页与相关页面（支持语言子域，长度不限，如 cn、de、zh-cn）
       /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/pornstar\/.*/, // Pornstar 主页与相关页面（支持语言子域，长度不限，如 cn、de、zh-cn）
@@ -228,7 +228,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/(?:[a-z-]+\.)?pornhub\.com\/view_video\.php\?viewkey=.*/, // 视频详情页（支持语言子域，长度不限，如 cn、de、zh-cn）
     ],
   },
-  'reddit': {
+  reddit: {
     pages: [
       /^https:\/\/www\.reddit\.com\/r\/[^/]+\/?$/, // 板块首页
     ],
@@ -236,7 +236,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.reddit\.com\/r\/[^/]+\/comments\/.*/, // 帖子
     ],
   },
-  'sankaku': {
+  sankaku: {
     pages: [
       /^https:\/\/chan\.sankakucomplex\.com\/([a-z]{2}\/?)?([?#].*)?$/, // 首页、标签搜索页（如 /?tags=xxx，可带语言前缀 /cn、/en 等）
       /^https:\/\/chan\.sankakucomplex\.com\/([a-z]{2}\/)?posts\/?([?#].*)?$/, // 帖子列表、标签搜索页（如 /cn/posts?tags=xxx）
@@ -267,7 +267,7 @@ export const PRESET_RULES: PresetRules = {
 
     ],
   },
-  'techflow': {
+  techflow: {
     pages: [
       /^https:\/\/www\.techflowpost\.com\/$/, // 首页
     ],
@@ -275,7 +275,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.techflowpost\.com\/article\/.*/, // 文章页
     ],
   },
-  'tieba': {
+  tieba: {
     pages: [
       /^https:\/\/tieba\.baidu\.com\/f\?[^#]*kw=.*/, // 某个吧首页
       /^https:\/\/tieba\.baidu\.com\/hottopic.*/, // 热榜
@@ -284,7 +284,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/tieba\.baidu\.com\/p\/\d+/, // 帖子
     ],
   },
-  '通信人家园': {
+  通信人家园: {
     pages: [
       /^https:\/\/www\.txrjy\.com\/forum.*/,
     ],
@@ -301,7 +301,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/51cg1\.com\/archives\/\d+\/?$/, // 文章页
     ],
   },
-  'v2ex': {
+  v2ex: {
     pages: [
       /^https:\/\/www\.v2ex\.com\/$/,
       /^https:\/\/www\.v2ex\.com\/\?tab.*/,
@@ -311,7 +311,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.v2ex\.com\/t\/.*/,
     ],
   },
-  '一亩三分地': {
+  一亩三分地: {
     pages: [
       /^https:\/\/www\.1point3acres\.com\/?$/, // 首页
       /^https:\/\/www\.1point3acres\.com\/.*/, // 任意页面
@@ -321,7 +321,7 @@ export const PRESET_RULES: PresetRules = {
       /^https:\/\/www\.1point3acres\.com\/bbs\/thread-.*/, // 帖子页面
     ],
   },
-  'zhihu': {
+  zhihu: {
     pages: [
       /^https:\/\/www\.zhihu\.com\/$/, // 首页
       /^https:\/\/www\.zhihu\.com\/hot$/, // 热榜
@@ -336,4 +336,4 @@ export const PRESET_RULES: PresetRules = {
   // resources: https://rebang.today/
   // TODO: enshan 油猴脚本都加载不进去，之后再试试
   // TODO: reddit 第一次点击的时候不会变色，刷新后才会
-};
+}

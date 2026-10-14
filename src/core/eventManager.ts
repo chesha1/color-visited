@@ -1,44 +1,44 @@
 // ================== 事件管理模块 ==================
 
-import { shouldColorLink } from '@/core/pageDetector';
-import { batchAddLinks, updateAllLinksStatus } from '@/core/linkManager';
-import { provideLinkContext, ensureDOMObserver } from '@/core/domObserver';
-import { recordVisit } from '@/core/storage';
-import { matchesShortcut } from '@/core/shortcut';
-import { getBaseUrl } from '@/core/utils';
-import type { ScriptState } from '@/types';
+import { shouldColorLink } from '@/core/pageDetector'
+import { batchAddLinks, updateAllLinksStatus } from '@/core/linkManager'
+import { provideLinkContext, ensureDOMObserver } from '@/core/domObserver'
+import { recordVisit } from '@/core/storage'
+import { matchesShortcut } from '@/core/shortcut'
+import { getBaseUrl } from '@/core/utils'
+import type { ScriptState } from '@/types'
 
 // ================== 快捷键管理 ==================
 
 // 用户正在输入时不响应快捷键，否则会抢掉输入框里的同名操作（比如默认的 Ctrl+Shift+V 是浏览器的“粘贴为纯文本”）
 function isTyping(event: KeyboardEvent): boolean {
-  if (event.isComposing) return true;
+  if (event.isComposing) return true
   // 监听器挂在 document 上，shadow DOM 里的输入框会被重定向成宿主元素，所以要从 composedPath 取实际的目标
-  const target = event.composedPath()[0];
+  const target = event.composedPath()[0]
   return target instanceof HTMLElement
-    && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+    && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
 }
 
 // 设置批量染色快捷键监听器
 export function setupBatchKeyListener(state: ScriptState): void {
   // 移除之前的监听器
   if (state.batchKeyHandler) {
-    document.removeEventListener('keydown', state.batchKeyHandler);
+    document.removeEventListener('keydown', state.batchKeyHandler)
   }
 
   // 创建新的监听器
   state.batchKeyHandler = function (event: KeyboardEvent): void {
-    if (isTyping(event) || !matchesShortcut(event, state.batchKeySettings)) return;
+    if (isTyping(event) || !matchesShortcut(event, state.batchKeySettings)) return
 
     // 阻止浏览器默认行为
-    event.preventDefault();
+    event.preventDefault()
 
     // 执行批量染色功能
-    batchAddLinks(state);
-  };
+    batchAddLinks(state)
+  }
 
   // 添加新的监听器
-  document.addEventListener('keydown', state.batchKeyHandler);
+  document.addEventListener('keydown', state.batchKeyHandler)
 }
 
 // ================== DOM观察器 ==================
@@ -46,9 +46,9 @@ export function setupBatchKeyListener(state: ScriptState): void {
 // 设置DOM变化监听器
 export function setupDOMObserver(state: ScriptState): MutationObserver {
   // 注入上下文供全局 Observer 使用
-  provideLinkContext(state);
+  provideLinkContext(state)
   // 确保全局 Observer 已创建
-  return ensureDOMObserver();
+  return ensureDOMObserver()
 }
 
 // ================== 链接点击事件 ==================
@@ -57,38 +57,38 @@ export function setupDOMObserver(state: ScriptState): MutationObserver {
 export function createLinkClickHandler(state: ScriptState): (event: Event) => void {
   return function handleLinkClick(event: Event): void {
     // 使用 event.target.closest 来获取被点击的链接元素
-    const target = event.target as Element | null;
-    if (!target) return;
+    const target = event.target as Element | null
+    if (!target) return
 
-    const link = target.closest('a[href]');
+    const link = target.closest('a[href]')
     // 点击的不是链接，或者是 SVG 里的 <a>（它的 href 不是字符串），直接返回
-    if (!(link instanceof HTMLAnchorElement)) return;
+    if (!(link instanceof HTMLAnchorElement)) return
 
-    const originalHref = link.href;
-    const inputUrl = getBaseUrl(link);
-    const shouldColor = shouldColorLink(inputUrl, state);
+    const originalHref = link.href
+    const inputUrl = getBaseUrl(link)
+    const shouldColor = shouldColorLink(inputUrl, state)
 
     if (state.generalSettings.debug) {
-      console.log(`[handleLinkClick] 原始href: ${originalHref}`);
-      console.log(`[handleLinkClick] 处理后URL: ${inputUrl}`);
-      console.log(`[handleLinkClick] shouldColorLink结果: ${shouldColor}`);
+      console.log(`[handleLinkClick] 原始href: ${originalHref}`)
+      console.log(`[handleLinkClick] 处理后URL: ${inputUrl}`)
+      console.log(`[handleLinkClick] shouldColorLink结果: ${shouldColor}`)
     }
 
-    if (!shouldColor) return; // 如果链接不符合匹配规则，返回
+    if (!shouldColor) return // 如果链接不符合匹配规则，返回
 
-    recordVisit(inputUrl);
+    recordVisit(inputUrl)
 
     // 染上所有相同 URL 的链接（包括当前点击的元素）
-    updateAllLinksStatus(state);
-  };
+    updateAllLinksStatus(state)
+  }
 }
 
 export function setupLinkEventListeners(state: ScriptState): ((event: Event) => void) {
-  const handleLinkClick = createLinkClickHandler(state);
+  const handleLinkClick = createLinkClickHandler(state)
 
   // 添加事件委托的点击事件监听器
-  document.addEventListener('click', handleLinkClick, true);
-  document.addEventListener('auxclick', handleLinkClick, true);
+  document.addEventListener('click', handleLinkClick, true)
+  document.addEventListener('auxclick', handleLinkClick, true)
 
-  return handleLinkClick;
+  return handleLinkClick
 }

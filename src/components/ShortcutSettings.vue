@@ -14,7 +14,7 @@
         >
         </el-input>
       </el-form-item>
-      
+
       <el-form-item>
         <el-alert
           :title="hintText"
@@ -56,7 +56,7 @@ const isResetMode = ref(false) // 标识是否处于重置模式
 
 const hintText = computed(() => {
   if (hasNewKeyPress.value) {
-    return isResetMode.value 
+    return isResetMode.value
       ? '已设置为默认快捷键，点击保存应用设置'
       : '已记录新快捷键，点击保存应用设置'
   }
@@ -71,18 +71,18 @@ const currentShortcutDisplay = computed(() => {
   if (settings.ctrlKey) shortcutText.push(props.isMac ? '⌃ Control' : 'Ctrl')
   if (settings.altKey) shortcutText.push(props.isMac ? '⌥ Option' : 'Alt')
   if (settings.shiftKey) shortcutText.push(props.isMac ? '⇧ Shift' : 'Shift')
-  
+
   // 键位名去掉 Key、Digit 前缀即可显示（KeyV → V），少数键换成符号
   if (settings.code) {
     const keyMap: Record<string, string> = {
-      'ArrowUp': '↑',
-      'ArrowDown': '↓',
-      'ArrowLeft': '←',
-      'ArrowRight': '→',
-      'Enter': '⏎',
-      'Backspace': '⌫',
-      'Delete': '⌦',
-      'Escape': 'Esc',
+      ArrowUp: '↑',
+      ArrowDown: '↓',
+      ArrowLeft: '←',
+      ArrowRight: '→',
+      Enter: '⏎',
+      Backspace: '⌫',
+      Delete: '⌦',
+      Escape: 'Esc',
     }
     shortcutText.push(keyMap[settings.code] || settings.code.replace(/^(Key|Digit)/, ''))
   }
@@ -147,7 +147,7 @@ watch(() => props.currentSettings, (currentSettings) => {
 // 监听对话框显示状态和标签页激活状态，只在快捷键设置标签页激活时添加键盘监听器
 watch([() => props.visible, () => props.isActive], ([isVisible, isActive]) => {
   console.log('对话框状态变化:', { isVisible, isActive })
-  
+
   if (isVisible && isActive) {
     console.log('添加键盘监听器')
     document.addEventListener('keydown', handleKeyDown, true)
@@ -179,6 +179,6 @@ defineExpose({
   save: handleSave,
   reset: handleReset,
   getFormData: () => hasNewKeyPress.value ? ({ ...newSettings.value }) : ({ ...formData.value }),
-  hasChanges
+  hasChanges,
 })
 </script>

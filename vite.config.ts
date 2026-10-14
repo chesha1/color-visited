@@ -1,14 +1,14 @@
-import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
-import { PRESET_RULES } from './src/shared/presetRules.ts';
-import monkey from 'vite-plugin-monkey';
-import path from 'path';
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { PRESET_RULES } from './src/shared/presetRules.ts'
+import monkey from 'vite-plugin-monkey'
+import path from 'path'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import tailwindcss from '@tailwindcss/vite'
 
-const includeArray = Object.values(PRESET_RULES).flatMap(rule => rule.pages);
+const includeArray = Object.values(PRESET_RULES).flatMap((rule) => rule.pages)
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -37,7 +37,7 @@ export default defineConfig({
         author: 'chesha1',
         license: 'GPL-3.0-only',
         include: includeArray,
-        "run-at": 'document-idle',
+        'run-at': 'document-idle',
         noframes: true,
         homepage: 'https://github.com/chesha1/color-visited',
         supportURL: 'https://github.com/chesha1/color-visited/issues',
@@ -45,4 +45,4 @@ export default defineConfig({
       },
     }),
   ],
-});
+})

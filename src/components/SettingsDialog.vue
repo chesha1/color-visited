@@ -31,7 +31,7 @@
         </el-tab-pane>
         <el-tab-pane label="预设网站" name="presets" class="h-full">
           <div class="p-6 h-full overflow-y-auto">
-            <PresetSettingsComponent 
+            <PresetSettingsComponent
               :current-preset-settings="currentPresetSettings"
               ref="presetSettingsRef"
               @save="(states) => emit('presetSave', states)"
@@ -61,7 +61,7 @@
         </el-tab-pane>
       </el-tabs>
     </div>
-    
+
     <template #footer>
       <div class="flex justify-end gap-3">
         <el-button @click="handleReset" size="large" plain>
@@ -110,7 +110,7 @@ const emit = defineEmits<Emits>()
 
 const visible = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: (value) => emit('update:modelValue', value),
 })
 
 const activeTab = ref('general')

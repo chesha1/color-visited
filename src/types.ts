@@ -1,13 +1,13 @@
 // ================== 核心类型定义 ==================
 
 export interface ScriptState {
-  generalSettings: GeneralSettings;
-  presetSettings: Record<string, boolean>;
-  batchKeySettings: BatchKeySettings;
-  syncSettings: SyncSettings;
-  batchKeyHandler: ((event: KeyboardEvent) => void) | null;
+  generalSettings: GeneralSettings
+  presetSettings: Record<string, boolean>
+  batchKeySettings: BatchKeySettings
+  syncSettings: SyncSettings
+  batchKeyHandler: ((event: KeyboardEvent) => void) | null
   /** 全局链接点击/中键点击事件处理器 */
-  linkClickHandler: ((event: Event) => void) | null;
+  linkClickHandler: ((event: Event) => void) | null
 }
 
 export interface GeneralSettings {
@@ -21,7 +21,7 @@ export interface BatchKeySettings {
   shiftKey: boolean
   altKey: boolean
   metaKey: boolean
-  code: string  // 物理键位（KeyboardEvent.code），如 KeyV、ArrowUp
+  code: string // 物理键位（KeyboardEvent.code），如 KeyV、ArrowUp
 }
 
 export interface SyncSettings {
@@ -59,10 +59,10 @@ export interface NotificationOptions {
 export type VisitedLinks = Record<string, number>
 
 export interface UserSettings {
-  general: GeneralSettings           // 基础设置（颜色、过期时间、调试模式）
-  preset: Record<string, boolean>    // 预设网站启用状态
-  batch: BatchKeySettings           // 批量标记快捷键配置
-  sync: SyncSettings               // GitHub同步配置
+  general: GeneralSettings // 基础设置（颜色、过期时间、调试模式）
+  preset: Record<string, boolean> // 预设网站启用状态
+  batch: BatchKeySettings // 批量标记快捷键配置
+  sync: SyncSettings // GitHub同步配置
 }
 
 // ================== 事件类型 ==================
@@ -78,10 +78,10 @@ export type Events = {
   }
   // 只带设置对话框里改过的字段（快捷键是一个整体，改了就整个带上），由 script.ts 合并到当前设置上
   'settings:save':
-    | { type: 'batch-key'; settings: BatchKeySettings }
-    | { type: 'general'; settings: Partial<GeneralSettings> }
-    | { type: 'preset'; states: Record<string, boolean> }
-    | { type: 'sync'; settings: Partial<SyncSettings> }
+    | { type: 'batch-key', settings: BatchKeySettings }
+    | { type: 'general', settings: Partial<GeneralSettings> }
+    | { type: 'preset', states: Record<string, boolean> }
+    | { type: 'sync', settings: Partial<SyncSettings> }
   'menu:update': {
     // 菜单更新事件
   }

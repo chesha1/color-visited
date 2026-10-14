@@ -14,8 +14,8 @@ const dialogData = ref<{
 } | null>(null)
 
 const handleShowDialog = (event: {
-  type: 'settings';
-  payload: SettingsDialogPayload;
+  type: 'settings'
+  payload: SettingsDialogPayload
 }) => {
   dialogData.value = { ...event.payload, visible: true }
 }
@@ -24,28 +24,28 @@ const handleShowDialog = (event: {
 const handleSettingsSave = (settings: BatchKeySettings) => {
   eventBus.emit('settings:save', {
     type: 'batch-key',
-    settings
+    settings,
   })
 }
 
 const handleGeneralSave = (settings: Partial<GeneralSettings>) => {
   eventBus.emit('settings:save', {
     type: 'general',
-    settings
+    settings,
   })
 }
 
 const handlePresetSave = (states: Record<string, boolean>) => {
   eventBus.emit('settings:save', {
     type: 'preset',
-    states
+    states,
   })
 }
 
 const handleSyncSave = (settings: Partial<SyncSettings>) => {
   eventBus.emit('settings:save', {
     type: 'sync',
-    settings
+    settings,
   })
 }
 
