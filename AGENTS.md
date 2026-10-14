@@ -19,7 +19,7 @@
 ## 发版
 
 - 构建产物 `dist/` 不入库，不用手动构建、提交。
-- push 到 `main` 后，CI（`.github/workflows/release.yml`）会构建脚本。版本号还没发布过时，自动发一个 GitHub Release（tag 为 `v版本号`），Greasy Fork 收到 webhook 后跟着更新；版本号没变的提交只构建、不发布。
+- push 到 `main` 后，CI（`.github/workflows/release.yml`）先跑 `pnpm test` 和不带 `--fix` 的 eslint，任何一步失败都不构建、不发布；都通过才构建脚本。版本号还没发布过时，自动发一个 GitHub Release（tag 为 `v版本号`），Greasy Fork 收到 webhook 后跟着更新；版本号没变的提交只构建、不发布。
 
 ## Git Commit Message
 

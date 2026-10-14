@@ -25,7 +25,6 @@
 
 | 阶段 | 内容 | 条目 | 状态 |
 |---|---|---|---|
-| 2 | 安全网：CI | E11 | 进行中 |
 | 3 | UI 外壳 | A8（含 B19） | 未开始 |
 | 4 | 站点规则 | A9（含 B20、B21） | 未开始 |
 | 5 | 存储与设置 | A10 | 未开始 |
@@ -162,6 +161,7 @@
 - **规则文件会在 Node 中执行。** vite.config.ts 在 Node 里 import 它来生成脚本头部，所以它的顶层不能引用浏览器全局对象。
 - **体积只能靠减少依赖。** Greasy Fork 不允许发布压缩过的代码。
 - **发版由 CI 完成**（[release.yml](../../.github/workflows/release.yml)），构建产物不入库。
+  - 构建前先跑 `pnpm test` 和不带 `--fix` 的 eslint，任何一步失败都不发版。所以提交前要让这两项都通过。
   - 产物文件名 `color-visited.user.js` 不能改，头部要保留 `@version`。
   - tag 指向 CI 另加的、放着构建产物的提交：Greasy Fork 收到 release 事件后，是用 `git show <tag>:color-visited.user.js` 取脚本的。
 - **UI 继续用 Element Plus**（D3 已定）。不手写组件替代它，也不用原生的 confirm、alert。
@@ -496,10 +496,6 @@
   - 验证：在几个支持的站点上截图对比；再构造一个带上面那种高特异性 `!important` 规则的页面，确认链接能染上色。
 
 ## 4. 工程化
-
-- [ ] **E11 · CI 跑测试和 lint**
-  - 在 release.yml 的 `pnpm build` 之前，先跑 `pnpm test`，再跑不带 `--fix` 的 eslint。任何一步失败都不发版。
-  - 检查哪些文件由 eslint.config.mjs 的 `files` 决定，`pnpm lint` 就是 `eslint --fix`，不带参数。所以 CI 里直接跑 `pnpm exec eslint` 就行，也可以加一个 `lint:check` 脚本。
 
 - [ ] **E12 · ESLint 规则**（A12 之后）
   - 现状：Vue 那段配置只注册了插件，没有任何规则；TS 部分只启用了 `@eslint/js` 的 recommended，还关掉了 `no-unused-vars`。

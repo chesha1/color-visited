@@ -1,4 +1,4 @@
-# push 到 main 后构建脚本。产物头部的 @version 还没有对应的 release，就发一个；
+# push 到 main 后先跑测试和 lint，都通过再构建脚本。产物头部的 @version 还没有对应的 release，就发一个；
 # Greasy Fork 通过仓库的 webhook 收到 release 事件后更新脚本，同步地址是
 # https://github.com/chesha1/color-visited/releases/latest/download/color-visited.user.js
 name: 发布
@@ -23,6 +23,12 @@ jobs:
           version: 12
           runtime: node@26
           cache: true
+
+      # 测试或 lint 不通过就停下，不构建也不发布
+      - run: pnpm test
+
+      # pnpm lint 带 --fix，会悄悄把问题改掉；这里只检查
+      - run: pnpm exec eslint
 
       - run: pnpm build
 
