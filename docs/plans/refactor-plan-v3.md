@@ -83,7 +83,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
 
 1. **沿着旧模块的边界渐进迁移。** A10 要先让马上就删的旧模块改读新设置，A13 要为旧运行时保留 `sync:completed` 事件，`ScriptState` 要留一半到 A12。这些过渡代码只为让中间状态能跑。v3 先用测试锁住运行时的行为（S1），再整块替换（S3）。过渡代码只剩两处：S2 里旧调用方改用新站点表的几处小改动，S3 里旧对话框的一个桥接（S4 删掉）。
 2. **几个没核实过的前提：**
-   - "依赖真实 DOM 的场景测不了"：jsdom 对 MutationObserver（含 `attributeFilter`）、`toggleAttribute` 状态不变时不产生变化记录、`<a>` 的 `hostname`（解析失败时为空字符串）、SVG 里的 `<a>`、open 和 closed shadow root 下的 `composedPath()`、`pushState` 都是按规范实现的（2026-10-15 用 jsdom 27 实测）。只有样式层叠（`@layer`、`!important`）和对话框外观要真实浏览器。happy-dom 在 shadow root 的事件重定向、`toggleAttribute` 上有好几处不对，不用它。
+   - "依赖真实 DOM 的场景测不了"：jsdom 对 MutationObserver（含 `attributeFilter`）、`toggleAttribute` 状态不变时不产生变化记录、`<a>` 的 `hostname`（解析失败时为空字符串）、SVG 里的 `<a>`、open 和 closed shadow root 下的 `composedPath()`、`pushState` 都是按规范实现的（2026-10-15 用 jsdom 27 实测）。有两处例外（2026-10-16 实测 jsdom 27.4、30.1.3）：节点刚移出 DOM、observer 的回调还没跑时对它的修改，规范要求照样报告（2026-10-17 Chrome 146 实测也报告），jsdom 不报告；jsdom 的 `Blob` 没有 `stream()`。怎么应对见 S1。只有样式层叠（`@layer`、`!important`）和对话框外观要真实浏览器。happy-dom 在 shadow root 的事件重定向、`toggleAttribute` 上有好几处不对，不用它。
    - "UI 用到时才创建"能省掉每个页面的开销：A8 只推迟了创建应用，Vue 和 Element Plus 仍是静态 import，它们的模块初始化（连同这部分代码的编译）照样在每次加载页面时执行。要用动态 `import()` 把它们整个留到用到时，见 S4。
    - "其他标签页记下的访问没法实时染色"：用一个计数键广播就做得到，只是这是新功能，见「考虑过、不做的」。
 3. **漏掉的问题：** 右键点链接会被记成访问过（B22）；按住批量快捷键会反复标记；设置对话框点到外面就关掉，没保存的修改直接丢掉；启动、同步时无条件打日志。
@@ -261,8 +261,11 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
 - 做法：
   - 加 devDependency `jsdom`。运行时的测试文件开头写 `// @vitest-environment jsdom`，页面 URL 用 `// @vitest-environment-options {"url": "https://www.v2ex.com/"}` 设。
   - GM 用现有的 test/fakes/gm.ts，`Date.now` 照旧固定在 `NOW`。通知 mock 掉，记下每次的类型、文字和撤销回调。MutationObserver 的回调是微任务，断言前先 `await` 一下。
+    - 场景 5 把链接移出 DOM 之后，也要先 `await` 再改 href：节点刚移出、回调还没跑时改的 href，浏览器里 observer 收得到，jsdom 收不到（见「几个没核实过的前提」）。先 `await`，测的就始终是插回来时重新判断这条路，和真实页面一样，也不依赖 jsdom 的这处偏差。
+  - jsdom 模拟不到的地方补桩：Vitest 的 jsdom 环境把全局的 `Blob` 换成了 jsdom 的，它没有 `stream()`，而 sync.ts 的 `compressText`、`decompressText` 要用。场景 9 的文件里用 `vi.stubGlobal('Blob', Blob)` 换回 Node 的（`Blob` 从 `node:buffer` 引入）。不换的话同步直接抛 TypeError，换回之后编码、解码都正常（2026-10-16，Vitest 5.0.4 + jsdom 30.1.3 实测）。
   - 现在的运行时没有完整的释放（监听器挂在 document 上，observer 是模块级的单例），同一个测试文件里没法重复启动。所以每个文件只启动一次，按顺序跑完一个场景。
-  - 测试只经过一层 helper 碰实现：启动、本标签页保存设置、mock 通知。S3 换实现时主要改这一层，场景不动。
+  - 测试只经过一层 helper 碰实现：启动、本标签页保存设置、mock 通知、判断链接有没有标记（S3 把标记从 class `visited-link` 换成 data 属性）。S3 换实现时主要改这一层，场景不动。
+    - 准备记录、模拟其他标签页写设置、检查存储，都直接用 GM 的假实现；点击、按键、SPA 跳转直接用 DOM 的 API。这些和实现无关，不进 helper。
   - 场景（也是 S3、S6 的回归清单）：
     1. 激活页初次染色：访问过且没过期的链接标记；没访问过、过期了、不符合规则的不标记；SVG 里的 `<a>`、href 解析不了的链接不报错。
     2. 非激活页、站点被关掉时：不标记，点击也不记录。
@@ -519,7 +522,10 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
 - **把其他标签页记下的访问实时染到当前页上。** 做得到：storage 写访问记录时顺带写一个计数键，其他标签页监听它的变化，重新判断当前页面上的链接，`onLinksChange` 已经留好了接口。但这是新功能，不在重构的范围内。
 - **改成 `document-start` 运行，消除"先显示、后变色"的闪烁。** 要先知道管理器在 `document-start` 注入全部 GM 值会不会推迟页面的解析（Q1 的数据可以帮助判断），而且这是行为上的变化。
 - **给 shadow DOM 里的链接染色（比如新版 reddit）。** 这是新功能，不在重构的范围内。
-- **Vitest 的 browser mode。** jsdom 已经覆盖了运行时的行为；样式层叠和对话框外观要检查的次数不多，手动做。
+- **Vitest 的 browser mode。** D11 已定不加。jsdom 已经覆盖了运行时的行为；样式层叠和对话框外观要检查的次数不多，手动做。browser mode 能补上的也很少：
+  - 测不了 S1。测试页面在 Vitest 自己的服务器上（`http://localhost:63315/…`），`location` 改不了，`pushState` 也不能换域名，而运行时按 `location.href` 判断要不要激活、有没有 SPA 跳转。
+  - 验证不了产物的 CSS（B19、对话框外观）。它跑的是源码，走 Vitest 自己的 Vite 流程，不是 vite-plugin-monkey 的打包。
+  - 用得上的只有 C15（宿主页面有 `!important` 时链接还是我们的颜色）。为这一条多两个 devDependency（`@vitest/browser-playwright` 的版本还要和 vitest 完全一致），每次发版都在 CI 里装一次 Chromium，不划算；只在本地跑、不进 CI，迟早没人跑。以后有更多只能在真浏览器里验证、又容易改坏的行为，再重新考虑。
 - **去掉 Element Plus。** D9 已定保留。按需加载之后，每次加载页面的开销已经和去掉它（只剩内核 + Vue）相当；去掉要重写整个设置界面，外观也会变。保留的代价：产物约 940 KB，要靠 SystemJS 的 `@require`，样式要收集进 shadow root 并分层。换成别的组件库也不会更轻：同一组组件、同样不压缩、不含 Vue 时，Element Plus 约 600 KB 加约 100 KB 样式，Naive UI 约 820 KB（样式在 JS 里），无样式的 Reka UI 约 310 KB、样式还要全部自己写。
 - **靠构建配置缩小产物。** 压缩：Greasy Fork 不允许；删除死代码：默认已经开着，产物里没有残留的开发分支；按需引入：已经生效。`externalGlobals` 从 CDN `@require` 的 Element Plus 只有完整版（压缩后 1.1 MB），更大，而且每次照样要解析。
 - **去掉 Tailwind。** v2 的 D7 已定保留。按 2026-10-14 的构建，它的 CSS 约 18 KB，B19 在保留它的前提下就能修好。
