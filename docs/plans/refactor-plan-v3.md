@@ -5,7 +5,7 @@
 
 ## 怎么用这份文档
 
-- 新会话可以直接说：「读 `docs/plans/refactor-plan-v3.md`，做 S1」。
+- 新会话可以直接说：「读 `docs/plans/refactor-plan-v3.md`，做 S2」。
 - 编号：
   - **S** = 实施步骤，按「进度」里的顺序做；**B** = bug；**D** = 要你拍板的决策；**Q** = 先实测、再决定做不做的调查。
   - B、D 接着 v2 往下排（v2 用到 B21、D8）。S、Q 是新前缀，和以前用过的 A、C、E、P 不重名，`git log --grep` 不会查混。删掉的编号不复用。
@@ -16,22 +16,21 @@
   - 「约束」因此变了的，一并更新。
 - D 项由你决定，动手前先问。S4 要等 D10。
 - 取舍原则：简单、干净优先；只为用户感觉得到的问题专门优化。
-- 测试：`pnpm test`。纯逻辑在 Node 里跑；S1 起，运行时的 DOM 行为在 jsdom 里跑；样式层叠、对话框外观、真实的管理器只能在浏览器里验证。
+- 测试：`pnpm test`。纯逻辑在 Node 里跑；运行时的 DOM 行为在 jsdom 里跑（test/runtime/，只经过其中的 helpers.ts 碰实现）；样式层叠、对话框外观、真实的管理器只能在浏览器里验证。已知的 bug 先按期望的行为写成 `it.fails`，修的那一步改回 `it`。
 - 仓库约定（pnpm、版本号、提交信息格式）见 [AGENTS.md](../../AGENTS.md)。
 
 ## 进度
 
 | 步骤 | 内容 | 来自 v2 | 依赖 | 状态 |
 |---|---|---|---|---|
-| S1 | 运行时的特征测试 | （新增） | — | 未开始 |
 | S2 | 站点表 | A9、B20、B21 | — | 未开始 |
-| S3 | 运行时内核：存储、设置、页面、染色 | A10、A12、C15 | S1、S2 | 未开始 |
+| S3 | 运行时内核：存储、设置、页面、染色 | A10、A12、C15 | S2 | 未开始 |
 | S4 | UI：按需加载、外壳、通知、设置对话框 | A8、A11、B19 | S3、D10 | 未开始 |
 | S5 | 同步模块 | A13 | S3 | 未开始 |
 | S6 | 和宿主页面的 JS 环境隔开 | A14 | S4、S5 | 未开始 |
 | S7 | 收尾：lint 规则、配置、文档 | E12、E13、E14、D8 | S6（配置清理和 D8 随时可做） | 未开始 |
 
-- S1、S2 互不依赖；S4、S5 互不依赖。
+- S4、S5 互不依赖。
 - Q1 不在实施顺序里，随时可做。
 
 ## 待决策
@@ -81,9 +80,9 @@ sync.ts 的 1132 行里，兼容旧格式的只占几十行，其余是诊断代
 
 v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有事件总线、同步的行为不变量）站得住，v3 基本保留。偏的是这几处：
 
-1. **沿着旧模块的边界渐进迁移。** A10 要先让马上就删的旧模块改读新设置，A13 要为旧运行时保留 `sync:completed` 事件，`ScriptState` 要留一半到 A12。这些过渡代码只为让中间状态能跑。v3 先用测试锁住运行时的行为（S1），再整块替换（S3）。过渡代码只剩两处：S2 里旧调用方改用新站点表的几处小改动，S3 里旧对话框的一个桥接（S4 删掉）。
+1. **沿着旧模块的边界渐进迁移。** A10 要先让马上就删的旧模块改读新设置，A13 要为旧运行时保留 `sync:completed` 事件，`ScriptState` 要留一半到 A12。这些过渡代码只为让中间状态能跑。v3 先用测试锁住运行时的行为（test/runtime/），再整块替换（S3）。过渡代码只剩两处：S2 里旧调用方改用新站点表的几处小改动，S3 里旧对话框的一个桥接（S4 删掉）。
 2. **几个没核实过的前提：**
-   - "依赖真实 DOM 的场景测不了"：jsdom 对 MutationObserver（含 `attributeFilter`）、`toggleAttribute` 状态不变时不产生变化记录、`<a>` 的 `hostname`（解析失败时为空字符串）、SVG 里的 `<a>`、open 和 closed shadow root 下的 `composedPath()`、`pushState` 都是按规范实现的（2026-10-15 用 jsdom 27 实测）。有两处例外（2026-10-16 实测 jsdom 27.4、30.1.3）：节点刚移出 DOM、observer 的回调还没跑时对它的修改，规范要求照样报告（2026-10-17 Chrome 146 实测也报告），jsdom 不报告；jsdom 的 `Blob` 没有 `stream()`。怎么应对见 S1。只有样式层叠（`@layer`、`!important`）和对话框外观要真实浏览器。happy-dom 在 shadow root 的事件重定向、`toggleAttribute` 上有好几处不对，不用它。
+   - "依赖真实 DOM 的场景测不了"：jsdom 对 MutationObserver（含 `attributeFilter`）、`toggleAttribute` 状态不变时不产生变化记录、`<a>` 的 `hostname`（解析失败时为空字符串）、SVG 里的 `<a>`、open 和 closed shadow root 下的 `composedPath()`、`pushState` 都是按规范实现的（2026-10-15 用 jsdom 27 实测）。有两处例外（2026-10-16 实测 jsdom 27.4、30.1.3）：节点刚移出 DOM、observer 的回调还没跑时对它的修改，规范要求照样报告（2026-10-17 Chrome 146 实测也报告），jsdom 不报告；jsdom 的 `Blob` 没有 `stream()`。test/runtime/ 里的应对：移出 DOM 之后先等 observer 的回调跑过再改 href（dynamic.test.ts），同步的场景把 `Blob` 换回 Node 的（sync.test.ts）。只有样式层叠（`@layer`、`!important`）和对话框外观要真实浏览器。happy-dom 在 shadow root 的事件重定向、`toggleAttribute` 上有好几处不对，不用它。
    - "UI 用到时才创建"能省掉每个页面的开销：A8 只推迟了创建应用，Vue 和 Element Plus 仍是静态 import，它们的模块初始化（连同这部分代码的编译）照样在每次加载页面时执行。要用动态 `import()` 把它们整个留到用到时，见 S4。
    - "其他标签页记下的访问没法实时染色"：用一个计数键广播就做得到，只是这是新功能，见「考虑过、不做的」。
 3. **漏掉的问题：** 右键点链接会被记成访问过（B22）；按住批量快捷键会反复标记；设置对话框点到外面就关掉，没保存的修改直接丢掉；启动、同步时无条件打日志。
@@ -255,30 +254,6 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
 
 ## 步骤
 
-### S1 · 运行时的特征测试（新增）
-
-- 为什么先做：S3 要整块替换运行时的 10 个文件（script.ts、state.ts、config.ts、linkManager.ts、eventManager.ts、domObserver.ts、pageDetector.ts、menuManager.ts、utils.ts、core/ui.ts）。这些文件里积累了好几轮修 bug 的细节（复用 `<a>` 只换 href、SVG 链接、批量标记和撤销的时间戳规则……），v2 打算靠 headless Chrome 手动跑一遍清单来验证。改成先在现有代码上写成自动化测试、全部通过，S3 之后同一批测试再跑一遍，以后也一直守着。
-- 做法：
-  - 加 devDependency `jsdom`。运行时的测试文件开头写 `// @vitest-environment jsdom`，页面 URL 用 `// @vitest-environment-options {"url": "https://www.v2ex.com/"}` 设。
-  - GM 用现有的 test/fakes/gm.ts，`Date.now` 照旧固定在 `NOW`。通知 mock 掉，记下每次的类型、文字和撤销回调。MutationObserver 的回调是微任务，断言前先 `await` 一下。
-    - 场景 5 把链接移出 DOM 之后，也要先 `await` 再改 href：节点刚移出、回调还没跑时改的 href，浏览器里 observer 收得到，jsdom 收不到（见「几个没核实过的前提」）。先 `await`，测的就始终是插回来时重新判断这条路，和真实页面一样，也不依赖 jsdom 的这处偏差。
-  - jsdom 模拟不到的地方补桩：Vitest 的 jsdom 环境把全局的 `Blob` 换成了 jsdom 的，它没有 `stream()`，而 sync.ts 的 `compressText`、`decompressText` 要用。场景 9 的文件里用 `vi.stubGlobal('Blob', Blob)` 换回 Node 的（`Blob` 从 `node:buffer` 引入）。不换的话同步直接抛 TypeError，换回之后编码、解码都正常（2026-10-16，Vitest 5.0.4 + jsdom 30.1.3 实测）。
-  - 现在的运行时没有完整的释放（监听器挂在 document 上，observer 是模块级的单例），同一个测试文件里没法重复启动。所以每个文件只启动一次，按顺序跑完一个场景。
-  - 测试只经过一层 helper 碰实现：启动、本标签页保存设置、mock 通知、判断链接有没有标记（S3 把标记从 class `visited-link` 换成 data 属性）。S3 换实现时主要改这一层，场景不动。
-    - 准备记录、模拟其他标签页写设置、检查存储，都直接用 GM 的假实现；点击、按键、SPA 跳转直接用 DOM 的 API。这些和实现无关，不进 helper。
-  - 场景（也是 S3、S6 的回归清单）：
-    1. 激活页初次染色：访问过且没过期的链接标记；没访问过、过期了、不符合规则的不标记；SVG 里的 `<a>`、href 解析不了的链接不报错。
-    2. 非激活页、站点被关掉时：不标记，点击也不记录。
-    3. 左键、中键点击符合规则的链接：记下归一化后的 URL，页面上同一个 URL 的链接都标记；点不符合规则的链接不记录。
-    4. 右键（`auxclick`，`button` 为 2）不记录（B22）。
-    5. 新插入的链接、href 变了的链接、移出 DOM 改了 href 再插回来的链接、克隆出来的链接：都按当前的 href 重新判断。
-    6. 批量标记：页面上符合规则、还没访问过的链接记成同一个时间戳，已有的记录不改；通知带撤销；撤销只删之后没再点开过的，并去掉对应的标记；焦点在输入框里、输入法正在组字时按快捷键不触发。
-    7. SPA 跳转：激活页 → 非激活页（标记去掉，点击不再记录）→ 激活页（重新标记）。
-    8. 本标签页、其他标签页改了设置（颜色、站点开关、快捷键）：按新设置重新激活。
-    9. 同步合并进来的记录染上色（经 `syncWithCloud` 和 test/fakes/github.ts）。
-  - 已知的 bug 按期望的行为写，标成 `it.fails`，修的那一步改回 `it`。
-- 完成标准：`pnpm test` 通过；故意改坏几处（去掉 6e38167 对 href 复用的修复、去掉 `isTyping`、点击后不再重扫），对应的测试都会失败。
-
 ### S2 · 站点表（v2 的 A9；修 B20、B21）
 
 - 现状：
@@ -394,7 +369,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
   - **旧对话框的桥接**（S4 删掉）：打开设置时用 `getSettings()` 发出原来的 `dialog:show-settings`；`settings:save` 转成 `saveSettings`；`sync:request` 转成 `runSync({ manual: true })`。旧组件只改 import 路径这类让它们继续工作的地方；App.vue 照旧在启动时挂载，S4 改成用到时才创建。
   - 删掉 script.ts、state.ts、config.ts、linkManager.ts、eventManager.ts、domObserver.ts、pageDetector.ts、menuManager.ts、utils.ts、core/ui.ts。types.ts 只留同步相关的类型，S5 删。
 - 完成标准：
-  - S1 的测试改用新的入口后全部通过，B22 那条从 `it.fails` 改回 `it`。jsdom 没有 `CSS.supports`，测试里补一个桩。
+  - test/runtime/ 的测试全部通过：只改 helpers.ts（启动、保存设置、通知、标记和染色样式的读法），场景文件里只把 B22 那条从 `it.fails` 改回 `it`。jsdom 30 自带 `CSS.supports`，颜色校验不用补桩（2026-10-17 实测：`red`、`rgba(0,0,0,0)` 为 true，`notacolor`、`red;} body{x:y` 为 false）。
   - 新增测试：
     - `parseSettings`：空存储；`preset` 为 null；缺字段；类型不对；过期时间为 null、0、负数、365（把天数当毫秒填）、半天、缺字段时，都换成一年；1 天、9.6 天、3650 天原样保留。
     - `saveSettings` 只合并改过的字段，快捷键整个替换；本标签页保存、其他标签页写入（用 `setValueFromOtherTab` 模拟），各通知一次。
@@ -486,7 +461,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
 - 现状：两个管理器默认都把脚本注入页面环境（见「运行平台」），脚本的全局对象和各种原型都和宿主页面共享。脚本并不需要访问页面里的任何 JS 对象，却因此让页面脚本有机会拿到 GitHub 令牌：S5 之前，hook `fetch` 就行；请求都改走 `GM_xmlhttpRequest` 之后，令牌还会经过 Vue 的响应式（`Proxy`、`WeakMap`）这类页面能事先改写的全局对象。
 - 做法：脚本头部加上 `@sandbox DOM`（TM：只要 DOM 访问，在隔离环境里运行）和 `@inject-into content`（VM：注入内容脚本的环境），vite-plugin-monkey 两个字段都支持。closed shadow root 和 `isTyping` 的改动已经在 S4 做完。
 - 验证（只能在真实的管理器里做）：
-  - 在 TM + Chrome、VM + Firefox 上各跑一遍 S1 的场景；
+  - 在 TM + Chrome、VM + Firefox 上各跑一遍 test/runtime/ 的场景（每个文件开头一行写着场景，测试名就是要检查的项）；
   - 再测设置对话框（取色、录快捷键、在对话框的输入框里按批量快捷键不触发）、通知、同步。对话框和通知都经 SystemJS 按需加载，要确认它在隔离环境里也正常。Firefox 的内容脚本环境里，要特别看同步的压缩、解压（`CompressionStream`、`Blob`、`Response`）是否正常。
 
 ### S7 · 收尾（v2 的 E12、E13、E14，D8）
@@ -523,7 +498,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
 - **改成 `document-start` 运行，消除"先显示、后变色"的闪烁。** 要先知道管理器在 `document-start` 注入全部 GM 值会不会推迟页面的解析（Q1 的数据可以帮助判断），而且这是行为上的变化。
 - **给 shadow DOM 里的链接染色（比如新版 reddit）。** 这是新功能，不在重构的范围内。
 - **Vitest 的 browser mode。** D11 已定不加。jsdom 已经覆盖了运行时的行为；样式层叠和对话框外观要检查的次数不多，手动做。browser mode 能补上的也很少：
-  - 测不了 S1。测试页面在 Vitest 自己的服务器上（`http://localhost:63315/…`），`location` 改不了，`pushState` 也不能换域名，而运行时按 `location.href` 判断要不要激活、有没有 SPA 跳转。
+  - 测不了运行时的场景（test/runtime/）。测试页面在 Vitest 自己的服务器上（`http://localhost:63315/…`），`location` 改不了，`pushState` 也不能换域名，而运行时按 `location.href` 判断要不要激活、有没有 SPA 跳转。
   - 验证不了产物的 CSS（B19、对话框外观）。它跑的是源码，走 Vitest 自己的 Vite 流程，不是 vite-plugin-monkey 的打包。
   - 用得上的只有 C15（宿主页面有 `!important` 时链接还是我们的颜色）。为这一条多两个 devDependency（`@vitest/browser-playwright` 的版本还要和 vitest 完全一致），每次发版都在 CI 里装一次 Chromium，不划算；只在本地跑、不进 CI，迟早没人跑。以后有更多只能在真浏览器里验证、又容易改坏的行为，再重新考虑。
 - **去掉 Element Plus。** D9 已定保留。按需加载之后，每次加载页面的开销已经和去掉它（只剩内核 + Vue）相当；去掉要重写整个设置界面，外观也会变。保留的代价：产物约 940 KB，要靠 SystemJS 的 `@require`，样式要收集进 shadow root 并分层。换成别的组件库也不会更轻：同一组组件、同样不压缩、不含 Vue 时，Element Plus 约 600 KB 加约 100 KB 样式，Naive UI 约 820 KB（样式在 JS 里），无样式的 Reka UI 约 310 KB、样式还要全部自己写。

@@ -8,6 +8,7 @@ import type {
   GmDeleteValuesType,
   GmGetValueType,
   GmListValuesType,
+  GmRegisterMenuCommandType,
   GmRemoveValueChangeListenerType,
   GmResponseEvent,
   GmSetValueType,
@@ -68,6 +69,9 @@ export const GM_addValueChangeListener: GmAddValueChangeListenerType = (key, cal
 export const GM_removeValueChangeListener: GmRemoveValueChangeListenerType = (id) => {
   listeners.delete(id)
 }
+
+// 启动时注册的"设置"菜单。测试不点菜单，不用记下来
+export const GM_registerMenuCommand: GmRegisterMenuCommandType = () => 0
 
 // 转给全局的 fetch 发出去。测试里 fetch 换成了假的 GitHub（见 github.ts），所以两种发请求的方式落到同一个假服务端上。
 // 回调的事件只填了同步用到的几个字段；和真实的管理器一样，回调里的 this 是事件本身
