@@ -5,7 +5,7 @@ import { batchAddLinks, updateAllLinksStatus } from '@/core/linkManager'
 import { provideLinkContext, ensureDOMObserver } from '@/core/domObserver'
 import { recordVisit } from '@/core/storage'
 import { matchesShortcut } from '@/core/shortcut'
-import { getBaseUrl } from '@/core/utils'
+import { normalizeUrl } from '@/shared/sites'
 import type { ScriptState } from '@/types'
 
 // ================== 快捷键管理 ==================
@@ -65,7 +65,7 @@ export function createLinkClickHandler(state: ScriptState): (event: Event) => vo
     if (!(link instanceof HTMLAnchorElement)) return
 
     const originalHref = link.href
-    const inputUrl = getBaseUrl(link)
+    const inputUrl = normalizeUrl(link)
     const shouldColor = shouldColorLink(inputUrl, state)
 
     if (state.generalSettings.debug) {

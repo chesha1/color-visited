@@ -2,7 +2,8 @@
 
 import { shouldColorLink } from '@/core/pageDetector'
 import { showNotification, removeCustomStyles } from '@/core/ui'
-import { getBaseUrl, logStorageInfo } from '@/core/utils'
+import { logStorageInfo } from '@/core/utils'
+import { normalizeUrl } from '@/shared/sites'
 import { clearLinkContext } from '@/core/domObserver'
 import { deleteLinksIfUnchanged, isVisited, loadLinks, mergeLinks } from '@/core/storage'
 import type { ScriptState, VisitedLinks } from '@/types'
@@ -16,7 +17,7 @@ export function batchAddLinks(state: ScriptState): void {
   const links = document.querySelectorAll('a[href]:not(.visited-link)')
   links.forEach((link) => {
     if (!(link instanceof HTMLAnchorElement)) return // SVG 里的 <a> 也会被选中，它的 href 不是字符串
-    const url = getBaseUrl(link)
+    const url = normalizeUrl(link)
     if (!shouldColorLink(url, state)) return
     // 还没过期的记录不改时间戳：链接只是显示在页面上，不算访问
     if (!Object.hasOwn(newLinks, url) && !isVisited(url, state.generalSettings.expirationTime)) newLinks[url] = now
@@ -47,7 +48,7 @@ function undoBatchAdd(newLinks: VisitedLinks): void {
 
   // updateAllLinksStatus 只加颜色不去颜色，这里单独去掉。同一个 URL 在页面上可能有好几个链接
   document.querySelectorAll('a.visited-link').forEach((link) => {
-    if (link instanceof HTMLAnchorElement && deletedUrls.has(getBaseUrl(link))) {
+    if (link instanceof HTMLAnchorElement && deletedUrls.has(normalizeUrl(link))) {
       link.classList.remove('visited-link')
     }
   })
@@ -65,7 +66,7 @@ export function updateLinkStatus(link: Element, state: ScriptState): void {
   if (!(link instanceof HTMLAnchorElement)) return
 
   const originalHref = link.href
-  const inputUrl = getBaseUrl(link)
+  const inputUrl = normalizeUrl(link)
   const shouldColor = shouldColorLink(inputUrl, state)
 
   if (state.generalSettings.debug) {

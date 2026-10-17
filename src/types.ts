@@ -30,10 +30,6 @@ export interface SyncSettings {
   gistId: string
 }
 
-// ================== 配置类型 ==================
-
-export type { PresetRule, PresetRules } from './shared/presetRules'
-
 // ================== UI 类型 ==================
 
 export interface SettingsDialogPayload {

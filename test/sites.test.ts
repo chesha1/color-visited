@@ -1,20 +1,32 @@
 import { describe, expect, it } from 'vitest'
-import { getBaseUrl } from '@/core/utils'
-import { PRESET_RULES } from '@/shared/presetRules'
+import { findActiveSite, normalizeUrl, SITES } from '@/shared/sites'
 
-// 站点匹配表，锁住的是规则表本身：哪些页面上激活哪个站点，激活后哪些链接要染色。
+// 站点匹配表，锁住的是站点表本身：哪些页面上激活哪个站点，激活后哪些链接要染色。
 // 期望值里的站点 id 也是 userSettings.preset 里的键，改名会重置用户的开关，所以这里写的都是原名。
-// 现在的匹配写在 pageDetector 里，依赖 location 和设置；这里按同样的规则直接查表
+// 运行时的 findActiveSite 只取第一个命中的站点；这里查出全部，好检查有没有重叠
 
 // 规则命中这个页面的所有站点。一个页面只应该属于一个站点
 function sitesOfPage(url: string): string[] {
-  return Object.keys(PRESET_RULES).filter((id) => PRESET_RULES[id].pages.some((pattern) => pattern.test(url)))
+  return SITES.filter((site) => site.pages.some((pattern) => pattern.test(url))).map((site) => site.id)
 }
 
 // 在这个站点的页面上，这个链接要不要染色：先归一化，再和规则比
-function shouldColor(site: string, href: string): boolean {
-  const url = getBaseUrl(new URL(href))
-  return PRESET_RULES[site].patterns.some((pattern) => pattern.test(url))
+function shouldColor(id: string, href: string): boolean {
+  const url = normalizeUrl(new URL(href))
+  return SITES.find((site) => site.id === id)!.links.some((pattern) => pattern.test(url))
+}
+
+// @match 在这里只用到了路径里的 *：其余字符照字面匹配，* 匹配任意字符
+function matchPatternToRegExp(pattern: string): RegExp {
+  const parts = pattern.split('*').map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+  return new RegExp(`^${parts.join('.*')}$`)
+}
+
+// 管理器会不会把脚本加载进这个页面：脚本头部的 @include（没写 match 的站点的 pages）和 @match，命中一条就加载
+function isInjected(url: string): boolean {
+  return SITES.some((site) => site.match
+    ? site.match.some((pattern) => matchPatternToRegExp(pattern).test(url))
+    : site.pages.some((pattern) => pattern.test(url)))
 }
 
 describe('页面 → 激活哪个站点', () => {
@@ -127,6 +139,7 @@ describe('页面 → 激活哪个站点', () => {
     ['https://www.zhihu.com/people/someone/answers', 'zhihu'],
   ])('%s → %s', (url, site) => {
     expect(sitesOfPage(url)).toEqual([site])
+    expect(isInjected(url), '激活页一定要在注入范围里，否则脚本根本不运行').toBe(true)
   })
 
   // 详情页、帖子页这些不在 pages 里，不激活
@@ -149,6 +162,7 @@ describe('页面 → 激活哪个站点', () => {
     'https://www.pixiv.net/artworks/123456789',
     'https://cn.pornhub.com/view_video.php?viewkey=ph5f1234567890',
     'https://www.reddit.com/r/programming/comments/1abcdef/some_title/',
+    'https://seekingalpha.com/article/4712345-some-title',
     'https://chan.sankakucomplex.com/posts/AbCdEfGhIjK',
     'https://seekingalpha.com/article/4712345-some-title',
     'https://www.south-plus.net/read.php?tid-2412345.html',
@@ -161,6 +175,34 @@ describe('页面 → 激活哪个站点', () => {
     'https://github.com/',
   ])('%s → 不激活', (url) => {
     expect(sitesOfPage(url)).toEqual([])
+  })
+})
+
+describe('注入范围', () => {
+  // 管理器只在整页加载时检查注入范围。从外部链接打开 SPA 站点的帖子，再站内跳到列表页，
+  // 这时脚本要已经在页面上，靠运行时按 pages 激活（B20）
+  it.each([
+    'https://linux.do/t/topic/647305',
+    'https://www.uscardforum.com/t/topic/123456',
+    'https://space.bilibili.com/123456/dynamic',
+    'https://www.pixiv.net/artworks/123456789',
+    'https://www.reddit.com/r/programming/comments/1abcdef/some_title/',
+    'https://seekingalpha.com/article/4712345-some-title',
+    'https://www.techflowpost.com/article/detail_12345.html',
+  ])('SPA 站点的非激活页也注入：%s', (url) => {
+    expect(sitesOfPage(url)).toEqual([])
+    expect(isInjected(url)).toBe(true)
+  })
+})
+
+describe('findActiveSite：设置里关掉的站点不激活', () => {
+  it.each([
+    [{}, 'v2ex'], // preset 里没有的站点算启用：新加的站点默认启用
+    [{ v2ex: true }, 'v2ex'],
+    [{ zhihu: false }, 'v2ex'],
+    [{ v2ex: false }, undefined],
+  ])('preset 为 %j 时，v2ex 首页 → %s', (preset, id) => {
+    expect(findActiveSite('https://www.v2ex.com/', preset)?.id).toBe(id)
   })
 })
 

@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { getBaseUrl } from '@/core/utils'
+import { normalizeUrl } from '@/shared/sites'
 
 // 归一化的黄金表：左边是 <a> 的 href，右边是现在归一化的结果，也就是存进存储的键。
-// 结果一变，已经存下的记录就对不上了，所以这张表只能加行，不能改已有的行。
-// 唯一的例外是 bbs.imoutolove.me 那一行，等它补上 south-plus 的归一化时改
+// 结果一变，已经存下的记录就对不上了，所以这张表只能加行，不能改已有的行
 function normalize(href: string): string {
-  return getBaseUrl(new URL(href))
+  return normalizeUrl(new URL(href))
 }
 
 describe('归一化黄金表', () => {
@@ -61,8 +60,7 @@ describe('归一化黄金表', () => {
     ['https://www.south-plus.net/read.php?tid-2412345-fpage-3-page-2.html', 'https://www.south-plus.net/read.php?tid-2412345.html'],
     ['https://www.white-plus.net/read.php?tid-2412345-fpage-2.html', 'https://www.white-plus.net/read.php?tid-2412345.html'],
     ['https://www.summer-plus.net/read.php?tid-2412345-page-a.html', 'https://www.summer-plus.net/read.php?tid-2412345.html'],
-    // 现在还没有归一化：同一个帖子在不同的列表页上带着不同的分页后缀，存成了不同的键
-    ['https://bbs.imoutolove.me/read.php?tid-2412345-fpage-2.html', 'https://bbs.imoutolove.me/read.php?tid-2412345-fpage-2.html'],
+    ['https://bbs.imoutolove.me/read.php?tid-2412345-fpage-2.html', 'https://bbs.imoutolove.me/read.php?tid-2412345.html'],
 
     // 其他站点的链接原样返回，查询参数、锚点都留着
     ['https://36kr.com/p/3012345678901234', 'https://36kr.com/p/3012345678901234'],
@@ -101,6 +99,6 @@ describe('归一化黄金表', () => {
   })
 
   it('href 解析不了时（<a> 的 hostname 是空字符串）原样返回', () => {
-    expect(getBaseUrl({ href: 'http://exa mple.com/t/1?p=2', hostname: '' })).toBe('http://exa mple.com/t/1?p=2')
+    expect(normalizeUrl({ href: 'http://exa mple.com/t/1?p=2', hostname: '' })).toBe('http://exa mple.com/t/1?p=2')
   })
 })

@@ -34,36 +34,33 @@
     </div>
 
     <div class="space-y-2">
-      <div v-for="(rule, siteName) in presetRules" :key="siteName"
+      <div v-for="site in SITES" :key="site.id"
            class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
         <!-- 卡片头部 -->
         <div class="p-5">
           <div class="flex items-center justify-between">
             <!-- 左侧：可点击的网站信息区域 -->
-            <div class="flex items-center flex-1 cursor-pointer" @click="toggleExpanded(siteName)">
+            <div class="flex items-center flex-1 cursor-pointer" @click="toggleExpanded(site.id)">
               <!-- 网站信息 -->
               <div class="flex-1">
                 <div class="flex items-center space-x-3">
-                  <h4 class="font-semibold text-gray-900 capitalize text-lg">{{ siteName }}</h4>
+                  <h4 class="font-semibold text-gray-900 text-lg">{{ site.name }}</h4>
                   <el-icon class="text-gray-400 transition-all duration-200"
-                           :class="{ 'rotate-90 text-blue-500': expandedSites.has(siteName) }">
+                           :class="{ 'rotate-90 text-blue-500': expandedSites.has(site.id) }">
                     <ArrowRight />
                   </el-icon>
                 </div>
                 <p class="text-sm text-gray-500 mt-1">
-                  {{ rule.pages.length }} 种生效范围 · {{ rule.patterns.length }} 种可染色链接
+                  {{ site.pages.length }} 种生效范围 · {{ site.links.length }} 种可染色链接
                 </p>
-                <div v-if="rule.description" class="text-xs text-gray-400 mt-1">
-                  {{ rule.description }}
-                </div>
               </div>
             </div>
 
             <!-- 右侧：独立的开关控制区 -->
             <div class="flex items-center ml-4" @click.stop>
               <el-switch
-                v-model="presetSettings[siteName]"
-                @change="updatePresetState(siteName, $event)"
+                v-model="presetSettings[site.id]"
+                @change="updatePresetState(site.id, $event)"
                 size="default"
                 :active-color="'#10b981'"
                 :inactive-color="'#d1d5db'">
@@ -74,43 +71,36 @@
 
         <!-- 展开内容区域 -->
         <el-collapse-transition>
-          <div v-show="expandedSites.has(siteName)" class="border-t border-gray-100">
+          <div v-show="expandedSites.has(site.id)" class="border-t border-gray-100">
             <div class="px-5 py-3 bg-gray-50/50 rounded-b-xl space-y-3">
               <!-- 不需要左边距了，因为删除了图标 -->
               <div>
-                <div v-if="rule.description" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                  <div class="flex items-start space-x-2">
-                    <div class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 flex-shrink-0"></div>
-                    <p class="text-sm text-blue-800">{{ rule.description }}</p>
-                  </div>
-                </div>
-
-                <div v-if="rule.pages.length > 0" class="bg-white rounded-lg border border-gray-200 p-4 mb-3">
+                <div v-if="site.pages.length > 0" class="bg-white rounded-lg border border-gray-200 p-4 mb-3">
                   <div class="flex items-center space-x-2 mb-3">
                     <div class="w-2 h-2 rounded-full bg-green-500"></div>
                     <span class="font-medium text-gray-900 text-sm">在下面这些页面中生效</span>
                     <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                      {{ rule.pages.length }} 个
+                      {{ site.pages.length }} 个
                     </span>
                   </div>
                   <div class="space-y-2 max-h-32 overflow-y-auto">
-                    <div v-for="(page, index) in rule.pages" :key="index"
+                    <div v-for="(page, index) in site.pages" :key="index"
                          class="text-xs text-gray-700 font-mono bg-gray-50 px-3 py-2 rounded-md border border-gray-200 break-all hover:bg-gray-100 transition-colors">
                       {{ formatRegex(page) }}
                     </div>
                   </div>
                 </div>
 
-                <div v-if="rule.patterns.length > 0" class="bg-white rounded-lg border border-gray-200 p-4">
+                <div v-if="site.links.length > 0" class="bg-white rounded-lg border border-gray-200 p-4">
                   <div class="flex items-center space-x-2 mb-3">
                     <div class="w-2 h-2 rounded-full bg-purple-500"></div>
                     <span class="font-medium text-gray-900 text-sm">对下面这些链接染色</span>
                     <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                      {{ rule.patterns.length }} 个
+                      {{ site.links.length }} 个
                     </span>
                   </div>
                   <div class="space-y-2 max-h-32 overflow-y-auto">
-                    <div v-for="(pattern, index) in rule.patterns" :key="index"
+                    <div v-for="(pattern, index) in site.links" :key="index"
                          class="text-xs text-gray-700 font-mono bg-gray-50 px-3 py-2 rounded-md border border-gray-200 break-all hover:bg-gray-100 transition-colors">
                       {{ formatRegex(pattern) }}
                     </div>
@@ -128,9 +118,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ArrowRight } from '@element-plus/icons-vue'
-import { PRESET_RULES } from '@/core/config'
 import { changedFields } from '@/core/utils'
-import type { PresetRules } from '@/types'
+import { SITES } from '@/shared/sites'
 
 interface Props {
   currentPresetSettings: Record<string, boolean>
@@ -143,7 +132,6 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const presetRules: PresetRules = PRESET_RULES
 const expandedSites = ref<Set<string>>(new Set())
 
 // 预设状态管理 - 使用本地状态，不立即保存
@@ -181,8 +169,8 @@ const handleSave = () => {
 const handleReset = () => {
   // 生成默认预设状态（全部启用）
   const defaultStates: Record<string, boolean> = {}
-  Object.keys(PRESET_RULES).forEach((key) => {
-    defaultStates[key] = true
+  SITES.forEach(({ id }) => {
+    defaultStates[id] = true
   })
   presetSettings.value = { ...defaultStates }
 }

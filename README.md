@@ -73,8 +73,8 @@ Therefore, this script adopts a **proactive recording + style injection** approa
 <details>
 <summary>⚙️ <strong>Preset Rules System</strong></summary>
 
-- Each website defines `pages` (running pages) and `patterns` (coloring links) regex rules
-- Auto-generates `@include` rules from configuration during build
+- Each website defines `pages` (running pages) and `links` (coloring links) regex rules
+- Auto-generates `@include` rules from configuration during build; SPA websites also define `match`, which generates `@match` rules covering the whole site
 - Secondary URL matching check at runtime (handles SPA routing)
 - Supports user dynamic enable/disable of websites
 

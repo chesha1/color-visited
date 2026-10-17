@@ -1,5 +1,5 @@
 import type { BatchKeySettings, GeneralSettings, SyncSettings } from '@/types'
-import { PRESET_RULES } from '@/shared/presetRules'
+import { SITES } from '@/shared/sites'
 import { isMac } from './utils'
 
 export const DEFAULT_SETTINGS = {
@@ -18,10 +18,7 @@ export const DEFAULT_SETTINGS = {
     }
   },
   get presetStates(): Record<string, boolean> {
-    return Object.keys(PRESET_RULES).reduce((acc, key) => {
-      acc[key] = true
-      return acc
-    }, {} as Record<string, boolean>)
+    return Object.fromEntries(SITES.map((site) => [site.id, true]))
   },
   sync: {
     enabled: false,
@@ -29,5 +26,3 @@ export const DEFAULT_SETTINGS = {
     gistId: '',
   } as SyncSettings,
 } as const
-
-export { PRESET_RULES }

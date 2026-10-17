@@ -5,7 +5,7 @@
 
 ## 怎么用这份文档
 
-- 新会话可以直接说：「读 `docs/plans/refactor-plan-v3.md`，做 S2」。
+- 新会话可以直接说：「读 `docs/plans/refactor-plan-v3.md`，做 S3」。
 - 编号：
   - **S** = 实施步骤，按「进度」里的顺序做；**B** = bug；**D** = 要你拍板的决策；**Q** = 先实测、再决定做不做的调查。
   - B、D 接着 v2 往下排（v2 用到 B21、D8）。S、Q 是新前缀，和以前用过的 A、C、E、P 不重名，`git log --grep` 不会查混。删掉的编号不复用。
@@ -23,8 +23,7 @@
 
 | 步骤 | 内容 | 来自 v2 | 依赖 | 状态 |
 |---|---|---|---|---|
-| S2 | 站点表 | A9、B20、B21 | — | 未开始 |
-| S3 | 运行时内核：存储、设置、页面、染色 | A10、A12、C15 | S2 | 未开始 |
+| S3 | 运行时内核：存储、设置、页面、染色 | A10、A12、C15 | — | 未开始 |
 | S4 | UI：按需加载、外壳、通知、设置对话框 | A8、A11、B19 | S3、D10 | 未开始 |
 | S5 | 同步模块 | A13 | S3 | 未开始 |
 | S6 | 和宿主页面的 JS 环境隔开 | A14 | S4、S5 | 未开始 |
@@ -80,7 +79,7 @@ sync.ts 的 1132 行里，兼容旧格式的只占几十行，其余是诊断代
 
 v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有事件总线、同步的行为不变量）站得住，v3 基本保留。偏的是这几处：
 
-1. **沿着旧模块的边界渐进迁移。** A10 要先让马上就删的旧模块改读新设置，A13 要为旧运行时保留 `sync:completed` 事件，`ScriptState` 要留一半到 A12。这些过渡代码只为让中间状态能跑。v3 先用测试锁住运行时的行为（test/runtime/），再整块替换（S3）。过渡代码只剩两处：S2 里旧调用方改用新站点表的几处小改动，S3 里旧对话框的一个桥接（S4 删掉）。
+1. **沿着旧模块的边界渐进迁移。** A10 要先让马上就删的旧模块改读新设置，A13 要为旧运行时保留 `sync:completed` 事件，`ScriptState` 要留一半到 A12。这些过渡代码只为让中间状态能跑。v3 先用测试锁住运行时的行为（test/runtime/），再整块替换（S3）。过渡代码只剩 S3 里旧对话框的一个桥接（S4 删掉）。
 2. **几个没核实过的前提：**
    - "依赖真实 DOM 的场景测不了"：jsdom 对 MutationObserver（含 `attributeFilter`）、`toggleAttribute` 状态不变时不产生变化记录、`<a>` 的 `hostname`（解析失败时为空字符串）、SVG 里的 `<a>`、open 和 closed shadow root 下的 `composedPath()`、`pushState` 都是按规范实现的（2026-10-15 用 jsdom 27 实测）。有两处例外（2026-10-16 实测 jsdom 27.4、30.1.3）：节点刚移出 DOM、observer 的回调还没跑时对它的修改，规范要求照样报告（2026-10-17 Chrome 146 实测也报告），jsdom 不报告；jsdom 的 `Blob` 没有 `stream()`。test/runtime/ 里的应对：移出 DOM 之后先等 observer 的回调跑过再改 href（dynamic.test.ts），同步的场景把 `Blob` 换回 Node 的（sync.test.ts）。只有样式层叠（`@layer`、`!important`）和对话框外观要真实浏览器。happy-dom 在 shadow root 的事件重定向、`toggleAttribute` 上有好几处不对，不用它。
    - "UI 用到时才创建"能省掉每个页面的开销：A8 只推迟了创建应用，Vue 和 Element Plus 仍是静态 import，它们的模块初始化（连同这部分代码的编译）照样在每次加载页面时执行。要用动态 `import()` 把它们整个留到用到时，见 S4。
@@ -194,6 +193,10 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
 
 ### 运行平台
 
+- **注入范围和激活范围。** 注入范围是管理器把脚本加载进哪些页面，由脚本头部的 `@include`、`@match` 决定，管理器只在整页加载时检查；激活范围是脚本加载之后在哪些页面上染色，由站点的 `pages` 在运行时判断，URL 一变就重新判断。
+  - 站点不写 `match` 时，按 `pages` 生成 `@include`，两个范围一样。
+  - SPA 站点的站内跳转不是整页加载，管理器不会补注入，所以要写 `match` 覆盖整个 host。否则从非激活页（比如从外部链接打开的帖子）进来，再站内跳到激活页，脚本一直不在。
+  - 非 SPA 站点不写 `match`：每次注入，管理器都要把全部 GM 值交给页面（见「性能与数据规模」）。新增站点时，先在浏览器里从详情页点回列表页，看是整页跳转还是站内跳转。
 - **SPA 跳转检测用 MutationObserver。** 隔离环境（S6）里 hook 不到页面的 `history.pushState`，SPA 跳转只能在 MutationObserver 的回调里比较 `location.href` 来发现。这个检测在非激活页上也必须一直运行：v2.19.4 修过从非激活页跳到激活页时监听失效的问题。
 - **注入环境。** Tampermonkey 不写 `@sandbox` 时默认是 `raw`，注入页面的 MAIN_WORLD；Violentmonkey 的 `@inject-into` 默认是 `auto`，也是先试页面环境。在页面环境里，脚本用到的全局对象和原型都和页面共享（见 S6）。
 - **GM 存储的语义。** `GM_getValue` 返回的是副本；GM 存储由所有标签页共享。
@@ -234,7 +237,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
   - 点击一次只写一个键，页面主线程的开销约为 0；
   - 每次注入页面约 53 ms（没在真实的管理器里量过，见 Q1）；
   - 后台每次持久化约 25 ms，不在页面主线程上。
-- 由此得出两点：初始化页面时不要全量读存储；扩大注入范围是有代价的（见 S2 的 `match`）。
+- 由此得出两点：初始化页面时不要全量读存储；扩大注入范围是有代价的（见「约束」的「注入范围和激活范围」）。
 
 ## Bug
 
@@ -242,54 +245,12 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
   - Tailwind v4 的 `border`、`shadow-*`、渐变等工具类，依赖 `@property` 注册的变量初始值，而 `@property` 在 shadow root 里不生效。Tailwind 自带的回退块包在一个只针对旧版 Safari、Firefox 的 `@supports` 里，Chrome 用不上。所以卡片和分隔线的边框、阴影，预设页统计框的渐变，现在都没有显示（宿主网站自己也用 Tailwind v4 时例外，验证时别挑这种网站）。
   - 另外，写在 Element Plus 组件上的工具类在 `@layer utilities` 里，压不过不在任何 layer 里的 Element Plus 样式，有 4 处不生效。S4 把 Element Plus 的样式包进 `@layer components` 修好。
   - 细节和 Chrome 146 的实测见 v2 的 B19。
-- [ ] **B20 · SPA 站点上，从没被 include 的页面进来后，站内跳到列表页也不染色**（S2 修）
-  - `@include` 直接由各站点的 `pages` 生成（88 条），脚本只在这些 URL 整页加载时注入。比如从外部链接直接打开 linux.do 的帖子，再点左上角回到首页：首页是站内跳转过去的，脚本根本没有注入，一直不染色，只能手动刷新。
-- [ ] **B21 · south-plus 的镜像域名 bbs.imoutolove.me 上的链接没有归一化**（S2 修）
-  - south-plus 的规则包含这个域名，但 `getBaseUrl` 里 south-plus 的归一化只匹配 `www.*-plus.net`。同一个帖子在不同列表页上的链接带着不同的分页后缀，被存成不同的键：在一处点过，换一页再看就不染色。
-  - 修了之后，这个域名上已有的、带分页后缀的记录对不上，不再染色。影响只限这一个镜像域名。
 - [ ] **B22 · 右键点链接也会被记成访问过**（S3 修）
   - 点击监听同时挂在 `click` 和 `auxclick` 上（`createLinkClickHandler`），没看 `event.button`。`auxclick` 对中键和右键都会触发。Chrome 155 里用 CDP 的真实输入事件实测：右键依次触发 mousedown、contextmenu、mouseup、auxclick（`button` 为 2）。
   - 后果：在松开右键之后才弹出系统菜单的平台上（Windows），右键点一下链接，哪怕只是为了复制链接地址，也会被记下并染色。macOS 在按下右键时就弹出菜单，页面收不到 mouseup，不受影响。README 写的是只记录左键、中键、Ctrl+点击。
   - 修法：`auxclick` 只认 `button === 1`。修之前在 Windows 的真实 Chrome 上确认一次现状（headless 不弹系统菜单）。
 
 ## 步骤
-
-### S2 · 站点表（v2 的 A9；修 B20、B21）
-
-- 现状：
-  - 每个站点只有 `pages` 和 `patterns` 两个字段。`pages` 既是激活范围，又直接用来生成 `@include`，注入范围因此和激活范围一样窄（B20）。
-  - 归一化写在 utils.ts 的 `getBaseUrl` 里，是一串按链接 hostname 分派的 if，和规则表分开放。新增站点有时要改两个文件，而且容易漏掉（B21）。
-  - 规则的 key 既是显示名，又是持久化的键（比如 `'The Economist'`、`'美卡论坛'`、`'Hacker News'`），一改名用户的开关就会被重置。
-  - 有冗余的正则，每条都多生成一条 `@include`：bloomberg、economist、一亩三分地里的 `/?$`，已被 `/.*` 覆盖；HN 的 newest、front、show，已被 `/.*` 覆盖；pixiv 的 `novel/ranking`，已被 `novel.*` 覆盖；ehentai 和 exhentai 的规则成对重复。没有站点用到 `description` 字段。
-- 做法：
-  ```ts
-  // shared/sites.ts：vite.config.ts 会在 Node 里 import 它，顶层不能引用浏览器全局对象，也不 import 别的 src 模块
-  export interface Site {
-    id: string        // 沿用现有的 key：它是 userSettings.preset 里的键，不能改
-    name: string      // 设置界面里显示的名字
-    pages: RegExp[]   // 激活范围：在哪些页面上染色
-    links: RegExp[]   // 染哪些链接，对归一化之后的 URL 判断（即原来的 patterns）
-    match?: string[]  // 注入范围（@match）；不写就按 pages 生成 @include
-  }
-  // 归一化按链接自己的 hostname 查表，和链接出现在哪个站点的页面上无关：
-  // HN 上指向 v2ex 的链接，和 v2ex 页面上的同一个链接，必须得到同一个键
-  const NORMALIZERS: Record<string, (href: string) => string> = { … }
-  export function normalizeUrl(link: { href: string, hostname: string }): string
-  export function isSiteEnabled(preset: Record<string, boolean>, id: string): boolean // preset[id] !== false
-  export function findActiveSite(url: string, preset: Record<string, boolean>): Site | undefined
-  ```
-  - 归一化单独成表，不挂在站点上：它是 URL 自己的性质，而像 HN 这样的站点要染的是任意 host 的链接。表和站点放在同一个文件里，新增站点只改这一个文件。B21 在这里修：把 bbs.imoutolove.me 加进 south-plus 那一项。
-  - `normalizeUrl` 照旧直接接收 `<a>` 元素（读它的 `href`、`hostname`），不为每个链接 `new URL`；`hostname` 是空字符串时原样返回。
-  - SPA 站点写 `match`，覆盖整个 host（比如 `https://linux.do/*`）；是否激活，仍在运行时按 `pages` 判断。B20 在这里修。
-    - 哪些站点是 SPA，要逐个确认。已知 linux.do 和美卡论坛（都是 Discourse）是。
-    - 注入范围不是越大越好：每次整页加载都要把全部 GM 值交给页面（见「性能与数据规模」），所以非 SPA 站点不加 `match`。
-  - vite.config.ts 里，没有 `match` 的站点按 `pages` 生成 `@include`，有 `match` 的生成 `@match`。
-  - 站点是否启用只在 `isSiteEnabled` 里判断。sites.ts 不能 import settings.ts（Node 会执行它），所以 `findActiveSite` 直接接收 preset 表。
-  - 去掉冗余的正则和 `description` 字段。
-  - 旧的调用方（pageDetector、linkManager、eventManager、state、config、PresetSettings.vue）只做让它们继续工作的最小改动，S3、S4 会整体替换。设置页显示 `name`。
-- 完成标准：
-  - test/normalize.test.ts、test/sites.test.ts 只改开头调用的函数，表里的行不动；黄金表里只有 B21 那一行（bbs.imoutolove.me）的期望值改成归一化之后的。
-  - `@include` 和 `@match` 加起来比现在的 88 条少。
 
 ### S3 · 运行时内核：存储、设置、页面、染色（v2 的 A10、A12、C15；修 B22）
 
@@ -298,7 +259,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
   - **读设置时几乎不做规范化**：只补新站点的 key（还要写回存储）、只校验过期时间。`preset` 是 null 时，`initializeScriptState` 执行 `key in null` 抛错，脚本在所有站点上都起不来，"设置"菜单也不会注册。`DEFAULT_SETTINGS` 里一部分字段是 getter，另一部分是共享对象，会被直接当作 `GM_getValue` 的默认值返回出去。"所有站点默认启用"写了两遍：config.ts 和 PresetSettings.vue。
   - **页面颜色有四条更新路径**：初次扫描和 observer；点击后全量重扫（`updateAllLinksStatus`）；撤销时手动去色；收到 `sync:completed` 事件后全量重扫。
   - **资源的创建和释放不在一处**：keydown、click 监听在 eventManager 里添加，却在 linkManager 的 `removeScript` 里移除，handler 引用存在 `ScriptState` 里；observer 是全局单例，靠 `provideLinkContext`、`clearLinkContext` 开关染色。linkManager 和 domObserver 互相 import，`activateLinkFeatures` 为了避开另一处循环依赖，把函数当参数传进来。
-  - **页面匹配写了两遍**（`isPageActive`、`getCurrentPagePreset`），`getEnabledPresets` 把 `getActivePresets` 的结果又过滤一遍；缓存只按 URL 记，不随设置变化失效。
+  - **页面匹配算了两遍**：pageDetector 的 `isPageActive` 和 `getCurrentSite` 各调一次 `findActiveSite`，后者的缓存只按 URL 记，不随设置变化失效。
   - **标记用的是没有命名空间的 class `visited-link`**：宿主页面可能有同名的 class；React、Vue 更新 class 绑定时会整体改写 `className`，把它冲掉，而 observer 只看 href 的变化。
   - **染色样式靠堆特异性**（`generateStyleContent`）想压过网站自己的 `!important`，网站规则的特异性更高时照样会输：Chrome 146 实测，宿主页面有 `#app .list a{color:red!important}` 时，链接还是红色。用户填的颜色值直接拼进 CSS，再用 `innerHTML` 写入。
   - **其他**：B22；按住批量快捷键时 keydown 会重复触发，每次都重新跑一遍批量标记、弹一条"没有找到新的…链接"；启动时无条件打日志，开启调试后每个链接要打 7–9 行。
@@ -472,7 +433,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
   - `typecheck` 脚本里，`tsc -p tsconfig.app.json` 和 `vue-tsc --build` 做的是同一件事，只留后者。
   - tsconfig：`useDefineForClassFields`、`jsx: preserve`、`exactOptionalPropertyTypes: false` 在本项目里不起作用；`noImplicitAny` 已经包含在 `strict` 里了；include 里列了 `*.tsx`，但项目里没有这种文件。
 - **文档**（S6 之后）：
-  - CLAUDE.md（被 .gitignore 忽略，只存在于本地）已经过时：说 `PRESET_RULES` 在 core/config.ts，说 build 用的是 tsc，还漏掉了好几个模块。把架构说明写进入库的 AGENTS.md，CLAUDE.md 只留一行 `@AGENTS.md`，免得两份各自过时。
+  - CLAUDE.md（被 .gitignore 忽略，只存在于本地）已经过时：说 build 用的是 tsc，还漏掉了好几个模块。把架构说明写进入库的 AGENTS.md，CLAUDE.md 只留一行 `@AGENTS.md`，免得两份各自过时。
   - README、README_zh：「开发计划」里的「本地写入性能优化」已经由逐条存储解决，删掉；「核心工作流程」按新架构改写。
   - AGENTS.md：D8 定下来之后，更新版本号规则。
 

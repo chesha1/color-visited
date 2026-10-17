@@ -73,8 +73,8 @@
 <details>
 <summary>⚙️ <strong>预设规则系统</strong></summary>
 
-- 每个网站定义 `pages`（运行页面）和 `patterns`（染色链接）正则规则
-- 构建时从配置自动生成 `@include` 规则
+- 每个网站定义 `pages`（运行页面）和 `links`（染色链接）正则规则
+- 构建时从配置自动生成 `@include` 规则；SPA 网站另写 `match`，生成覆盖整个网站的 `@match`
 - 运行时二次检查URL匹配（处理SPA路由）
 - 支持用户动态启用/禁用网站
 
