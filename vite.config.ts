@@ -34,7 +34,7 @@ export default defineConfig({
       entry: 'src/main.ts',
       userscript: {
         name: 'color-visited 对已访问过的链接染色',
-        version: '2.23.2',
+        version: '2.23.3',
         description: '把访问过的链接染色成灰色',
         author: 'chesha1',
         license: 'GPL-3.0-only',
@@ -44,7 +44,8 @@ export default defineConfig({
         noframes: true,
         homepage: 'https://github.com/chesha1/color-visited',
         supportURL: 'https://github.com/chesha1/color-visited/issues',
-        connect: ['gist.githubusercontent.com'],
+        // 同步的请求走 GM_xmlhttpRequest，见 src/core/sync/github.ts
+        connect: ['api.github.com', 'gist.githubusercontent.com'],
       },
     }),
   ],

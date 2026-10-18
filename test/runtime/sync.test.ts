@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url": "https://www.v2ex.com/"}
 // 同步合并进来的记录染上色
-import { Blob } from 'node:buffer'
 import { beforeAll, expect, it, vi } from 'vitest'
 import { isMarked, start } from './helpers'
 import { addLink } from './dom'
@@ -18,8 +17,6 @@ const fromCloud = addLink(FROM_CLOUD)
 const unvisited = addLink(UNVISITED)
 
 beforeAll(async () => {
-  // Vitest 的 jsdom 环境把全局的 Blob 换成了 jsdom 的，它没有 stream()，同步的压缩、解压要用。换回 Node 的
-  vi.stubGlobal('Blob', Blob)
   vi.useFakeTimers({ now: NOW, toFake: ['Date'] })
   const github = fakeGitHub()
   github.files[FILE] = await encode({ [FROM_CLOUD]: NOW - DAY })

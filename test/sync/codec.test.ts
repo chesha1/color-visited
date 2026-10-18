@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NOW } from '../time'
 import { decode, diffLinks, encode, hasFixture, readFixture, v2 } from './helpers'
 
-// sync.ts 和它引用的存储模块都用到 GM API
+// 同步模块和它引用的存储模块都用到 GM API
 vi.mock('vite-plugin-monkey/dist/client', () => import('../fakes/gm'))
 
 beforeEach(() => {

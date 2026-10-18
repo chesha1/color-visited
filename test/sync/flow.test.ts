@@ -86,8 +86,16 @@ describe('读不了云端时抛错，不覆盖云端', () => {
     ['v3 的前缀比上一条还长', v3({ 'a.com': [[0, '/x', NOW], [5, 'y', NOW]] })],
     ['v3 的后缀不是字符串', v3({ 'a.com': [[0, 1, NOW]] })],
     ['v3 还原出的路径不以 / 开头', v3({ 'a.com': [[0, 'x', NOW]] })],
+    // 自愈只丢掉混进来的条目，一条都留不下的就不是这种格式
+    ['v2 的记录一条都不是「URL → 时间戳」', v2({ payload: 'H4sI', itemCount: 1 })],
+    ['v3 的时间戳都不是数字', v3({ 'a.com': [[0, '/x', '2026-10-13']] })],
   ])('syncVersion 认识，但%s', async (_, content) => {
     github.files[FILE] = content
+    await expectFailedWithoutChanges()
+  })
+
+  it('带 visitedLinks 字段的旧明文，记录一条都不是「URL → 时间戳」', async () => {
+    github.files[FILE] = JSON.stringify({ visitedLinks: { syncVersion: 'v3', payload: 'H4sI' } })
     await expectFailedWithoutChanges()
   })
 

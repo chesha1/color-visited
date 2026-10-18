@@ -14,7 +14,7 @@
   - 做了什么、为什么这样取舍，写进提交信息（列一行「重构计划文档：完成 Sn」），不在本文留记录；
   - 只能在真实浏览器里验证的步骤列在对话里，能自动化的写成测试；
   - 「约束」因此变了的，一并更新。
-- D 项由你决定，动手前先问。S4 要等 D10。
+- D 项由你决定，动手前先问。
 - 取舍原则：简单、干净优先；只为用户感觉得到的问题专门优化。
 - 测试：`pnpm test`。纯逻辑在 Node 里跑；运行时的 DOM 行为在 jsdom 里跑（test/runtime/，只经过其中的 helpers.ts 碰实现）；样式层叠、对话框外观、真实的管理器只能在浏览器里验证。已知的 bug 先按期望的行为写成 `it.fails`，修的那一步改回 `it`。
 - 仓库约定（pnpm、版本号、提交信息格式）见 [AGENTS.md](../../AGENTS.md)。
@@ -23,7 +23,7 @@
 
 | 步骤 | 内容 | 来自 v2 | 依赖 | 状态 |
 |---|---|---|---|---|
-| S4 | UI：按需加载、外壳、通知、设置对话框 | A8、A11、B19 | D10 | 未开始 |
+| S4 | UI：按需加载、外壳、通知、设置对话框 | A8、A11、B19 | — | 未开始 |
 | S5 | 同步模块 | A13 | — | 未开始 |
 | S6 | 和宿主页面的 JS 环境隔开 | A14 | S4、S5 | 未开始 |
 | S7 | 收尾：lint 规则、配置、文档 | E12、E13、E14、D8 | S6（配置清理和 D8 随时可做） | 未开始 |
@@ -32,13 +32,6 @@
 - Q1 不在实施顺序里，随时可做。
 
 ## 待决策
-
-- [ ] **D10 · 取色器怎么放**
-  - 背景：D9 定了保留 Element Plus，S4 要把它的样式只写进 shadow root。v2 A8 打算让 `el-color-picker` 的面板用 `append-to` 挂进 shadow root，实测行不通：Element Plus 判断"点到了外面"，看的是 document 上收到的 `event.target`，而 shadow root 里的点击传到 document 时，`target` 已经换成了宿主元素。面板放进 shadow root 之后（open、closed 都一样），在面板里点一个预设色块，值变了，面板随即被当成点到外面而关掉，选的颜色也被重置；面板留在 `document.body` 时正常（2026-10-16，Chrome 155，CDP 的真实鼠标事件）。对话框里的其他组件（tab、开关、输入框、数字框、按钮）放在 closed shadow root 里都正常。
-  - 选项：
-    1. **换成原生控件（推荐）。** 预设色块（含透明）、文本框（任意 CSS 颜色，失焦时用 `CSS.supports` 校验，不合法就退回原值），加上原生的 `<input type="color">`（不带透明度）。样式全在 shadow root 里；Element Plus 的部分少约 150 KB（取色面板、tooltip、弹层），每次加载页面要预解析的也跟着少。代价：取色时没有透明度滑块，透明要靠色块或文本框。
-    2. 保留 `el-color-picker`，面板照旧挂到 `document.body`。打开设置时，把 Element Plus 的样式也写一份进宿主页面的 `<head>`（取色面板要用），关掉对话框时删掉。代价：对话框开着时宿主页面上有 Element Plus 的全局样式，宿主网站自己也用 Element Plus 时两边会互相干扰；样式要写两处。
-  - S4 按选项 1 写；选 2 的话，S4 第 4 步（样式）和常规 tab 的取色器跟着改。
 
 - [ ] **D8 · 版本号只留一个来源**（v2 留下的）
   - 现状：userscript 的版本号写在 vite.config.ts 里，package.json 的 `version` 一直是 1.0.0，AGENTS.md 规定发版时只改前者。
@@ -118,7 +111,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
   - 重新判断的结果和现在一样时不写 DOM：每个新插入的链接都要判断一遍，而 `setAttribute` 即使值没变，页面上的 MutationObserver 也会收到一次变化。用 `toggleAttribute(name, force)`，状态没变时不产生变化记录（Chrome 146、jsdom 实测）。
 - **激活一次，释放一次。** `activate` 里添加的监听器共用一个 AbortController；observer、订阅、样式、标记都在它返回的 dispose 里释放。没有全局的 handler 引用，也没有 observer 上下文。
 - **界面按需加载。** vite-plugin-monkey 遇到动态 `import()` 就用 SystemJS 打包：所有块仍在同一个文件里，入口块只有内核，Vue、Element Plus 和界面在用到时才执行的块里。每次加载激活页从约 32 ms 降到约 16 ms，和"内核 + Vue"相当；代价是第一次打开设置多等约 20 ms（见「性能与数据规模」）。
-- **宿主页面上只多一段染色样式。** 没打开过设置、也没弹过通知的页面上，没有宿主元素，Vue 和 Element Plus 的代码也不执行。打开之后，Element Plus 的样式也只写进 shadow root（取色器见 D10）。
+- **宿主页面上平时只多一段染色样式。** 没打开过设置、也没弹过通知的页面上，没有宿主元素，Vue 和 Element Plus 的代码也不执行。打开之后，样式都写进 shadow root；只有设置对话框开着的时候，宿主页面的 `<head>` 里多一份 Element Plus 的样式，给挂在 `document.body` 上的取色面板用，关掉对话框就删掉（见「约束」）。
 
 写法：
 
@@ -188,6 +181,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
 - **设置界面和通知用 Element Plus，按需加载**（D9 已定保留）。
   - 按需加载靠动态 `import()`，vite-plugin-monkey 遇到它就用 SystemJS 打包。SystemJS 本身只能从 jsdelivr `@require`（Greasy Fork 不允许内联压缩过的代码），所以脚本头部有 2 个 jsdelivr 的 `@require` 和 1 个 data: 形式的 `@require`。
   - 启动时执行的模块不能静态 import Vue、Element Plus 和界面（见「目标架构」的依赖规则），否则它们又会在每次加载页面时执行。
+  - 取色器用 `el-color-picker`（D10 已定保留，不换成原生控件），它的面板只能挂在 `document.body`。Element Plus 判断"点到了外面"，看的是 document 上收到的 `event.target`，而 shadow root 里的点击传到 document 时，`target` 已经换成了宿主元素。所以面板放进 shadow root 之后（open、closed 都一样），在面板里点一个预设色块，值变了，面板随即被当成点到外面而关掉，选的颜色也被重置；面板留在 `document.body` 时正常（2026-10-16，Chrome 155，CDP 的真实鼠标事件）。代价：对话框开着时，宿主页面上要有一份 Element Plus 的全局样式，宿主网站自己也用 Element Plus 时两边会互相干扰。
 - **GM 权限声明。** vite-plugin-monkey 会根据代码里 import 的 `GM_*` 自动生成 `@grant`。`GM_xmlhttpRequest` 要访问的域名，需要加进 `connect`。
 
 ### 运行平台
@@ -272,9 +266,9 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
      - ESLint 对 main.ts、core/、shared/、ui/notify.ts 开 `no-restricted-imports`，禁止静态 import vue、element-plus、@element-plus/*、`*.vue` 和 ui/ 里别的模块。这条规则只管静态 import，不管 `import()`。
   3. **ui/root.ts**：第一次打开设置或弹通知时，才创建宿主元素。
      - 宿主元素用自定义标签名（比如 `<color-visited-ui>`），挂在 `document.documentElement` 下：页面写给 `div` 的样式碰不到它。
-     - shadow root 建成 closed，引用只留在这个模块里。对话框里的 Element Plus 组件（tab、开关、输入框、数字框、按钮）放在 closed shadow root 里，用 CDP 的真实输入事件实测正常（Chrome 155）；取色器不行，见 D10。
-     - closed 之后，挂在 document 上的 keydown 监听拿到的 `composedPath()` 从宿主元素开始，看不到里面的输入框。所以 `isTyping` 改成：事件目标是我们的宿主元素时，就当作用户在输入（Chrome 155、jsdom 实测）。
-  4. **样式**：所有 CSS 只写进 shadow root（取色器按 D10 选项 1 换掉之后）。
+     - shadow root 建成 closed，引用只留在这个模块里。对话框里的 Element Plus 组件（tab、开关、输入框、数字框、按钮）放在 closed shadow root 里，用 CDP 的真实输入事件实测正常（Chrome 155）；取色器的面板不行，照旧挂在 `document.body`（见「约束」）。
+     - closed 之后，挂在 document 上的 keydown 监听拿到的 `composedPath()` 从宿主元素开始，看不到里面的输入框。所以 `isTyping` 加一条：事件目标是我们的宿主元素时，就当作用户在输入（Chrome 155、jsdom 实测）。原来按输入框判断的那条留着：取色面板在 `document.body` 里，面板里的输入框不经过宿主元素。
+  4. **样式**：CSS 都写进 shadow root；只有取色面板要的 Element Plus 样式，在对话框开着时另写一份进宿主页面的 `<head>`（最后一条）。
      - 用 vite-plugin-monkey 的 `build.cssSideEffects`，把打包进来的 CSS（Element Plus 的组件样式、SFC 的 `<style>`）收集到 `globalThis` 上一个带命名空间的键里（比如 `Symbol.for('color-visited/css')`）。这个函数会被 `toString()` 之后内联进产物，不能引用模块作用域。
      - 每个块的 CSS 要到这个块执行时才进来：先弹过通知、后打开设置时，对话框的样式是后来的。所以 ui/root.ts 在每次 `import()` 完成后，把新收集到的 CSS 追加进 shadow root；写入时把 `:root` 换成 `:host`，整段包进 `@layer components{…}`（B19）。
      - 通知用的 `ElMessage`、渲染"撤销"按钮的 `ElButton`，resolver 看不到，照旧显式 import 它们的 `style/css`。
@@ -283,22 +277,23 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
        - B19：在 vite.config.ts 里加一个很小的 transform，把 `@layer properties` 里那层 `@supports (…)` 换成 `@media all`，让变量的初始值在 shadow root 里也无条件生效。找不到要换的文本时让构建失败，免得以后升级 Tailwind 时悄悄坏掉。Tailwind 自己没有这个开关。开发和构建时 CSS 的空白不一样（构建时压缩过），匹配要容忍空白。
      - 删掉 unpkg 的 link，以及 styles/index.css 里手动补的 `--el-*` 变量。
      - 开发模式（`pnpm dev`）下，CSS 由 Vite 插进 `document.head`，`cssSideEffects` 不生效。要在 `import.meta.env.DEV` 下把这些 `<style>` 复制进 shadow root，同样包进 `@layer components{…}`。
+     - 取色面板：ui/dialog.ts 打开对话框时，把收集到的 Element Plus 样式原样（不换 `:root`、不分层，和现在 `GM_addStyle` 写进去的一样）写进 `<head>` 里的一个 `<style>`，unmount 时删掉。
   5. **ui/message.ts**：沿用现在的 `ElMessage` 实现，`appendTo` 指向 shadow root 里的元素。带操作按钮时显示 5 秒，否则 2 秒；鼠标停在上面时不消失；按钮只响应第一次点击（通知淡出的过程中按钮还点得到）；同样的通知正在显示时不叠加（`grouping`）。
   6. **设置对话框**（ui/dialog.ts 和 ui/*.vue）：
      - `openSettings()` 每次打开都新建一个 Vue 应用，挂进 shadow root，用 `el-dialog`，关闭后 unmount；对话框已经开着时什么都不做。这样就不再需要 App.vue、`destroy-on-close`、重置 `activeTab`，也不用 watch props。
      - 打开时从 `getSettings()` 拷贝出一份 draft，再留一份快照。整个对话框只有一个 `hasChanges`、一个"保存"按钮：`saveSettings(diffSettings(快照, draft))`。保存后对话框不关，快照换成刚保存的值。"重置为默认"只重置当前 tab 的 draft，和现在一样。
      - 关闭：只有关闭按钮会关，丢弃没保存的修改。点背景不关（`close-on-click-modal` 设为 false）；Esc 照旧不关（`close-on-press-escape` 为 false），这样录快捷键时能录到 Esc。
      - 各个 tab 组件用 v-model 编辑 draft 中属于自己的那部分，不再 `defineExpose`：
-       - 常规：颜色按 D10 选项 1，用预设色块（含透明）、文本框（失焦时用 `CSS.supports` 校验，不合法就退回原值）和原生取色器，去掉 `el-color-picker`；调试开关。
+       - 常规：颜色照旧用 `el-color-picker`（带透明度和预设色）加文本框；调试开关。
        - 过期时间保留现在的规则：在 `change`（失焦、回车）时才取值，输入过程中的数不算（从 365 退格到空，中间会经过 3）；清空、0、负数、小数，都回到保存的天数。不能把无效输入改成 1 天：保存后一天前的记录会全被删掉。
        - 预设网站：按站点表列出 `name`，开关的值是 `isSiteEnabled(draft.preset, id)`；"已启用 x/y"按站点表来算；全部启用、全部禁用；点开看 `pages`、`links`。箭头的两个颜色类改成二选一（`expanded ? 'text-blue-500' : 'text-gray-400'`）。
        - 快捷键：录制时 `preventDefault`。显示用 `formatShortcut`。
        - 同步：保存时把 Gist 网址归一化成纯 ID。"测试连接"用表单里的值；"立即同步"调用 `runSync({ manual: true })`，同步这部分有没保存的修改时不能点。最后同步时间跟着 `onLastSyncTimeChange` 刷新。去掉 gzip 支持状态的卡片和提示。
 - 完成标准：
   - 入口块（产物里 `./___monkey.entry.js` 那一段）没有 `_css(`；产物里没有 `unpkg.com`，也没有 `GM_addStyle`；
-  - 没打开过设置、也没弹过通知的页面上，没有宿主元素；打开设置、弹过通知之后，宿主页面的 `<head>` 里也只有染色用的那一段样式；
+  - 没打开过设置、也没弹过通知的页面上，没有宿主元素；只弹过通知，或者关掉设置对话框之后，宿主页面的 `<head>` 里也只有染色用的那一段样式；
   - 在两个 tab 里各改一项，点一次保存，两项都存下来；
-  - 先弹通知再打开设置，以及反过来，对话框的各个 tab、通知（含"撤销"按钮）的外观都和现在一样（截图对比），B19 的边框、阴影、渐变和那 4 处类都显示出来；
+  - 先弹通知再打开设置，以及反过来，对话框的各个 tab、取色面板、通知（含"撤销"按钮）的外观都和现在一样（截图对比），B19 的边框、阴影、渐变和那 4 处类都显示出来；在取色面板里点预设色块、拖透明度滑块，面板不会自己关掉，选的颜色留得住；
   - 按「性能与数据规模」的方法量一次，每次加载激活页要和"内核 + Vue"相当；把产物体积、每次注入的耗时和第一次打开设置的耗时写进提交信息。
 
 ### S5 · 同步模块（v2 的 A13）
@@ -354,7 +349,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
   - 怎么用结果：
     - 13 万条时在两个管理器里都不超过 20 ms：关掉这一条。
     - 明显更大：再评估按 host 分片存储（键从几万个降到几十个）。分片会把"多个标签页并发写同一个键"的问题带回来，要在写入前现读、现合并，并分析剩下的竞争窗口，还要做一次迁移。
-    - 源码这一步明显花时间（比如 940 KB 的产物比只有内核的多出 10 ms 以上）：再评估缩小产物。取色器按 D10 选项 1 换掉后已经少了约 150 KB；还可以把 `el-form` 换成普通布局，再少约 63 KB。
+    - 源码这一步明显花时间（比如 940 KB 的产物比只有内核的多出 10 ms 以上）：再评估缩小产物，比如把 `el-form` 换成普通布局，少约 63 KB。取色器不换（D10 已定保留）。
 
 ## 考虑过、不做的
 
@@ -371,6 +366,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
   - 验证不了产物的 CSS（B19、对话框外观）。它跑的是源码，走 Vitest 自己的 Vite 流程，不是 vite-plugin-monkey 的打包。
   - 用得上的只有 C15（宿主页面有 `!important` 时链接还是我们的颜色）。为这一条多两个 devDependency（`@vitest/browser-playwright` 的版本还要和 vitest 完全一致），每次发版都在 CI 里装一次 Chromium，不划算；只在本地跑、不进 CI，迟早没人跑。以后有更多只能在真浏览器里验证、又容易改坏的行为，再重新考虑。
 - **去掉 Element Plus。** D9 已定保留。按需加载之后，每次加载页面的开销已经和去掉它（只剩内核 + Vue）相当；去掉要重写整个设置界面，外观也会变。保留的代价：产物约 940 KB，要靠 SystemJS 的 `@require`，样式要收集进 shadow root 并分层。换成别的组件库也不会更轻：同一组组件、同样不压缩、不含 Vue 时，Element Plus 约 600 KB 加约 100 KB 样式，Naive UI 约 820 KB（样式在 JS 里），无样式的 Reka UI 约 310 KB、样式还要全部自己写。
+- **把取色器换成原生控件。** D10 已定保留 `el-color-picker`。原生的做法是预设色块（含透明）、文本框（失焦时用 `CSS.supports` 校验）加 `<input type="color">`：样式能全放进 shadow root，Element Plus 的部分少约 150 KB（取色面板、tooltip、弹层）；代价是取色时没有透明度滑块，透明只能靠色块或文本框，外观也会变。
 - **靠构建配置缩小产物。** 压缩：Greasy Fork 不允许；删除死代码：默认已经开着，产物里没有残留的开发分支；按需引入：已经生效。`externalGlobals` 从 CDN `@require` 的 Element Plus 只有完整版（压缩后 1.1 MB），更大，而且每次照样要解析。
 - **去掉 Tailwind。** v2 的 D7 已定保留。按 2026-10-14 的构建，它的 CSS 约 18 KB，B19 在保留它的前提下就能修好。
 - **为了体积去压 Tailwind 的产物**（比如排掉误生成的类、去掉 preflight）。最多从 18 KB 压到 12.6 KB，却要维护一张词表，还得重新检查整个界面。S4 改成只扫描 ui/ 之后，从业务代码里误生成的类会自然消失。

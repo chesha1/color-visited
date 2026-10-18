@@ -28,6 +28,11 @@ function isLinkKey(key: string): boolean {
   return key.includes(':')
 }
 
+// 能不能当作一条访问记录：键是 URL，值是有限的时间戳。写入前（mergeLinks）、读云端的同步数据时都按它过滤
+export function isLinkEntry(key: string, value: unknown): value is number {
+  return isLinkKey(key) && Number.isFinite(value)
+}
+
 // 本标签页写入、删除了哪些访问记录。其他标签页的写入收不到：记录是逐键存储的，没法订阅全部的键
 const linkListeners = new Set<(urls: string[]) => void>()
 
@@ -79,7 +84,7 @@ export function loadLinks(): VisitedLinks {
 export function mergeLinks(links: VisitedLinks): number {
   const updates: VisitedLinks = {}
   for (const [url, time] of Object.entries(links)) {
-    if (!isLinkKey(url) || !Number.isFinite(time)) continue
+    if (!isLinkEntry(url, time)) continue
     const current = GM_getValue<number | undefined>(url)
     if (current === undefined || current < time) updates[url] = time
   }

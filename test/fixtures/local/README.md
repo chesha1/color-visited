@@ -8,7 +8,7 @@
 | `visited-links.v2.json` | v2 同步包 | 97,048 | 2026-04-11 | 原先在仓库根目录，2026-10-10 移到这里，并已从 git 历史中清除 |
 
 - 两种格式的外层都是 `{ syncVersion, encoding, payload, itemCount, updatedAt, originalBytes, compressedBytes }`，`payload` 是 gzip 之后再 base64 的 JSON。v2 里是平铺的「URL → 首次访问时间戳」；v3 先按 host 分组，组内路径排序后再做前缀差分。
-- 两份都能被当前的 sync.ts 完整解码，条数和 `itemCount` 一致（2026-10-10 验证）。
+- 两份都能完整解码，条数和 `itemCount` 一致，test/sync/codec.test.ts 每次都检查。
 - v2 里有 1 条以空 `#` 结尾的 linux.do 记录（`…/topic/647305/49#`）。v2.23.0 及以前的 v3 编码会丢掉末尾空的 `#`，所以 v3 样本里只有去掉 `#` 之后的 `…/49`。往返测试不要去掉这一条，它要逐字往返。
 
 ## 用途

@@ -75,23 +75,8 @@
             <span class="text-gray-600">最后同步时间:</span>
             <span class="text-gray-900">{{ lastSyncTimeFormatted }}</span>
           </div>
-          <div class="flex items-center justify-between gap-4">
-            <span class="text-gray-600">gzip 支持状态:</span>
-            <el-tag :type="gzipSupportAvailable ? 'success' : 'danger'" effect="light">
-              {{ gzipSupportAvailable ? '当前浏览器已支持' : '当前浏览器不支持' }}
-            </el-tag>
-          </div>
         </div>
       </el-card>
-
-      <div class="w-full">
-        <el-alert
-          :title="gzipSupportAlertTitle"
-          :type="gzipSupportAvailable ? 'success' : 'warning'"
-          show-icon
-          :closable="false"
-        />
-      </div>
 
       <!-- 测试连接、立即同步按钮 -->
       <div class="flex justify-center pt-2">
@@ -99,7 +84,7 @@
           type="primary"
           :loading="testingConnection"
           :disabled="!formData.enabled || !formData.githubToken"
-          @click="testConnection"
+          @click="checkConnection"
         >
           {{ testingConnection ? '测试中...' : '测试连接' }}
         </el-button>
@@ -120,7 +105,7 @@ import { ref, computed, watch, onUnmounted } from 'vue'
 import { changedFields, createDefaultSettings, type SyncSettings } from '@/core/settings'
 import { eventBus } from '@/core/eventBus'
 import { getLastSyncTime, onLastSyncTimeChange } from '@/core/storage'
-import { AUTO_SYNC_INTERVAL, isGzipSyncSupported, normalizeGistId, testSyncConnection } from '@/core/sync'
+import { AUTO_SYNC_INTERVAL, normalizeGistId, testConnection } from '@/core/sync'
 import { notify } from '@/ui/notify'
 
 interface Props {
@@ -145,7 +130,6 @@ const savedSettings = ref<SyncSettings>({ ...props.currentSettings })
 
 // 测试连接状态
 const testingConnection = ref(false)
-const gzipSupportAvailable = isGzipSyncSupported()
 
 const autoSyncMinutes = AUTO_SYNC_INTERVAL / 60000
 
@@ -184,16 +168,8 @@ const hasChanges = computed(() => {
   )
 })
 
-const gzipSupportAlertTitle = computed(() => {
-  if (gzipSupportAvailable) {
-    return '当前浏览器支持 gzip，同步存储 v3 将使用 host 分组 + 前缀差分 + 单文件 gzip 压缩格式。'
-  }
-
-  return '当前浏览器不支持 gzip Compression Streams，启用同步后将无法使用同步存储 v3。请升级浏览器或切换到支持该能力的环境。'
-})
-
 // 测试连接
-const testConnection = async () => {
+const checkConnection = async () => {
   if (!formData.value.githubToken) {
     notify('请输入 GitHub 令牌', 'warning')
     return
@@ -202,7 +178,7 @@ const testConnection = async () => {
   testingConnection.value = true
 
   try {
-    const result = await testSyncConnection(formData.value.githubToken, normalizeGistId(formData.value.gistId))
+    const result = await testConnection(formData.value.githubToken, formData.value.gistId)
     notify(result.message, result.level)
   } catch (error: unknown) {
     const err = error as Error

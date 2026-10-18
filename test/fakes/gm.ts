@@ -14,6 +14,7 @@ import type {
   GmSetValueType,
   GmSetValuesType,
   GmValueListenerId,
+  GmXmlhttpRequestOption,
   GmXmlhttpRequestType,
 } from 'vite-plugin-monkey/dist/client'
 
@@ -73,18 +74,38 @@ export const GM_removeValueChangeListener: GmRemoveValueChangeListenerType = (id
 // 启动时注册的"设置"菜单。测试不点菜单，不用记下来
 export const GM_registerMenuCommand: GmRegisterMenuCommandType = () => 0
 
-// 转给全局的 fetch 发出去。测试里 fetch 换成了假的 GitHub（见 github.ts），所以两种发请求的方式落到同一个假服务端上。
-// 回调的事件只填了同步用到的几个字段；和真实的管理器一样，回调里的 this 是事件本身
+export interface FakeResponse {
+  status: number
+  body: string
+  headers?: Record<string, string>
+}
+
+export type FakeRequest = Pick<GmXmlhttpRequestOption<'text'>, 'method' | 'url' | 'headers' | 'data'>
+
+// 收到 GM_xmlhttpRequest 的请求，返回响应；返回的 Promise reject 表示网络出错
+export type FakeServer = (request: FakeRequest) => Promise<FakeResponse>
+
+const noServer: FakeServer = () => Promise.reject(new Error('没有服务端'))
+let server = noServer
+
+// 之后 GM_xmlhttpRequest 的请求都交给 handler，比如假的 GitHub（见 github.ts）
+export function serveRequests(handler: FakeServer): void {
+  server = handler
+}
+
+// 回调的事件只填了同步用到的几个字段。和真实的管理器一样：响应头是一整个字符串，一行一个；回调里的 this 是事件本身
 export const GM_xmlhttpRequest: GmXmlhttpRequestType = (details) => {
-  fetch(details.url, { method: details.method, headers: details.headers, body: details.data })
-    .then(async (response) => {
-      const event = { status: response.status, responseText: await response.text(), finalUrl: details.url } as GmResponseEvent<never, never>
+  server(details).then(
+    ({ status, body, headers = {} }) => {
+      const responseHeaders = Object.entries(headers).map(([name, value]) => `${name}: ${value}\r\n`).join('')
+      const event = { status, responseText: body, responseHeaders, finalUrl: details.url } as GmResponseEvent<never, never>
       details.onload?.call(event, event)
-    })
-    .catch(() => {
+    },
+    () => {
       const event = { error: 'network error' } as never
       details.onerror?.call(event, event)
-    })
+    },
+  )
   return { abort() {} }
 }
 
@@ -104,4 +125,5 @@ export function resetGM(): void {
   listeners.clear()
   GM_setValues = setValues
   GM_deleteValues = deleteValues
+  server = noServer
 }

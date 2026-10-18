@@ -2,20 +2,22 @@ import { existsSync, readFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
 import { vi } from 'vitest'
 import type { VisitedLinks } from '@/core/storage'
-import { deserializeGistContent, serializeVisitedLinksForGist, syncWithCloud } from '@/core/sync'
+import { syncWithCloud } from '@/core/sync'
+import * as codec from '@/core/sync/codec'
 import { GIST_ID, TOKEN } from '../fakes/github'
 import { YEAR } from '../time'
 
-// sync.ts 的 runSync 要弹通知：ui/notify.ts 引入了 Element Plus 通知组件的样式，那是 .css 文件，Node 加载不了，换成空模块
+// 同步模块的 runSync 要弹通知：ui/notify.ts 引入了 Element Plus 通知组件的样式，那是 .css 文件，Node 加载不了，换成空模块。
+// vi.mock 只对之后才加载的模块生效：测试文件要先引入这个文件，再引入 @/core/sync
 vi.mock('element-plus/es/components/message/style/css', () => ({}))
 
-// 同步格式的编解码。现在写在 sync.ts 里；拆出单独的编解码模块后，这两个函数改成直接调它
 export function encode(links: VisitedLinks): Promise<string> {
-  return serializeVisitedLinksForGist(links)
+  return codec.encode(links)
 }
 
+// 只取解码出来的记录
 export async function decode(content: string): Promise<VisitedLinks> {
-  return (await deserializeGistContent(content, false)).visitedLinks
+  return (await codec.decode(content)).links
 }
 
 // 用假 GitHub 上的那个 Gist 同步一次。expirationTime 是本机设置的过期时间
@@ -27,16 +29,12 @@ export function gzipBase64(text: string): string {
   return gzipSync(text).toString('base64')
 }
 
-// 拼一个同步包。外层的 7 个字段都写上（现在读取时会检查全部字段的类型），没传的用占位值
+// 拼一个同步包，没传的字段用占位值。外层只写读取时用到的三个字段，encode 写出来的另外还有 4 个
 export function envelope(fields: Record<string, unknown>): string {
   return JSON.stringify({
     syncVersion: 'v3',
     encoding: 'gzip-base64-json',
     payload: gzipBase64('{}'),
-    itemCount: 0,
-    updatedAt: 0,
-    originalBytes: 0,
-    compressedBytes: 0,
     ...fields,
   })
 }
