@@ -7,10 +7,11 @@ import {
   mergeLinks,
   migrateLegacyLinks,
   onLastSyncTimeChange,
+  onLinksChange,
   recordVisit,
   setLastSyncTime,
+  type VisitedLinks,
 } from '@/core/storage'
-import type { VisitedLinks } from '@/types'
 import { removeBatchApi, resetGM, setValueFromOtherTab, store } from './fakes/gm'
 import { DAY, NOW, YEAR } from './time'
 
@@ -148,6 +149,50 @@ describe('migrateLegacyLinks：v2.21.0 及以前把全部记录存在 visitedLin
     store.set('visitedLinks', { [A]: NOW, syncVersion: 'v3', itemCount: 3, [B]: 'x' })
     migrateLegacyLinks()
     expect(stored()).toEqual({ [A]: NOW })
+  })
+})
+
+describe('onLinksChange：本标签页写入、删除访问记录之后，通知改了哪些 URL', () => {
+  const listener = vi.fn()
+  let unsubscribe: () => void
+
+  beforeEach(() => {
+    listener.mockClear()
+    unsubscribe = onLinksChange(listener)
+  })
+
+  afterEach(() => {
+    unsubscribe()
+  })
+
+  it('写入：只通知真的写进去了的', () => {
+    store.set(A, NOW)
+    mergeLinks({ [A]: NOW - DAY, [B]: NOW })
+    recordVisit(C)
+    expect(listener.mock.calls).toEqual([[[B]], [[C]]])
+  })
+
+  it('删除：撤销批量标记、过期清理', () => {
+    mergeLinks({ [A]: NOW, [B]: NOW - YEAR - 1 })
+    listener.mockClear()
+    deleteLinksIfUnchanged({ [A]: NOW })
+    deleteExpiredLinks(YEAR)
+    expect(listener.mock.calls).toEqual([[[A]], [[B]]])
+  })
+
+  it('什么都没变时不通知', () => {
+    store.set(A, NOW)
+    store.set('lastCleanupTime', NOW) // 今天已经清理过
+    mergeLinks({ [A]: NOW, userSettings: NOW })
+    deleteLinksIfUnchanged({ [A]: NOW - DAY, [B]: NOW })
+    deleteExpiredLinks(YEAR)
+    expect(listener).not.toHaveBeenCalled()
+  })
+
+  it('取消订阅之后不再通知', () => {
+    unsubscribe()
+    recordVisit(A)
+    expect(listener).not.toHaveBeenCalled()
   })
 })
 

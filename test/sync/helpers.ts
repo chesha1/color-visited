@@ -1,9 +1,13 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
+import { vi } from 'vitest'
+import type { VisitedLinks } from '@/core/storage'
 import { deserializeGistContent, serializeVisitedLinksForGist, syncWithCloud } from '@/core/sync'
-import type { VisitedLinks } from '@/types'
 import { GIST_ID, TOKEN } from '../fakes/github'
 import { YEAR } from '../time'
+
+// sync.ts 的 runSync 要弹通知：ui/notify.ts 引入了 Element Plus 通知组件的样式，那是 .css 文件，Node 加载不了，换成空模块
+vi.mock('element-plus/es/components/message/style/css', () => ({}))
 
 // 同步格式的编解码。现在写在 sync.ts 里；拆出单独的编解码模块后，这两个函数改成直接调它
 export function encode(links: VisitedLinks): Promise<string> {

@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { matchesShortcut, toShortcut } from '@/core/shortcut'
-import type { BatchKeySettings } from '@/types'
+import { matchesShortcut, toShortcut, type Shortcut } from '@/core/shortcut'
 
 // 按下的键。key 不参与匹配，写上是为了说明这时候 key 是什么
 function press(fields: Partial<KeyboardEvent>): KeyboardEvent {
   return { ctrlKey: false, shiftKey: false, altKey: false, metaKey: false, code: '', key: '', ...fields } as KeyboardEvent
 }
 
-function shortcut(fields: Partial<BatchKeySettings>): BatchKeySettings {
+function shortcut(fields: Partial<Shortcut>): Shortcut {
   return { ctrlKey: false, shiftKey: false, altKey: false, metaKey: false, code: '', ...fields }
 }
 

@@ -1,11 +1,10 @@
-// ================== 存储模块 ==================
-
+// 唯一调用 GM 存储 API 的模块，所有键名都定义在这里。
 // 每条访问记录单独存成一个 GM 值：键是归一化后的 URL，值是最近一次访问的时间戳，过期从这个时间算起。
 // 所有写入都经过 mergeLinks，只会把时间戳改大，所以各台设备不管按什么顺序同步，最后都是同一个值。
 // 记录之间互不相关，扩展后台按键应用各个标签页的写入，所以一次写入只改动自己那几条，
 // 多个标签页同时记录访问也不会互相覆盖。读取一律直接查存储，页面里不再保留一份会过时的副本。
+// 记录的键是绝对 URL，一定带协议头的冒号；下面这些不是访问记录的键，都不能含冒号
 
-import type { VisitedLinks } from '@/types'
 import {
   GM_addValueChangeListener,
   GM_deleteValue,
@@ -17,23 +16,40 @@ import {
   GM_setValues,
 } from 'vite-plugin-monkey/dist/client'
 
-// 旧版本把全部记录存成这一个对象，启动时会迁移成逐条存储
+const SETTINGS_KEY = 'userSettings'
+const LAST_SYNC_TIME_KEY = 'lastSyncTime'
+const LAST_CLEANUP_TIME_KEY = 'lastCleanupTime'
+// v2.21.0 及以前把全部记录存成这一个对象，启动时会迁移成逐条存储
 const LEGACY_LINKS_KEY = 'visitedLinks'
 
-// 记录的键是绝对 URL，一定带协议头的冒号；userSettings 这类设置键是普通标识符，不能含冒号
+export type VisitedLinks = Record<string, number>
+
 function isLinkKey(key: string): boolean {
   return key.includes(':')
+}
+
+// 本标签页写入、删除了哪些访问记录。其他标签页的写入收不到：记录是逐键存储的，没法订阅全部的键
+const linkListeners = new Set<(urls: string[]) => void>()
+
+export function onLinksChange(listener: (urls: string[]) => void): () => void {
+  linkListeners.add(listener)
+  return () => {
+    linkListeners.delete(listener)
+  }
 }
 
 // 批量接口需要 Tampermonkey 5.3+ 或 Violentmonkey 2.19.1+，更早的版本退回逐条写
 function setLinks(links: VisitedLinks): void {
   if (GM_setValues) GM_setValues(links)
   else for (const url in links) GM_setValue(url, links[url])
+  const urls = Object.keys(links)
+  for (const listener of linkListeners) listener(urls)
 }
 
 function deleteLinks(urls: string[]): void {
   if (GM_deleteValues) GM_deleteValues(urls)
   else for (const url of urls) GM_deleteValue(url)
+  for (const listener of linkListeners) listener(urls)
 }
 
 // 有没有还没过期的记录。过期的记录读的时候就当作没有，不等清理删掉：
@@ -72,9 +88,8 @@ export function mergeLinks(links: VisitedLinks): number {
   return count
 }
 
-// 上次清理过期记录的时间（ms）。清理要把全部记录读一遍，十几万条时要几十毫秒；
-// 而过期的记录 isVisited 已经当作没有了，晚点删不影响染色，只是多占些存储，所以所有标签页合起来一天最多清理一次
-const LAST_CLEANUP_TIME_KEY = 'lastCleanupTime'
+// 清理要把全部记录读一遍，十几万条时要几十毫秒；而过期的记录 isVisited 已经当作没有了，
+// 晚点删不影响染色，只是多占些存储，所以所有标签页合起来一天最多清理一次，上次清理的时间（ms）记在存储里
 const CLEANUP_INTERVAL = 1000 * 60 * 60 * 24
 
 export function deleteExpiredLinks(expirationTime: number): void {
@@ -106,12 +121,25 @@ export function migrateLegacyLinks(): void {
   console.log(`已把 ${mergedCount} 条访问记录迁移为逐条存储`)
 }
 
-// ================== 同步状态 ==================
+// 设置只管原始的读写，读出来的值由 settings.ts 规范化
+export function readSettings(): unknown {
+  return GM_getValue<unknown>(SETTINGS_KEY)
+}
+
+export function writeSettings(settings: object): void {
+  GM_setValue(SETTINGS_KEY, settings)
+}
+
+// 其他标签页写入设置后回调。本标签页自己的写入也会触发 GM 的监听（remote 为 false），跳过：那时 saveSettings 已经通知过了
+export function onRemoteSettingsWrite(listener: () => void): () => void {
+  const id = GM_addValueChangeListener(SETTINGS_KEY, (_key, _oldValue, _newValue, remote) => {
+    if (remote) listener()
+  })
+  return () => GM_removeValueChangeListener(id)
+}
 
 // 上次同步成功的时间（ms），0 表示从未同步。它是同步写下的状态，不是用户设置：放在 userSettings 里的话，
 // 保存设置时会连同页面里那份旧值整块写回去。所以单独存一个键，只有同步会写它
-const LAST_SYNC_TIME_KEY = 'lastSyncTime'
-
 export function getLastSyncTime(): number {
   return GM_getValue(LAST_SYNC_TIME_KEY, 0)
 }

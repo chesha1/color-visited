@@ -117,13 +117,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
-import { DEFAULT_SETTINGS } from '@/core/config'
-import type { SyncSettings } from '@/types'
+import { changedFields, createDefaultSettings, type SyncSettings } from '@/core/settings'
 import { eventBus } from '@/core/eventBus'
 import { getLastSyncTime, onLastSyncTimeChange } from '@/core/storage'
 import { AUTO_SYNC_INTERVAL, isGzipSyncSupported, normalizeGistId, testSyncConnection } from '@/core/sync'
-import { showNotification } from '@/core/ui'
-import { changedFields } from '@/core/utils'
+import { notify } from '@/ui/notify'
 
 interface Props {
   currentSettings: SyncSettings
@@ -197,7 +195,7 @@ const gzipSupportAlertTitle = computed(() => {
 // 测试连接
 const testConnection = async () => {
   if (!formData.value.githubToken) {
-    showNotification('请输入 GitHub 令牌')
+    notify('请输入 GitHub 令牌', 'warning')
     return
   }
 
@@ -205,10 +203,10 @@ const testConnection = async () => {
 
   try {
     const result = await testSyncConnection(formData.value.githubToken, normalizeGistId(formData.value.gistId))
-    showNotification(result.message, result.level)
+    notify(result.message, result.level)
   } catch (error: unknown) {
     const err = error as Error
-    showNotification('连接失败: ' + err.message, 'error')
+    notify('连接失败: ' + err.message, 'error')
   } finally {
     testingConnection.value = false
   }
@@ -223,14 +221,14 @@ const getFormData = (): SyncSettings => {
 const handleSave = () => {
   // 保存前把 Gist 网址归一化成纯 ID，并回填到表单
   formData.value.gistId = normalizeGistId(formData.value.gistId)
-  emit('save', changedFields(formData.value, savedSettings.value))
+  emit('save', changedFields(savedSettings.value, formData.value))
   // 更新已保存状态
   savedSettings.value = { ...formData.value }
 }
 
 // 重置表单
 const handleReset = () => {
-  formData.value = { ...DEFAULT_SETTINGS.sync }
+  formData.value = createDefaultSettings().sync
 }
 
 // 暴露方法给父组件

@@ -82,7 +82,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { BatchKeySettings, GeneralSettings, SyncSettings } from '@/types'
+import type { GeneralSettings, SyncSettings } from '@/core/settings'
+import type { Shortcut } from '@/core/shortcut'
 import GeneralSettingsComponent from '@/components/GeneralSettings.vue'
 import PresetSettingsComponent from '@/components/PresetSettings.vue'
 import ShortcutSettingsComponent from '@/components/ShortcutSettings.vue'
@@ -90,7 +91,7 @@ import SyncSettingsComponent from '@/components/SyncSettings.vue'
 
 interface Props {
   modelValue: boolean
-  currentSettings: BatchKeySettings
+  currentSettings: Shortcut
   generalSettings: GeneralSettings
   currentPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
@@ -99,7 +100,7 @@ interface Props {
 
 interface Emits {
   (e: 'update:modelValue', value: boolean): void
-  (e: 'save', settings: BatchKeySettings): void
+  (e: 'save', settings: Shortcut): void
   (e: 'generalSave', settings: Partial<GeneralSettings>): void
   (e: 'presetSave', states: Record<string, boolean>): void
   (e: 'syncSave', settings: Partial<SyncSettings>): void

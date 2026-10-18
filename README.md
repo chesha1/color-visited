@@ -65,7 +65,7 @@ Therefore, this script adopts a **proactive recording + style injection** approa
 1. **Page Detection** → Determine script activation through preset rules
 2. **Link Monitoring** → Event delegation listens for link clicks (left/middle/Ctrl+click)
 3. **State Recording** → Store URL and timestamp to GM local storage
-4. **Style Coloring** → Dynamic CSS injection + class name addition for visual marking
+4. **Style Coloring** → Dynamic CSS injection + a `data-color-visited` attribute on visited links
 5. **Dynamic Updates** → MutationObserver monitors DOM changes to handle new links
 
 </details>

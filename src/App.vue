@@ -2,11 +2,13 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import SettingsDialog from '@/components/SettingsDialog.vue'
 import { eventBus } from '@/core/eventBus'
-import type { BatchKeySettings, GeneralSettings, SyncSettings, SettingsDialogPayload } from '@/types'
+import type { SettingsDialogPayload } from '@/core/eventBus'
+import type { GeneralSettings, SyncSettings } from '@/core/settings'
+import type { Shortcut } from '@/core/shortcut'
 
 const dialogData = ref<{
   visible: boolean
-  currentBatchKeySettings: BatchKeySettings
+  currentBatchKeySettings: Shortcut
   currentGeneralSettings: GeneralSettings
   currentPresetSettings: Record<string, boolean>
   currentSyncSettings: SyncSettings
@@ -21,7 +23,7 @@ const handleShowDialog = (event: {
 }
 
 // 处理设置保存事件
-const handleSettingsSave = (settings: BatchKeySettings) => {
+const handleSettingsSave = (settings: Shortcut) => {
   eventBus.emit('settings:save', {
     type: 'batch-key',
     settings,

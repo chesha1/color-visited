@@ -54,8 +54,8 @@ it('再点一次已经标记的链接：时间戳刷新成这次点击的时间'
   expect(store.get(A)).toBe(NOW + DAY)
 })
 
-// B22：auxclick 没看 button，右键也被当成点开了链接。修好之后改成 it
-it.fails('右键：不记录', () => {
+// 右键也会触发 auxclick。右键点一下（比如复制链接地址）不算点开
+it('右键：不记录', () => {
   rightClick(c)
   expect(store.has(C)).toBe(false)
   expect(isMarked(c)).toBe(false)

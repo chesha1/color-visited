@@ -4,13 +4,12 @@
 // vi.mock 只对之后才加载的模块生效：场景文件要先引入这个文件，再引入别的会加载 src 模块的文件
 
 import { vi } from 'vitest'
-import { eventBus } from '@/core/eventBus'
-import { startColorVisitedScript } from '@/core/script'
-import type { BatchKeySettings, GeneralSettings, SyncSettings } from '@/types'
+import { startPage } from '@/core/page'
+import { saveSettings as save, type SettingsPatch } from '@/core/settings'
 
 export interface Notice {
   message: string
-  type?: string
+  type: string
   /** 通知上"撤销"按钮的回调 */
   undo?: () => void
 }
@@ -19,41 +18,27 @@ export interface Notice {
 const notices = vi.hoisted((): Notice[] => [])
 export { notices }
 
-// 通知和染色样式现在都在 core/ui.ts 里：只换掉通知，样式用真的。
-// ui.ts 引入了 Element Plus 通知组件的样式，那是 .css 文件，Node 加载不了，换成空模块
-vi.mock('element-plus/es/components/message/style/css', () => ({}))
-vi.mock('@/core/ui', async (importOriginal) => ({
-  ...await importOriginal<typeof import('@/core/ui')>(),
-  showNotification(message: string, type?: string, action?: { onClick: () => void }) {
+// 通知只记下来，不真的弹：真的通知要用 Element Plus
+vi.mock('@/ui/notify', () => ({
+  notify(message: string, type: string, action?: { onClick: () => void }) {
     notices.push({ message, type, undo: action?.onClick })
   },
 }))
 
-// 启动脚本。现在的运行时没有完整的释放（监听器挂在 document 上，observer 是模块级的单例），
-// 所以一个测试文件只启动一次，文件里的测试按顺序接着前一个的状态跑
+// 启动页面这一层：按当前的 URL 和设置激活，之后跟着 URL、设置的变化重新激活。
+// main.ts 里启动时的其他几步（注册菜单、迁移旧数据、清理过期记录、自动同步）不跑。
+// 启动之后 URL 检测和设置订阅一直都在，没有停下来的办法，所以一个测试文件只启动一次，文件里的测试按顺序接着前一个的状态跑
 export function start(): void {
-  vi.spyOn(console, 'log').mockImplementation(() => {}) // 现在启动、同步时无条件打日志，测试里不看
-  startColorVisitedScript()
+  startPage()
 }
 
-// 设置对话框保存时交出的改动：只有改过的字段，快捷键改了就整个交出
-export interface SettingsPatch {
-  general?: Partial<GeneralSettings>
-  preset?: Record<string, boolean>
-  batch?: BatchKeySettings
-  sync?: Partial<SyncSettings>
-}
-
-// 在本标签页保存设置，和在设置对话框里点保存一样
+// 在本标签页保存设置，和在设置对话框里点保存一样：只交出改过的字段，快捷键改了就整个交出
 export function saveSettings(patch: SettingsPatch): void {
-  if (patch.general) eventBus.emit('settings:save', { type: 'general', settings: patch.general })
-  if (patch.preset) eventBus.emit('settings:save', { type: 'preset', states: patch.preset })
-  if (patch.batch) eventBus.emit('settings:save', { type: 'batch-key', settings: patch.batch })
-  if (patch.sync) eventBus.emit('settings:save', { type: 'sync', settings: patch.sync })
+  save(patch)
 }
 
 export function isMarked(link: Element): boolean {
-  return link.classList.contains('visited-link')
+  return link.hasAttribute('data-color-visited')
 }
 
 // 标记过的链接染成什么颜色：脚本写进页面的染色样式里的颜色，没有染色样式时是 undefined。

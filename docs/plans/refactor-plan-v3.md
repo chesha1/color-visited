@@ -5,7 +5,7 @@
 
 ## 怎么用这份文档
 
-- 新会话可以直接说：「读 `docs/plans/refactor-plan-v3.md`，做 S3」。
+- 新会话可以直接说：「读 `docs/plans/refactor-plan-v3.md`，做 S4」。
 - 编号：
   - **S** = 实施步骤，按「进度」里的顺序做；**B** = bug；**D** = 要你拍板的决策；**Q** = 先实测、再决定做不做的调查。
   - B、D 接着 v2 往下排（v2 用到 B21、D8）。S、Q 是新前缀，和以前用过的 A、C、E、P 不重名，`git log --grep` 不会查混。删掉的编号不复用。
@@ -23,9 +23,8 @@
 
 | 步骤 | 内容 | 来自 v2 | 依赖 | 状态 |
 |---|---|---|---|---|
-| S3 | 运行时内核：存储、设置、页面、染色 | A10、A12、C15 | — | 未开始 |
-| S4 | UI：按需加载、外壳、通知、设置对话框 | A8、A11、B19 | S3、D10 | 未开始 |
-| S5 | 同步模块 | A13 | S3 | 未开始 |
+| S4 | UI：按需加载、外壳、通知、设置对话框 | A8、A11、B19 | D10 | 未开始 |
+| S5 | 同步模块 | A13 | — | 未开始 |
 | S6 | 和宿主页面的 JS 环境隔开 | A14 | S4、S5 | 未开始 |
 | S7 | 收尾：lint 规则、配置、文档 | E12、E13、E14、D8 | S6（配置清理和 D8 随时可做） | 未开始 |
 
@@ -73,18 +72,18 @@
 | 旧版整块记录的迁移 | v2.21.0 及以前的用户 | 约 10 行，每次启动一次 `GM_getValue` |
 | 没有批量读写接口的旧管理器 | Tampermonkey 5.3、Violentmonkey 2.19.1 以前 | 4 行 |
 
-sync.ts 的 1132 行里，兼容旧格式的只占几十行，其余是诊断代码和重复的校验。
+sync.ts 的 1151 行里，兼容旧格式的只占几十行，其余是诊断代码和重复的校验。
 
 ### v2 被以前的写法带偏的地方
 
 v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有事件总线、同步的行为不变量）站得住，v3 基本保留。偏的是这几处：
 
-1. **沿着旧模块的边界渐进迁移。** A10 要先让马上就删的旧模块改读新设置，A13 要为旧运行时保留 `sync:completed` 事件，`ScriptState` 要留一半到 A12。这些过渡代码只为让中间状态能跑。v3 先用测试锁住运行时的行为（test/runtime/），再整块替换（S3）。过渡代码只剩 S3 里旧对话框的一个桥接（S4 删掉）。
+1. **沿着旧模块的边界渐进迁移。** A10 要先让马上就删的旧模块改读新设置，A13 要为旧运行时保留 `sync:completed` 事件，`ScriptState` 要留一半到 A12。这些过渡代码只为让中间状态能跑。v3 先用测试锁住运行时的行为（test/runtime/），再整块替换。过渡代码只剩旧对话框的桥接（ui/legacyDialog.ts，S4 删掉）。
 2. **几个没核实过的前提：**
    - "依赖真实 DOM 的场景测不了"：jsdom 对 MutationObserver（含 `attributeFilter`）、`toggleAttribute` 状态不变时不产生变化记录、`<a>` 的 `hostname`（解析失败时为空字符串）、SVG 里的 `<a>`、open 和 closed shadow root 下的 `composedPath()`、`pushState` 都是按规范实现的（2026-10-15 用 jsdom 27 实测）。有两处例外（2026-10-16 实测 jsdom 27.4、30.1.3）：节点刚移出 DOM、observer 的回调还没跑时对它的修改，规范要求照样报告（2026-10-17 Chrome 146 实测也报告），jsdom 不报告；jsdom 的 `Blob` 没有 `stream()`。test/runtime/ 里的应对：移出 DOM 之后先等 observer 的回调跑过再改 href（dynamic.test.ts），同步的场景把 `Blob` 换回 Node 的（sync.test.ts）。只有样式层叠（`@layer`、`!important`）和对话框外观要真实浏览器。happy-dom 在 shadow root 的事件重定向、`toggleAttribute` 上有好几处不对，不用它。
    - "UI 用到时才创建"能省掉每个页面的开销：A8 只推迟了创建应用，Vue 和 Element Plus 仍是静态 import，它们的模块初始化（连同这部分代码的编译）照样在每次加载页面时执行。要用动态 `import()` 把它们整个留到用到时，见 S4。
    - "其他标签页记下的访问没法实时染色"：用一个计数键广播就做得到，只是这是新功能，见「考虑过、不做的」。
-3. **漏掉的问题：** 右键点链接会被记成访问过（B22）；按住批量快捷键会反复标记；设置对话框点到外面就关掉，没保存的修改直接丢掉；启动、同步时无条件打日志。
+3. **漏掉的问题：** 设置对话框点到外面就关掉，没保存的修改直接丢掉（S4）。
 
 ## 目标架构
 
@@ -113,7 +112,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
 
 关键机制：
 
-- **设置只有一条更新路径。** `saveSettings(patch)` 把改动合并到存储里的当前值上，写回后通知订阅者。其他标签页写入后，storage 的订阅拿到新值，规范化之后同样通知。页面只订阅一次：`onSettingsChange(refresh)`。
+- **设置只有一条更新路径。** `saveSettings(patch)` 把改动合并到存储里的当前值上，写回后通知订阅者；其他标签页写入后，storage 的订阅同样通知。订阅者用 `getSettings()` 读新值，读的时候规范化。页面只订阅一次：`onSettingsChange(refresh)`。
 - **页面颜色只跟着存储走。** colorizer 只在两种时候改标记：一是扫描新出现的、或 href 变了的链接；二是收到本标签页访问记录的增删通知。点击、批量标记、撤销、同步合并都只写存储，不碰 DOM。
   - 扫描时不看链接原来有没有标记，一律按当前的 href 重新判断。翻页、"换一批"、虚拟滚动这类列表会复用 `<a>`、只换 href；移出 DOM 之后再改的 href，observer 收不到，只能在插回来时判断；克隆出来的链接也带着原来的标记。
   - 重新判断的结果和现在一样时不写 DOM：每个新插入的链接都要判断一遍，而 `setAttribute` 即使值没变，页面上的 MutationObserver 也会收到一次变化。用 `toggleAttribute(name, force)`，状态没变时不产生变化记录（Chrome 146、jsdom 实测）。
@@ -125,9 +124,9 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
 
 - 纯逻辑写成纯函数，和读写存储、DOM、网络的代码分开：`parseSettings`、`diffSettings`、`normalizeUrl`、`findActiveSite`、codec 都不碰 GM 和 DOM，在 Node 里直接测。
 - 错误只在边界接住、报告一次：`refresh`、`runSync`、启动时的各步。内部函数直接抛，不各打一遍日志。
-- 注释写"为什么现在是这样"；以前是怎么写的、修过什么 bug，写进提交信息。去掉 `// ====== 模块 ======` 这类横幅，以及 ES 模块里多余的 `'use strict'`（现在共 32 处）。
+- 注释写"为什么现在是这样"；以前是怎么写的、修过什么 bug，写进提交信息。去掉 `// ====== 模块 ======` 这类横幅，以及 ES 模块里多余的 `'use strict'`（现在只剩 sync.ts 里的 3 处）。
 - 只有 shared/ 会在 Node 里执行，别的模块不为 Node 给浏览器全局对象判空。
-- 类型就近定义，不建公共的类型文件。types.ts 里没人用的类型和事件（`NotificationOptions`、`SyncDialogPayload`、`DataComparison`、`SyncError`、`menu:update`、`dialog:show-sync`）随所在的步骤删掉。
+- 类型就近定义，不建公共的类型文件。types.ts 现在只剩同步用的类型，其中 `DataComparison`、`SyncError` 没人用，S5 删掉。
 
 ## 约束（重构时不能变）
 
@@ -245,99 +244,8 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
   - Tailwind v4 的 `border`、`shadow-*`、渐变等工具类，依赖 `@property` 注册的变量初始值，而 `@property` 在 shadow root 里不生效。Tailwind 自带的回退块包在一个只针对旧版 Safari、Firefox 的 `@supports` 里，Chrome 用不上。所以卡片和分隔线的边框、阴影，预设页统计框的渐变，现在都没有显示（宿主网站自己也用 Tailwind v4 时例外，验证时别挑这种网站）。
   - 另外，写在 Element Plus 组件上的工具类在 `@layer utilities` 里，压不过不在任何 layer 里的 Element Plus 样式，有 4 处不生效。S4 把 Element Plus 的样式包进 `@layer components` 修好。
   - 细节和 Chrome 146 的实测见 v2 的 B19。
-- [ ] **B22 · 右键点链接也会被记成访问过**（S3 修）
-  - 点击监听同时挂在 `click` 和 `auxclick` 上（`createLinkClickHandler`），没看 `event.button`。`auxclick` 对中键和右键都会触发。Chrome 155 里用 CDP 的真实输入事件实测：右键依次触发 mousedown、contextmenu、mouseup、auxclick（`button` 为 2）。
-  - 后果：在松开右键之后才弹出系统菜单的平台上（Windows），右键点一下链接，哪怕只是为了复制链接地址，也会被记下并染色。macOS 在按下右键时就弹出菜单，页面收不到 mouseup，不受影响。README 写的是只记录左键、中键、Ctrl+点击。
-  - 修法：`auxclick` 只认 `button === 1`。修之前在 Windows 的真实 Chrome 上确认一次现状（headless 不弹系统菜单）。
 
 ## 步骤
-
-### S3 · 运行时内核：存储、设置、页面、染色（v2 的 A10、A12、C15；修 B22）
-
-- 现状：
-  - **设置有三份**：存储、内存里的 `state`、对话框里的副本。本标签页保存（`settings:save` 事件 → script.ts 合并 → `saveUserSettings` → `setupPage`）和其他标签页保存（`followUserSettings` → 替换 `state` → `setupPage`）走两条路。`userSettings` 由 state.ts 直接调 GM API 读写，其他键在 storage.ts 里。
-  - **读设置时几乎不做规范化**：只补新站点的 key（还要写回存储）、只校验过期时间。`preset` 是 null 时，`initializeScriptState` 执行 `key in null` 抛错，脚本在所有站点上都起不来，"设置"菜单也不会注册。`DEFAULT_SETTINGS` 里一部分字段是 getter，另一部分是共享对象，会被直接当作 `GM_getValue` 的默认值返回出去。"所有站点默认启用"写了两遍：config.ts 和 PresetSettings.vue。
-  - **页面颜色有四条更新路径**：初次扫描和 observer；点击后全量重扫（`updateAllLinksStatus`）；撤销时手动去色；收到 `sync:completed` 事件后全量重扫。
-  - **资源的创建和释放不在一处**：keydown、click 监听在 eventManager 里添加，却在 linkManager 的 `removeScript` 里移除，handler 引用存在 `ScriptState` 里；observer 是全局单例，靠 `provideLinkContext`、`clearLinkContext` 开关染色。linkManager 和 domObserver 互相 import，`activateLinkFeatures` 为了避开另一处循环依赖，把函数当参数传进来。
-  - **页面匹配算了两遍**：pageDetector 的 `isPageActive` 和 `getCurrentSite` 各调一次 `findActiveSite`，后者的缓存只按 URL 记，不随设置变化失效。
-  - **标记用的是没有命名空间的 class `visited-link`**：宿主页面可能有同名的 class；React、Vue 更新 class 绑定时会整体改写 `className`，把它冲掉，而 observer 只看 href 的变化。
-  - **染色样式靠堆特异性**（`generateStyleContent`）想压过网站自己的 `!important`，网站规则的特异性更高时照样会输：Chrome 146 实测，宿主页面有 `#app .list a{color:red!important}` 时，链接还是红色。用户填的颜色值直接拼进 CSS，再用 `innerHTML` 写入。
-  - **其他**：B22；按住批量快捷键时 keydown 会重复触发，每次都重新跑一遍批量标记、弹一条"没有找到新的…链接"；启动时无条件打日志，开启调试后每个链接要打 7–9 行。
-- 做法：
-  - **storage.ts** 成为唯一调用 GM 存储 API 的模块。所有键名都定义在这里：`userSettings`、`lastSyncTime`、`lastCleanupTime`，以及旧版的 `visitedLinks`。注释里写明：不是访问记录的键，不能含冒号。
-    - 访问记录的接口照旧（`isVisited`、`recordVisit`、`mergeLinks`、`deleteLinksIfUnchanged`、`loadLinks`、`deleteExpiredLinks`、`migrateLegacyLinks`）。写入或删除之后通知本标签页：`onLinksChange(listener: (urls: string[]) => void)`。只通知本标签页自己的写入：记录是逐键存储的，没法订阅全部的键。
-    - 设置这一块，只提供原始的读写，以及订阅其他标签页的写入（`remote` 为 false 的回调跳过）。
-  - **settings.ts**，不依赖 Vue：
-    ```ts
-    createDefaultSettings(): Settings
-    parseSettings(raw: unknown): Settings          // 纯函数
-    getSettings(): Settings                        // 读存储、规范化，不缓存
-    saveSettings(patch: SettingsPatch): void       // 合并到存储里的当前值上，写回，再通知
-    onSettingsChange(listener): () => void         // 本标签页保存后、其他标签页写入后，各回调一次
-    diffSettings(base: Settings, draft: Settings): SettingsPatch // 只交出改过的字段，快捷键有任何不同就整个交出
-    ```
-    - 规范化以 `createDefaultSettings()` 为底，只接受默认值里有、而且类型相同的字段。这样 `sync.lastSyncTime` 这类残留字段自然就去掉了，缺 `code` 的旧快捷键也会换成默认值。另外：`preset` 只保留布尔值；`expirationTime` 不到 1 天时换成一年。
-    - 代码里的字段名和存储保持一致（`general`、`preset`、`batch`、`sync`），不再用 `batchKeySettings`、`presetStates` 这些别名。
-  - **shortcut.ts** 收进 `isMac`（去掉对 `navigator` 的判空，那是给 Node 准备的，utils.ts 早就不在 Node 里执行了）、默认快捷键、`formatShortcut`（从 ShortcutSettings.vue 挪过来）和 `isTyping`（从 eventManager 挪过来）。
-  - **log.ts**：`log.debug()` 只在调试开关打开时打印。每批变化打一行汇总，不再逐个链接打；开启调试时，照旧打印一次存储的大小。警告和错误照常用 `console.warn`、`console.error`。
-  - **page.ts**：
-    ```ts
-    export function startPage(): void {
-      let dispose: (() => void) | null = null
-      const refresh = () => {
-        dispose?.()
-        dispose = null
-        try {
-          const settings = getSettings()
-          const site = findActiveSite(location.href, settings.preset)
-          if (site) dispose = activate(site, settings)
-        } catch (error) {
-          // 要接住：不能让 URL 检测和设置订阅跟着失效
-          console.error('[color-visited] 激活页面失败', error)
-        }
-      }
-      refresh()
-      watchUrl(refresh)         // 常驻的 observer，只比较 location.href，在非激活页上也一直运行
-      onSettingsChange(refresh)
-    }
-    ```
-  - **colorizer.ts**：
-    ```ts
-    export function activate(site: Site, settings: Settings): () => void {
-      const ac = new AbortController()
-      const style = injectLinkStyle(settings.general.color)
-      markAll()                                         // 页面上全部 a[href]，按当前 href 判断
-      const observer = observeLinks()                   // 新出现的、href 变了的链接：不看现有标记，按当前 href 重新判断
-      const unsubscribe = onLinksChange(updateMarks)    // 本标签页的记录增删 → 重新判断对应 URL 的所有链接
-      document.addEventListener('click', onClick, { capture: true, signal: ac.signal })
-      document.addEventListener('auxclick', onClick, { capture: true, signal: ac.signal })
-      document.addEventListener('keydown', onKeydown, { signal: ac.signal })
-      return () => { ac.abort(); observer.disconnect(); unsubscribe(); style.remove(); unmarkAll() }
-    }
-    ```
-    - 标记改用带命名空间的 data 属性（比如 `data-color-visited`），写法见「关键机制」。
-    - 两个 observer（page.ts 的 URL 检测、这里的链接）都观察 `document.documentElement`，不观察 `body`：有的站点会整个替换 `<body>`（比如用 Turbo 的站点），之后挂在旧 body 上的 observer 就收不到变化了。
-    - 点击：`auxclick` 只认 `button === 1`（B22）。点击、批量标记、撤销都只写存储，颜色由 `onLinksChange` 跟着更新。
-    - 快捷键：忽略 `event.repeat`；`isTyping` 时不响应。
-    - 染色样式（C15）：
-      - 规则放进 `@layer color-visited { … }`。CSS 规定：写在 layer 里的 `!important` 声明，优先于所有不在 layer 里的 `!important`，和特异性无关。Chrome 146 实测，上面那个例子里，layer 里只写一条 `a[…]{color:…!important}` 就赢了。
-      - 规则只保留一组：链接及其后代（含 `::before`、`::after`）的颜色，以及后代里图片和背景图的半透明。
-      - 网站自己在 layer 里写了 `!important` 时我们会输（先声明的 layer 优先），但现在的写法在这种情况下也会输，不会更差。
-      - 颜色先用 `CSS.supports('color', c)` 校验，不合法就用默认值；写入时用 `textContent`。
-  - **ui/notify.ts**：`notify(message, type, action?)`，`type` 必填，不再按文字猜。S3 里先把现有的 Element Plus 实现从 core/ui.ts 挪过来，S4 改成按需加载，调用方不用改。
-  - **sync.ts**：带通知的 `runSync({ manual })` 和自动同步的间隔判断从 script.ts 挪进来，读 `getSettings()`，自动同步和"立即同步"共用。删掉 `sync:completed` 事件：合并写进存储时，`onLinksChange` 已经会通知。
-  - **main.ts** 只负责组合（见「目标架构」），"设置"菜单最先注册。
-  - **旧对话框的桥接**（S4 删掉）：打开设置时用 `getSettings()` 发出原来的 `dialog:show-settings`；`settings:save` 转成 `saveSettings`；`sync:request` 转成 `runSync({ manual: true })`。旧组件只改 import 路径这类让它们继续工作的地方；App.vue 照旧在启动时挂载，S4 改成用到时才创建。
-  - 删掉 script.ts、state.ts、config.ts、linkManager.ts、eventManager.ts、domObserver.ts、pageDetector.ts、menuManager.ts、utils.ts、core/ui.ts。types.ts 只留同步相关的类型，S5 删。
-- 完成标准：
-  - test/runtime/ 的测试全部通过：只改 helpers.ts（启动、保存设置、通知、标记和染色样式的读法），场景文件里只把 B22 那条从 `it.fails` 改回 `it`。jsdom 30 自带 `CSS.supports`，颜色校验不用补桩（2026-10-17 实测：`red`、`rgba(0,0,0,0)` 为 true，`notacolor`、`red;} body{x:y` 为 false）。
-  - 新增测试：
-    - `parseSettings`：空存储；`preset` 为 null；缺字段；类型不对；过期时间为 null、0、负数、365（把天数当毫秒填）、半天、缺字段时，都换成一年；1 天、9.6 天、3650 天原样保留。
-    - `saveSettings` 只合并改过的字段，快捷键整个替换；本标签页保存、其他标签页写入（用 `setValueFromOtherTab` 模拟），各通知一次。
-    - `diffSettings`；`onLinksChange` 在写入、删除之后通知，什么都没变时不通知。
-  - `grep -rnE "GM_(get|set|delete|list)Values?|GM_(add|remove)ValueChangeListener" src` 只匹配到 storage.ts。
-  - 没有 `ScriptState`；模块之间没有循环依赖。
-- 浏览器里验证：构造一个带 `#app .list a{color:red!important}` 的页面，确认链接能染上色；在几个支持的站点上截图对比。
 
 ### S4 · UI：按需加载、外壳、通知、设置对话框（v2 的 A8、A11；修 B19）
 
@@ -349,17 +257,17 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
     - 取色器的面板默认 teleport 到 `document.body`，全靠泄漏到宿主页面的样式显示；
     - B19。
   - **对话框**：
-    - 打开要经过事件总线和 App.vue 的 props，保存要经过 4 种 emit、4 个 handler、`settings:save` 事件；
+    - 打开要经过事件总线和 App.vue 的 props，保存要经过 4 种 emit、4 个 handler、`settings:save` 事件，再由桥接（ui/legacyDialog.ts）转成 `saveSettings`；
     - 4 个 tab 组件各有一套 `formData`、`savedSettings`、用 `JSON.stringify` 比较的 `hasChanges`、immediate + deep 的 watch 和 `defineExpose`，SettingsDialog 按 `activeTab` 走 4 个分支；
     - "保存设置"只保存当前 tab：在一个 tab 里改了，切到另一个 tab 再点保存，前一个 tab 的修改没存，也没有任何提示；
     - 点到对话框外面就会关掉（`close-on-click-modal`），没保存的修改随 `destroy-on-close` 直接丢掉；
-    - "立即同步"发出 `sync:request` 事件，绕到 script.ts 去执行。
-  - **通知的类型是猜的**：没传类型时，用正则匹配 `失败|错误|error`，其余都当作成功。所以同步页的"请输入 GitHub 令牌"、批量标记的"没有找到新的…链接"都显示成绿色的成功。
+    - "立即同步"发出 `sync:request` 事件，绕到桥接去调 `runSync`。
   - unplugin-auto-import 没有用处：它生成的 auto-imports.d.ts 是空的。
 - 做法：
-  1. 去掉 unplugin-auto-import 和 mitt；删掉 auto-imports.d.ts、eventBus.ts、App.vue 和旧对话框的桥接。Element Plus 的组件照旧由 unplugin-vue-components 的 resolver 按需引入。
+  1. 去掉 unplugin-auto-import 和 mitt；删掉 auto-imports.d.ts、eventBus.ts、App.vue 和旧对话框的桥接（ui/legacyDialog.ts）。Element Plus 的组件照旧由 unplugin-vue-components 的 resolver 按需引入。
   2. **按需加载**（规则见「目标架构」的依赖规则）：
      - main.ts 在"设置"菜单的回调里 `import('@/ui/dialog')`，再调 `openSettings()`。ui/notify.ts 第一次被调用时 `import('./message')`，之后复用同一个 Promise。
+     - ui/notify.ts 不再静态 import Element Plus 之后，test/sync/helpers.ts 里换掉通知样式的那行 `vi.mock` 删掉（sync.ts 的 `runSync` 引入了 ui/notify.ts）。
      - 这两处是边界：加载或执行出错时 `console.error`，不影响染色。
      - ESLint 对 main.ts、core/、shared/、ui/notify.ts 开 `no-restricted-imports`，禁止静态 import vue、element-plus、@element-plus/*、`*.vue` 和 ui/ 里别的模块。这条规则只管静态 import，不管 `import()`。
   3. **ui/root.ts**：第一次打开设置或弹通知时，才创建宿主元素。
@@ -395,7 +303,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
 
 ### S5 · 同步模块（v2 的 A13）
 
-- 现状：sync.ts 共 1132 行，大约一半是校验和诊断代码。
+- 现状：sync.ts 共 1151 行，大约一半是校验和诊断代码。
   - **同样的检查写了两套**：`isXxx` 一套、`describeXxx` 一套（比如 `isV3PathRecordValue` 和 `describeV3PathRecord`），"校验通过"还是用哨兵字符串 `'[prefixLength, suffix, timestamp]'` 来表示的。
   - **"取出 visitedLinks"有 7 个职责重叠的函数。** 自愈规则（剔除同步包字段和不是数字的时间戳）和 storage.ts 过滤键值的规则其实是同一件事，写了两遍。
   - **外层包的 7 个字段全都校验**，其中 4 个（`itemCount`、`updatedAt`、`originalBytes`、`compressedBytes`）解码时根本用不到。
@@ -433,7 +341,7 @@ v2 的目标架构（存储是唯一来源、`activate` 返回 dispose、没有�
   - `typecheck` 脚本里，`tsc -p tsconfig.app.json` 和 `vue-tsc --build` 做的是同一件事，只留后者。
   - tsconfig：`useDefineForClassFields`、`jsx: preserve`、`exactOptionalPropertyTypes: false` 在本项目里不起作用；`noImplicitAny` 已经包含在 `strict` 里了；include 里列了 `*.tsx`，但项目里没有这种文件。
 - **文档**（S6 之后）：
-  - CLAUDE.md（被 .gitignore 忽略，只存在于本地）已经过时：说 build 用的是 tsc，还漏掉了好几个模块。把架构说明写进入库的 AGENTS.md，CLAUDE.md 只留一行 `@AGENTS.md`，免得两份各自过时。
+  - CLAUDE.md（被 .gitignore 忽略，只存在于本地）说 build 用的是 tsc，架构一节也得每一步跟着改。把架构说明写进入库的 AGENTS.md，CLAUDE.md 只留一行 `@AGENTS.md`，免得两份各自过时。
   - README、README_zh：「开发计划」里的「本地写入性能优化」已经由逐条存储解决，删掉；「核心工作流程」按新架构改写。
   - AGENTS.md：D8 定下来之后，更新版本号规则。
 

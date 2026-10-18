@@ -11,14 +11,15 @@ import type {
   SyncData,
   SyncStorageEncoding,
   SyncStorageVersion,
-  SyncSettings,
   V3GroupedPayload,
   V3PathRecord,
   VisitedLinksData,
   VisitedLinksRepairResult,
 } from '@/types'
-import { eventBus } from '@/core/eventBus'
-import { loadLinks, mergeLinks, setLastSyncTime } from '@/core/storage'
+import { log } from '@/core/log'
+import { getSettings, type SyncSettings } from '@/core/settings'
+import { getLastSyncTime, loadLinks, mergeLinks, setLastSyncTime } from '@/core/storage'
+import { notify } from '@/ui/notify'
 import { GM_xmlhttpRequest } from 'vite-plugin-monkey/dist/client'
 
 const GITHUB_ACCEPT_HEADER = 'application/vnd.github.v3+json'
@@ -1068,7 +1069,7 @@ function pickUnexpiredLinks(links: VisitedLinksData, cutoff: number): VisitedLin
   return unexpiredLinks
 }
 
-// 加载页面时自动同步的最短间隔，距上次同步成功不到这么久就跳过（script.ts 判断），设置页的"立即同步"不受限制。
+// 加载页面时自动同步的最短间隔，距上次同步成功不到这么久就跳过，设置页的"立即同步"不受限制。
 // 每次同步都要下载、合并整份数据，有新记录时还要整份上传，不能每加载一个页面就来一次。
 // lastSyncTime 由所有标签页共用，所以这是整个浏览器合起来的频率
 export const AUTO_SYNC_INTERVAL = 1000 * 60 * 10
@@ -1089,12 +1090,12 @@ export async function syncWithCloud(syncSettings: SyncSettings, expirationTime: 
       throw new Error('Gist ID 未设置，请先创建 Gist 并在设置中填入 ID')
     }
 
-    console.log('开始同步数据...')
+    log.debug('开始同步数据...')
 
     // 1. 从云端获取数据（这个过程可能较慢）
     const cloud = await getGist(githubToken, gistId)
     if (cloud.needsInitialization) {
-      console.log(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`)
+      log.debug(`云端内容不是同步数据（${cloud.emptyReason}），本次同步会将其初始化为同步格式`)
     }
 
     // 2. 过期的记录两个方向都不同步，两边按同一个截止时间判断。否则云端的过期记录会被合并进本地，
@@ -1112,16 +1113,13 @@ export async function syncWithCloud(syncSettings: SyncSettings, expirationTime: 
     // 云端只是有记录到期，不会为此单独上传，它们会在下次上传时一并去掉
     if (cloud.needsInitialization || hasDataChanged(cloudLinks, mergedLinks)) {
       await updateGist(githubToken, gistId, cloud.fileName, mergedLinks)
-      console.log(cloud.needsInitialization ? '已初始化云端同步数据' : '数据已同步并上传到云端')
+      log.debug(cloud.needsInitialization ? '已初始化云端同步数据' : '数据已同步并上传到云端')
     } else {
-      console.log('数据已同步，无需上传')
+      log.debug('数据已同步，无需上传')
     }
 
     // 5. 记下这次同步成功的时间
     setLastSyncTime(Date.now())
-
-    // 6. 发送同步完成事件
-    eventBus.emit('sync:completed')
 
     return { initialized: cloud.needsInitialization }
   } catch (error: unknown) {
@@ -1129,4 +1127,25 @@ export async function syncWithCloud(syncSettings: SyncSettings, expirationTime: 
     console.warn('同步失败，使用本地数据:', syncError.message)
     throw error // 重新抛出错误，让调用者处理
   }
+}
+
+// 按当前设置同步一次，结果用通知告诉用户，自动同步和设置页的"立即同步"共用，不会抛错。
+// manual 表示是"立即同步"：用户在等结果，成功了也提示
+export async function runSync({ manual }: { manual: boolean }): Promise<void> {
+  try {
+    const { sync, general } = getSettings()
+    const { initialized } = await syncWithCloud(sync, general.expirationTime)
+    if (initialized) notify('已初始化云端同步数据', 'success')
+    else if (manual) notify('同步完成', 'success')
+  } catch (error) {
+    const message = getErrorMessage(error)
+    console.warn('同步失败:', message)
+    notify(`同步失败: ${message}`, 'error')
+  }
+}
+
+// 加载页面时，启用了同步就在后台同步一次。距上次同步成功不到 AUTO_SYNC_INTERVAL 就跳过；
+// 失败不会更新 lastSyncTime，下次加载页面会再试
+export function autoSync(): void {
+  if (getSettings().sync.enabled && Date.now() - getLastSyncTime() >= AUTO_SYNC_INTERVAL) runSync({ manual: false })
 }

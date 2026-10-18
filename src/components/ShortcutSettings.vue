@@ -29,28 +29,26 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
-import { DEFAULT_SETTINGS } from '@/core/config'
-import { toShortcut } from '@/core/shortcut'
-import type { BatchKeySettings } from '@/types'
+import { DEFAULT_SHORTCUT, formatShortcut, toShortcut, type Shortcut } from '@/core/shortcut'
 
 interface Props {
-  currentSettings: BatchKeySettings
+  currentSettings: Shortcut
   isMac: boolean
   visible: boolean
   isActive: boolean
 }
 
 interface Emits {
-  (e: 'save', settings: BatchKeySettings): void
+  (e: 'save', settings: Shortcut): void
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const formData = ref<BatchKeySettings>({ ...props.currentSettings })
+const formData = ref<Shortcut>({ ...props.currentSettings })
 // 保存的状态 - 用于比较是否有变更
-const savedSettings = ref<BatchKeySettings>({ ...props.currentSettings })
-const newSettings = ref<BatchKeySettings>({ ...props.currentSettings })
+const savedSettings = ref<Shortcut>({ ...props.currentSettings })
+const newSettings = ref<Shortcut>({ ...props.currentSettings })
 const hasNewKeyPress = ref(false)
 const isResetMode = ref(false) // 标识是否处于重置模式
 
@@ -63,32 +61,7 @@ const hintText = computed(() => {
   return '请按下您想要使用的快捷键组合...'
 })
 
-const currentShortcutDisplay = computed(() => {
-  const settings = hasNewKeyPress.value ? newSettings.value : formData.value
-  const shortcutText: string[] = []
-
-  if (settings.metaKey) shortcutText.push(props.isMac ? '⌘ Command' : 'Win')
-  if (settings.ctrlKey) shortcutText.push(props.isMac ? '⌃ Control' : 'Ctrl')
-  if (settings.altKey) shortcutText.push(props.isMac ? '⌥ Option' : 'Alt')
-  if (settings.shiftKey) shortcutText.push(props.isMac ? '⇧ Shift' : 'Shift')
-
-  // 键位名去掉 Key、Digit 前缀即可显示（KeyV → V），少数键换成符号
-  if (settings.code) {
-    const keyMap: Record<string, string> = {
-      ArrowUp: '↑',
-      ArrowDown: '↓',
-      ArrowLeft: '←',
-      ArrowRight: '→',
-      Enter: '⏎',
-      Backspace: '⌫',
-      Delete: '⌦',
-      Escape: 'Esc',
-    }
-    shortcutText.push(keyMap[settings.code] || settings.code.replace(/^(Key|Digit)/, ''))
-  }
-
-  return shortcutText.length > 0 ? shortcutText.join(' + ') : '未设置'
-})
+const currentShortcutDisplay = computed(() => formatShortcut(hasNewKeyPress.value ? newSettings.value : formData.value, props.isMac))
 
 const handleKeyDown = (e: KeyboardEvent) => {
   // 忽略单独的修饰键按下
@@ -127,7 +100,7 @@ const handleSave = () => {
 
 const handleReset = () => {
   // 仅重置界面显示为默认值，不立即生效
-  newSettings.value = { ...DEFAULT_SETTINGS.batchKey }
+  newSettings.value = { ...DEFAULT_SHORTCUT }
   hasNewKeyPress.value = true // 标记为有新的按键设置，需要保存
   isResetMode.value = true // 标记为重置模式
 }

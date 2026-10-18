@@ -55,9 +55,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { DEFAULT_SETTINGS } from '@/core/config'
-import { changedFields } from '@/core/utils'
-import type { GeneralSettings } from '@/types'
+import { changedFields, createDefaultSettings, type GeneralSettings } from '@/core/settings'
 
 interface Props {
   currentSettings: GeneralSettings
@@ -105,14 +103,14 @@ const expirationDays = computed({
 })
 
 const handleSave = () => {
-  emit('save', changedFields(formData.value, savedSettings.value))
+  emit('save', changedFields(savedSettings.value, formData.value))
   // 更新已保存状态
   savedSettings.value = { ...formData.value }
 }
 
 // 重置为默认值，但仅更新界面，真正保存需用户点击「保存设置」
 const handleReset = () => {
-  formData.value = { ...DEFAULT_SETTINGS.general }
+  formData.value = createDefaultSettings().general
 }
 
 // 监听 props.currentSettings 变化，同步更新 formData 和 savedSettings
