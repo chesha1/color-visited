@@ -25,10 +25,5 @@ declare module 'vue' {
     ElSwitch: typeof import('element-plus/es')['ElSwitch']
     ElTabPane: typeof import('element-plus/es')['ElTabPane']
     ElTabs: typeof import('element-plus/es')['ElTabs']
-    GeneralSettings: typeof import('./components/GeneralSettings.vue')['default']
-    PresetSettings: typeof import('./components/PresetSettings.vue')['default']
-    SettingsDialog: typeof import('./components/SettingsDialog.vue')['default']
-    ShortcutSettings: typeof import('./components/ShortcutSettings.vue')['default']
-    SyncSettings: typeof import('./components/SyncSettings.vue')['default']
   }
 }

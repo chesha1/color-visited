@@ -2,7 +2,7 @@
 // @vitest-environment-options {"url": "https://www.v2ex.com/"}
 // 按快捷键批量标记，以及撤销
 import { beforeAll, expect, it, vi } from 'vitest'
-import { isMarked, notices, start } from './helpers'
+import { inputInUi, isMarked, notices, start } from './helpers'
 import { addLink, addSvgLink, click, press } from './dom'
 import { store } from '../fakes/gm'
 import { DAY, NOW, YEAR } from '../time'
@@ -44,6 +44,13 @@ beforeAll(() => {
 // 焦点在输入框里时，快捷键可能是输入框自己的操作，比如 Ctrl+Shift+V 是浏览器的"粘贴为纯文本"
 it('焦点在输入框里时不触发', () => {
   press(SHORTCUT, input)
+  expect(store.has(NEW_1)).toBe(false)
+  expect(notices).toEqual([])
+})
+
+// 设置对话框里的输入框在 closed shadow root 里，document 上的监听器拿到的目标是宿主元素，看不到输入框本身
+it('焦点在脚本界面里的输入框上时不触发', () => {
+  press(SHORTCUT, inputInUi())
   expect(store.has(NEW_1)).toBe(false)
   expect(notices).toEqual([])
 })

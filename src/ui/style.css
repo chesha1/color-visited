@@ -1,0 +1,11 @@
+/* 设置界面和通知自己的样式，root.ts 创建 shadow root 时最先写入。只扫描 ui/ 下的文件来生成工具类 */
+@import "tailwindcss" source(".");
+
+/* 宿主页面上能继承的样式（字体、颜色、行高这些）不传进界面 */
+:host {
+  all: initial;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #303133;
+}

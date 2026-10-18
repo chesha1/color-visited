@@ -1,6 +1,4 @@
-import { h } from 'vue'
-import { ElButton, ElMessage } from 'element-plus'
-import 'element-plus/es/components/message/style/css'
+// 启动时就在的一层壳，core 只通过这里用到界面。通知用 Element Plus 显示（message.ts），到第一次通知时才执行它
 
 export type NotifyType = 'success' | 'warning' | 'info' | 'error'
 
@@ -10,35 +8,9 @@ export interface NotifyAction {
   onClick: () => void
 }
 
-// 显示通知。带操作按钮时多显示几秒，留出点按钮的时间（鼠标停在通知上时不会消失），点了按钮就关掉通知
+// 模块只初始化一次，之后每次 import() 拿到的都是同一个。加载或显示出错只报告，不影响染色
 export function notify(message: string, type: NotifyType, action?: NotifyAction): void {
-  // 挂进设置界面的 Shadow DOM 里，还没有时退回 document.body
-  const container = document.querySelector('#color-visited-root')
-  const appendTo = (container?.shadowRoot ?? document.body) as HTMLElement
-
-  const notification = ElMessage({
-    // message 传函数时，返回的内容渲染在通知的文字区域里
-    // 文字和按钮作为 flex 子项一起垂直居中。按钮放在文字行里的话，它按西文的 x-height 对齐，中文会比按钮高出 1–2px
-    message: action
-      ? () => h('span', { style: { display: 'flex', alignItems: 'center', gap: '12px' } }, [
-          message,
-          h(ElButton, {
-            link: true,
-            // 和通知文字同色，靠字重区分。ElButton 没有 error，对应的是 danger
-            type: type === 'error' ? 'danger' : type,
-            // 只响应第一次点击：通知淡出的过程中按钮还点得到
-            onClickOnce: () => {
-              notification.close()
-              action.onClick()
-            },
-          }, () => action.text),
-        ])
-      : message,
-    type,
-    duration: action ? 5000 : 2000,
-    showClose: true,
-    grouping: true,
-    offset: 20,
-    appendTo,
-  })
+  import('@/ui/message')
+    .then(({ showMessage }) => showMessage(message, type, action))
+    .catch((error) => console.error('[color-visited] 显示通知失败', error))
 }

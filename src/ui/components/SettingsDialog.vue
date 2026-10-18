@@ -84,10 +84,10 @@
 import { ref, computed } from 'vue'
 import type { GeneralSettings, SyncSettings } from '@/core/settings'
 import type { Shortcut } from '@/core/shortcut'
-import GeneralSettingsComponent from '@/components/GeneralSettings.vue'
-import PresetSettingsComponent from '@/components/PresetSettings.vue'
-import ShortcutSettingsComponent from '@/components/ShortcutSettings.vue'
-import SyncSettingsComponent from '@/components/SyncSettings.vue'
+import GeneralSettingsComponent from '@/ui/components/GeneralSettings.vue'
+import PresetSettingsComponent from '@/ui/components/PresetSettings.vue'
+import ShortcutSettingsComponent from '@/ui/components/ShortcutSettings.vue'
+import SyncSettingsComponent from '@/ui/components/SyncSettings.vue'
 
 interface Props {
   modelValue: boolean

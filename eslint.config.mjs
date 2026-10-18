@@ -9,7 +9,7 @@ import vueParser from 'vue-eslint-parser'
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
-    ignores: ['dist/', 'src/auto-imports.d.ts', 'src/components.d.ts', 'src/vite-env.d.ts'],
+    ignores: ['dist/', 'src/components.d.ts', 'src/vite-env.d.ts'],
   },
   {
     files: ['src/**/*.js', 'src/**/*.ts', 'test/**/*.ts', '*.config.{ts,mjs}'],
@@ -29,6 +29,19 @@ export default [
       'no-undef': 'off',
       'no-useless-escape': 'off',
       'no-unused-vars': 'off',
+    },
+  },
+  {
+    // 每次加载页面都执行的模块。界面（Vue、Element Plus 和 ui/ 里的其他模块）到第一次用到时才执行，
+    // 只从两个 import() 进来：main.ts 的设置菜单、ui/notify.ts。这条规则只管静态 import
+    files: ['src/main.ts', 'src/core/**/*.ts', 'src/shared/**/*.ts', 'src/ui/notify.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['vue', 'element-plus', '@element-plus/*', '*.vue', '@/ui/*', '!@/ui/notify'],
+          message: '每次加载页面都执行的模块不能静态 import 界面的代码，要用 import()（见 main.ts、ui/notify.ts）',
+        }],
+      }],
     },
   },
   {

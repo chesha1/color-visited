@@ -1,4 +1,4 @@
-// 旧的设置对话框（App.vue、components/）和它的桥接（ui/legacyDialog.ts）之间的事件
+// 旧的设置对话框（ui/App.vue、ui/components/）和它的桥接（ui/dialog.ts）之间的事件
 import mitt, { type Emitter } from 'mitt'
 import type { GeneralSettings, SyncSettings } from '@/core/settings'
 import type { Shortcut } from '@/core/shortcut'

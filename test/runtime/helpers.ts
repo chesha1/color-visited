@@ -1,4 +1,4 @@
-// 运行时测试碰实现的唯一一层：启动、本标签页保存设置、弹过的通知、链接有没有标记、标记用的颜色。
+// 运行时测试碰实现的唯一一层：启动、本标签页保存设置、弹过的通知、脚本界面里的输入框、链接有没有标记、标记用的颜色。
 // 场景文件只经过这里碰实现：运行时的实现换了，主要改这个文件，场景不动。
 // 准备记录、模拟其他标签页、检查存储，直接用 ../fakes/gm；页面和用户的操作见 ./dom。
 // vi.mock 只对之后才加载的模块生效：场景文件要先引入这个文件，再引入别的会加载 src 模块的文件
@@ -6,6 +6,7 @@
 import { vi } from 'vitest'
 import { startPage } from '@/core/page'
 import { saveSettings as save, type SettingsPatch } from '@/core/settings'
+import { createMountPoint } from '@/ui/root'
 
 export interface Notice {
   message: string
@@ -35,6 +36,11 @@ export function start(): void {
 // 在本标签页保存设置，和在设置对话框里点保存一样：只交出改过的字段，快捷键改了就整个交出
 export function saveSettings(patch: SettingsPatch): void {
   save(patch)
+}
+
+// 脚本界面里的一个输入框，比如设置对话框里的。界面在 closed shadow root 里，页面上的监听器只看得到它的宿主元素
+export function inputInUi(): HTMLInputElement {
+  return createMountPoint().appendChild(document.createElement('input'))
 }
 
 export function isMarked(link: Element): boolean {

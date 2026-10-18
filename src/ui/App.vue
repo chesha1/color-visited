@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import SettingsDialog from '@/components/SettingsDialog.vue'
+import SettingsDialog from '@/ui/components/SettingsDialog.vue'
 import { eventBus } from '@/core/eventBus'
 import type { SettingsDialogPayload } from '@/core/eventBus'
 import type { GeneralSettings, SyncSettings } from '@/core/settings'

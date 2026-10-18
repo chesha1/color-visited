@@ -50,11 +50,16 @@ export function formatShortcut(shortcut: Shortcut, mac = isMac): string {
   return parts.length > 0 ? parts.join(' + ') : '未设置'
 }
 
+// 设置界面和通知的宿主元素的标签名（见 ui/root.ts）
+export const UI_TAG = 'color-visited-ui'
+
 // 用户正在输入时不响应快捷键，否则会抢掉输入框里的同名操作（比如默认的 Ctrl+Shift+V 是浏览器的“粘贴为纯文本”）
 export function isTyping(event: KeyboardEvent): boolean {
   if (event.isComposing) return true
-  // 监听器挂在 document 上，shadow DOM 里的输入框会被重定向成宿主元素，所以要从 composedPath 取实际的目标
+  // 监听器挂在 document 上，shadow DOM 里的输入框会被重定向成宿主元素，所以要从 composedPath 取实际的目标。
+  // 脚本的界面在 closed shadow root 里，从里面来的按键，composedPath 也只到宿主元素，一律当作在输入。
+  // 取色面板在 document.body 里，不经过宿主元素，按输入框判断
   const target = event.composedPath()[0]
   return target instanceof HTMLElement
-    && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+    && (target.localName === UI_TAG || target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
 }

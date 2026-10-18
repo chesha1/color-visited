@@ -1,15 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
-import { vi } from 'vitest'
 import type { VisitedLinks } from '@/core/storage'
 import { syncWithCloud } from '@/core/sync'
 import * as codec from '@/core/sync/codec'
 import { GIST_ID, TOKEN } from '../fakes/github'
 import { YEAR } from '../time'
-
-// 同步模块的 runSync 要弹通知：ui/notify.ts 引入了 Element Plus 通知组件的样式，那是 .css 文件，Node 加载不了，换成空模块。
-// vi.mock 只对之后才加载的模块生效：测试文件要先引入这个文件，再引入 @/core/sync
-vi.mock('element-plus/es/components/message/style/css', () => ({}))
 
 export function encode(links: VisitedLinks): Promise<string> {
   return codec.encode(links)

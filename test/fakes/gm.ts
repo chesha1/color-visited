@@ -71,8 +71,13 @@ export const GM_removeValueChangeListener: GmRemoveValueChangeListenerType = (id
   listeners.delete(id)
 }
 
-// 启动时注册的"设置"菜单。测试不点菜单，不用记下来
-export const GM_registerMenuCommand: GmRegisterMenuCommandType = () => 0
+// 注册了的菜单项：标题 → 点它时的回调。真实的管理器回调时会传入点菜单的事件，脚本用不到，这里不传
+export const menuCommands = new Map<string, () => void>()
+
+export const GM_registerMenuCommand: GmRegisterMenuCommandType = (caption, onClick) => {
+  menuCommands.set(caption, onClick as () => void)
+  return caption
+}
 
 export interface FakeResponse {
   status: number
@@ -123,6 +128,7 @@ export function removeBatchApi(): void {
 export function resetGM(): void {
   store.clear()
   listeners.clear()
+  menuCommands.clear()
   GM_setValues = setValues
   GM_deleteValues = deleteValues
   server = noServer
