@@ -22,6 +22,13 @@ export function toShortcut({ ctrlKey, shiftKey, altKey, metaKey, code }: Keyboar
   return { ctrlKey, shiftKey, altKey, metaKey, code }
 }
 
+// 录快捷键时跳过这些键：单独按下的修饰键要等组合里的其他键，Tab、CapsLock 这类不适合当快捷键，code 为空表示浏览器认不出是哪个键
+const SKIPPED_CODES = /^((Control|Shift|Alt|Meta)(Left|Right)|Tab|CapsLock|NumLock|ScrollLock|Insert|PrintScreen|Pause)?$/
+
+export function isRecordable(event: KeyboardEvent): boolean {
+  return !SKIPPED_CODES.test(event.code)
+}
+
 // 匹配和录入共用 toShortcut：按下的键录下来和设置相同，就算匹配
 export function matchesShortcut(event: KeyboardEvent, shortcut: Shortcut): boolean {
   const pressed = toShortcut(event)

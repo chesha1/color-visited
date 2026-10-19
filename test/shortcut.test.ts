@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { matchesShortcut, toShortcut, type Shortcut } from '@/core/shortcut'
+import { isRecordable, matchesShortcut, toShortcut, type Shortcut } from '@/core/shortcut'
 
 // 按下的键。key 不参与匹配，写上是为了说明这时候 key 是什么
 function press(fields: Partial<KeyboardEvent>): KeyboardEvent {
@@ -47,5 +47,29 @@ describe('toShortcut：录快捷键时只记修饰键和键位', () => {
   it('录下来的快捷键，再按一次同样的键就能匹配上', () => {
     const event = press({ altKey: true, metaKey: true, code: 'Semicolon', key: '…' })
     expect(matchesShortcut(event, toShortcut(event))).toBe(true)
+  })
+})
+
+describe('isRecordable：录快捷键时哪些键录下来', () => {
+  it.each([
+    ['按住 Ctrl 时 Ctrl 自己的 keydown', press({ ctrlKey: true, code: 'ControlLeft', key: 'Control' })],
+    ['右边的 Shift', press({ shiftKey: true, code: 'ShiftRight', key: 'Shift' })],
+    ['Alt', press({ altKey: true, code: 'AltLeft', key: 'Alt' })],
+    ['Command', press({ metaKey: true, code: 'MetaRight', key: 'Meta' })],
+    ['Tab', press({ code: 'Tab', key: 'Tab' })],
+    ['CapsLock', press({ code: 'CapsLock', key: 'CapsLock' })],
+    ['浏览器认不出是哪个键', press({ code: '', key: 'Unidentified' })],
+  ])('%s：跳过', (_, event) => {
+    expect(isRecordable(event)).toBe(false)
+  })
+
+  it.each([
+    ['Ctrl+Shift+V', press({ ctrlKey: true, shiftKey: true, code: 'KeyV', key: 'V' })],
+    ['单独的字母', press({ code: 'KeyB', key: 'b' })],
+    ['Esc', press({ code: 'Escape', key: 'Escape' })],
+    ['功能键', press({ code: 'F2', key: 'F2' })],
+    ['Shift+空格', press({ shiftKey: true, code: 'Space', key: ' ' })],
+  ])('%s：录', (_, event) => {
+    expect(isRecordable(event)).toBe(true)
   })
 })

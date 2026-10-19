@@ -123,7 +123,7 @@ export function onSettingsChange(listener: () => void): () => void {
 }
 
 // draft 里和 base 不一样的字段
-export function changedFields<T extends object>(base: T, draft: T): Partial<T> {
+function changedFields<T extends object>(base: T, draft: T): Partial<T> {
   const changes: Partial<T> = {}
   for (const key in draft) {
     if (draft[key] !== base[key]) changes[key] = draft[key]

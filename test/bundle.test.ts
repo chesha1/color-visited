@@ -1,19 +1,13 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url": "https://www.v2ex.com/"}
 // 构建出来的脚本：只有一个文件；加载页面时只执行内核，界面（Vue、Element Plus）到第一次通知、第一次打开设置时才执行；
-// 界面的样式都写在它的 closed shadow root 里，宿主页面上只多一段染色样式，打开过设置之后再多一份给取色面板的样式。
-// 先构建，再在 jsdom 里执行产物，GM API 换成内存版。样式在页面上的效果、对话框的外观，要在浏览器里看
-import { execFile } from 'node:child_process'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import path from 'node:path'
-import { promisify } from 'node:util'
+// 界面的样式都写在它的 closed shadow root 里，宿主页面上只多一段染色样式，设置对话框开着时再多一份给取色面板的样式。
+// 先构建，再在 jsdom 里执行产物（见 ./build），GM API 换成内存版。样式在页面上的效果、对话框的外观，要在浏览器里看
 import { beforeAll, expect, it, vi } from 'vitest'
+import { buildScript, pageStyles, runScript, shadowRoots } from './build'
 import * as gm from './fakes/gm'
 import { addLink } from './runtime/dom'
 import { DAY } from './time'
-
-const ROOT = path.resolve(import.meta.dirname, '..')
 
 const VISITED = 'https://www.v2ex.com/t/1'
 const NEW = 'https://www.v2ex.com/t/2'
@@ -22,27 +16,6 @@ const SHORTCUT = { ctrlKey: true, shiftKey: true, altKey: false, metaKey: false,
 let script = ''
 const visited = addLink(VISITED)
 const unvisited = addLink(NEW)
-// 脚本建的 shadow root。closed 的从外面拿不到，所以执行产物之前换掉 attachShadow，记下它返回的
-const shadowRoots: ShadowRoot[] = []
-
-// 和发版时一样，另起一个进程用命令行构建。不能在测试的进程里构建：这里的 Node 带着 development 条件解析依赖，
-// Vue 的模板编译器是开发版，产物会多出模板里的注释。Vitest 设的 NODE_ENV 等环境变量也不传过去
-async function buildScript(): Promise<string> {
-  const outDir = await mkdtemp(path.join(tmpdir(), 'color-visited-'))
-  const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !/^(NODE_ENV|TEST|VITEST.*)$/.test(name)))
-  try {
-    const vite = path.join(ROOT, 'node_modules/vite/bin/vite.js')
-    await promisify(execFile)(process.execPath, [vite, 'build', '--outDir', outDir, '--logLevel', 'error'], { cwd: ROOT, env })
-    return await readFile(path.join(outDir, 'color-visited.user.js'), 'utf8')
-  } finally {
-    await rm(outDir, { recursive: true, force: true })
-  }
-}
-
-// 页面上的 <style>，不含 shadow root 里的
-function pageStyles(): HTMLStyleElement[] {
-  return [...document.querySelectorAll('style')]
-}
 
 function cssIn(root: ShadowRoot): string[] {
   return [...root.querySelectorAll('style')].map((style) => style.textContent)
@@ -50,20 +23,9 @@ function cssIn(root: ShadowRoot): string[] {
 
 beforeAll(async () => {
   script = await buildScript()
-
   gm.store.set('userSettings', { batch: SHORTCUT })
   gm.store.set(VISITED, Date.now() - DAY)
-  const { attachShadow } = Element.prototype
-  Element.prototype.attachShadow = function (init: ShadowRootInit) {
-    const root = attachShadow.call(this, init)
-    shadowRoots.push(root)
-    return root
-  }
-  for (const [name, value] of Object.entries(gm)) {
-    if (name.startsWith('GM_')) Object.assign(globalThis, { [name]: value })
-  }
-  // 间接调用 eval：在全局作用域里执行，和管理器把脚本注入页面一样
-  ;(0, eval)(script)
+  runScript(script)
 }, 60_000)
 
 it('只有一个文件：不 @require 别的脚本，不是 SystemJS 格式，样式不从 unpkg 加载，也不用 GM_addStyle 写进页面', () => {

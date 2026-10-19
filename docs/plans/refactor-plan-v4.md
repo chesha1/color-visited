@@ -5,7 +5,7 @@
 
 ## 怎么用这份文档
 
-- 新会话可以直接说：「读 `docs/plans/refactor-plan-v4.md`，做 S10」。
+- 新会话可以直接说：「读 `docs/plans/refactor-plan-v4.md`，做 S11」。
 - 编号：
   - **S** = 实施步骤，按「进度」里的顺序做；**B** = bug；**D** = 要你拍板的决策；**Q** = 先实测、再决定做不做的调查。
   - 都接着以前的往下排，删掉的编号不复用：v3 的 S4–S7 作废，由 S8–S12 取代（对应关系见「进度」）；D8、Q1 沿用。
@@ -15,15 +15,14 @@
   - 只能在真实浏览器里验证的项列在对话里，能自动化的写成测试。
 - D 项由你决定，动手前先问。
 - 取舍原则：简单、干净优先；只为用户感觉得到的问题专门优化。
-- 测试：`pnpm test`。纯逻辑在 Node 里跑；运行时的 DOM 行为在 jsdom 里跑（test/runtime/，只经过其中的 helpers.ts 碰实现）；样式层叠、对话框外观、真实的管理器只能在浏览器里验证。已知的 bug 先按期望的行为写成 `it.fails`，修的那一步改回 `it`。
+- 测试：`pnpm test`。纯逻辑在 Node 里跑；运行时的 DOM 行为在 jsdom 里跑（test/runtime/，只经过其中的 helpers.ts 碰实现）；设置对话框的 .vue 只有构建时才编译，它的交互在 jsdom 里执行构建出来的脚本来测（test/dialog.test.ts）；样式层叠、对话框外观、真实的管理器只能在浏览器里验证。已知的 bug 先按期望的行为写成 `it.fails`，修的那一步改回 `it`。
 - 仓库约定（pnpm、版本号、提交信息格式）见 [AGENTS.md](../../AGENTS.md)。
 
 ## 进度
 
 | 步骤 | 内容 | 来自 v3 | 依赖 | 状态 |
 |---|---|---|---|---|
-| S10 | 设置对话框：一份 draft、一个保存（修 B24） | S4 后半 | — | 未开始 |
-| S11 | 和宿主页面的 JS 环境隔开 | S6 | S10 | 未开始 |
+| S11 | 和宿主页面的 JS 环境隔开 | S6 | — | 未开始 |
 | S12 | 收尾：lint 规则、配置、文档 | S7 | S11（配置清理和 D8 随时可做） | 未开始 |
 
 - Q1 不在实施顺序里，随时可做。
@@ -53,21 +52,13 @@
 
 ### 现在的代码离这些原则还差什么
 
-内核（S1–S3 之后）已经是这个形状：storage.ts 是唯一碰 GM 存储的模块；设置只有 `saveSettings` 一条写入路径、`onSettingsChange` 一个通知；`activate` 返回 dispose；标记只跟着 `onLinksChange` 走；站点表和归一化在一个纯数据文件里。它的结构不用再动，只有一处跟着 S10 顺手改：`changedFields` 不再导出。同步（core/sync/）也已经按格式、网络、流程分开，请求都走 `GM_xmlhttpRequest`。界面的外壳（ui/notify.ts、ui/root.ts、ui/message.ts）也已经是目标的样子：产物是一个文件，界面到第一次用到时才执行，样式只写进 closed shadow root。
+内核（S1–S3 之后）已经是这个形状：storage.ts 是唯一碰 GM 存储的模块；设置只有 `saveSettings` 一条写入路径、`onSettingsChange` 一个通知；`activate` 返回 dispose；标记只跟着 `onLinksChange` 走；站点表和归一化在一个纯数据文件里。它的结构不用再动。同步（core/sync/）也已经按格式、网络、流程分开，请求都走 `GM_xmlhttpRequest`。界面（ui/）也已经是目标的样子：产物是一个文件，界面到第一次用到时才执行，样式只写进 closed shadow root；设置对话框的所有 tab 编辑一份 draft，只有一个保存。
 
 剩下的问题都在内核外面：
 
 | 地方 | 问题 | 违反了哪条 | 步骤 |
 |---|---|---|---|
-| 设置对话框 | 4 个 tab 各有一套表单状态，保存经过 emit、事件总线、桥接才到 `saveSettings`；会悄悄丢掉没保存的修改（B24） | 一条写入路径 | S10 |
 | 注入环境 | 脚本和页面共享全局对象和原型 | 只共享 DOM | S11 |
-
-### 和 v3 的不同
-
-v3 的目标架构保留。改掉的是几处被以前的写法带偏、或者没核实过的地方（已经做完的几条见 S9 的提交信息）：
-
-1. **对话框的状态只靠已经测过的函数。** 有没有改动就看 `diffSettings(快照, draft)` 是不是空的；tab 用设置的分组名命名，"重置为默认"对每个 tab 都是同一行；换算这类纯逻辑放进 .ts，在 Node 里测（S10）。
-2. **新发现的 bug**：B24 把 v3 写在 S4"现状"里的两个对话框问题单列出来。
 
 ## 目标架构
 
@@ -87,7 +78,8 @@ v3 的目标架构保留。改掉的是几处被以前的写法带偏、或者�
 | `ui/notify.ts` | 启动时就在的一层壳：`notify()` 被调用时才 `import()` message.ts |
 | `ui/message.ts` | 用 Element Plus 的 `ElMessage` 显示通知 |
 | `ui/root.ts` | 第一次用到时才创建宿主元素和 closed shadow root，把样式写进去；`createMountPoint()` 给对话框、通知各一个挂载点，`addPanelStyle()` 把取色面板要的样式写进 `<head>` |
-| `ui/dialog.ts`、`ui/*.vue` | `openSettings()`：每次打开都新建一个 Vue 应用，关掉就卸载 |
+| `ui/dialog.ts`、`ui/*.vue` | `openSettings()`：每次打开都新建一个 Vue 应用，关掉就卸载。每个 tab 一个组件，用 `v-model` 编辑 draft 里自己的那个分组 |
+| `ui/draft.ts` | 对话框的纯逻辑：`toDraft`、"重置为默认"、过期时间按天编辑时的换算 |
 
 依赖规则：
 
@@ -103,6 +95,7 @@ v3 的目标架构保留。改掉的是几处被以前的写法带偏、或者�
   - 扫描时不看链接原来有没有标记，一律按当前的 href 重新判断：翻页、"换一批"、虚拟滚动这类列表会复用 `<a>`、只换 href；移出 DOM 之后再改的 href，observer 收不到，只能在插回来时判断；克隆出来的链接也带着原来的标记。
   - 结果没变时不写 DOM：用 `toggleAttribute(name, force)`，状态没变就不产生变化记录；`setAttribute` 即使值没变，页面上的 MutationObserver 也会收到一次。
 - **激活一次，释放一次。** `activate` 里的监听器共用一个 AbortController；observer、订阅、样式、标记都在它返回的 dispose 里释放。
+- **对话框只有一份 draft、一个保存。** 打开时取 `getSettings()` 作快照，`toDraft` 出一份副本给各个 tab 编辑；有没有改动看 `diffSettings(快照, draft)` 是不是空的，保存就是把这份差别交给 `saveSettings`，之后快照、副本都换成存储里的最新值。只有关闭按钮会关，没保存的修改跟着丢掉。
 - **界面单文件、按需执行。** 没打开过设置、也没弹过通知的页面上，没有宿主元素，Vue 和 Element Plus 的代码不执行，宿主页面上只多一段染色样式；只有设置对话框开着时，`<head>` 里多一份给取色面板用的 Element Plus 样式（见「构建与发布」）。
 
 写法：
@@ -211,37 +204,7 @@ v3 的目标架构保留。改掉的是几处被以前的写法带偏、或者�
 - 逐条存储的开销（按 VM 页面侧的源码建模，用 9.7 万条在 Node 里实测；TM 闭源，常数可能不同）：点击一次只写一个键，页面主线程的开销约为 0；每次注入页面约 53 ms（没在真实的管理器里量过，见 Q1）；后台每次持久化约 25 ms，不在页面主线程上。
 - 由此得出两点：初始化页面时不要全量读存储；扩大注入范围是有代价的。
 
-## Bug
-
-- [ ] **B24 · 设置对话框会悄悄丢掉没保存的修改**（S10 修）
-  - "保存设置"只保存当前 tab，按钮能不能点也只看当前 tab：在一个 tab 里改了，切到另一个 tab 再点保存，前一个 tab 的修改没存，也没有任何提示，关掉对话框就没了。
-  - 点到对话框外面就会关掉（`close-on-click-modal`），没保存的修改随 `destroy-on-close` 一起丢掉。
-
 ## 步骤
-
-### S10 · 设置对话框（v3 的 S4 后半；修 B24）
-
-- 现状：
-  - 打开要经过事件总线和 App.vue 的 props；保存要经过 4 种 emit、4 个 handler、`settings:save` 事件，再由桥接（ui/dialog.ts）转成 `saveSettings`；"立即同步"发出 `sync:request` 事件，绕到桥接去调 `runSync`。
-  - 4 个 tab 组件各有一套 `formData`、`savedSettings`、用 `JSON.stringify` 比较的 `hasChanges`、immediate + deep 的 watch 和 `defineExpose`，SettingsDialog 按 `activeTab` 走 4 个分支。
-  - B24。ShortcutSettings.vue 还会无条件打 4 种 `console.log`。
-- 做法：
-  - **打开和关闭**：`openSettings()`（ui/dialog.ts）在对话框已经开着时什么都不做；否则在 root.ts 的 `createMountPoint()` 给的挂载点上新建一个 Vue 应用，用 `el-dialog`，同时 `addPanelStyle()`；关闭动画结束（`closed`）后 unmount，删掉挂载点和给取色面板的那份样式。每次打开都是新的，所以不再需要 App.vue、`destroy-on-close`、重置 `activeTab`，也不用 watch props。
-    - 只有关闭按钮会关，丢弃没保存的修改。`close-on-click-modal`、`close-on-press-escape` 都是 false，录快捷键时要能录到 Esc。
-  - **状态**：打开时 `saved = getSettings()`，`draft = toDraft(saved)`（`preset` 按站点表给每个站点补上 `isSiteEnabled` 的值）。`changes = diffSettings(saved, draft)`，不为空就是有改动。整个对话框只有一个"保存"：`saveSettings(changes)`，之后 `saved = getSettings()`、`draft = toDraft(saved)`，对话框不关，显示存储里的最新值。
-    - tab 的 name 用设置的分组名（`general`、`preset`、`batch`、`sync`）。"重置为默认"只重置当前 tab，对每个 tab 都是 `draft[tab] = toDraft(defaults)[tab]`。
-  - **tab**：每个 tab 一个组件，用 `v-model` 编辑 draft 里自己的那部分，不再 `defineExpose`。
-    - 常规：颜色照旧用 `el-color-picker`（带透明度和预设色）加文本框；调试开关。过期天数：清空、0、负数、小数，都回到 `saved` 里的天数。`el-input-number` 每按一个键就更新一次 model（从 365 退格到空，中间会经过 3），所以只能看最后的值；也不能用组件的 `min`，它会把无效输入改成 1 天，保存后一天前的记录全被删掉。
-    - 预设网站：按站点表列出 `name` 和开关；"已启用 x/y"按站点表来算；全部启用、全部禁用；点开看 `pages`、`links`。箭头的两个颜色类改成二选一（`expanded ? 'text-blue-500' : 'text-gray-400'`）。
-    - 快捷键：这个 tab 显示时，在 document 上捕获 keydown 来录制（`preventDefault`；单独的修饰键、Tab、CapsLock 这类照旧不录），监听的添加和移除交给一个 `watchEffect`。显示用 `formatShortcut`。
-    - 同步：Gist 输入框失焦时归一化成纯 ID；"测试连接"用 draft 里的值；"立即同步"直接调 `runSync({ manual: true })`，同步这部分有没保存的修改（`changes.sync` 存在）时不能点；最后同步时间跟着 `onLastSyncTimeChange` 刷新。
-  - `toDraft`、过期天数的换算这类纯逻辑，放进 ui/ 下一个不含组件的 .ts，在 Node 里测；.vue 只负责显示和绑定。
-  - 删掉 ui/App.vue、ui/components/、core/eventBus.ts 和 mitt；`changedFields` 不再导出。
-- 完成标准：
-  - 在两个 tab 里各改一项，点一次保存，两项都存下来；点背景、按 Esc 都不关；关掉再打开，没保存的修改不在了；
-  - 对话框开着时，在其他标签页改一个别的字段，这边保存之后那个字段保留；
-  - 关掉对话框之后，宿主页面的 `<head>` 里只剩染色用的那一段样式；
-  - 各个 tab、取色面板的外观和现在一样（截图对比）。
 
 ### S11 · 和宿主页面的 JS 环境隔开（v3 的 S6）
 
