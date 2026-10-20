@@ -3,8 +3,13 @@
 // 样式都写进 shadow root：先写自己的（style.css）；Element Plus 的组件样式跟着各自的模块初始化进来（见 vite.config.ts 的 cssSideEffects），
 // 比如先弹过通知、后打开设置时，对话框的样式是后来的，所以每次调用都把新来的补上
 
-import { UI_TAG } from '@/core/shortcut'
 import ownStyle from '@/ui/style.css?inline'
+
+// 对话框、通知共用的 Element Plus 配置（见 dialog.ts、message.ts）。
+// 弹层（对话框的遮罩、取色面板、通知）默认从 z-index 2000 起往上叠。宿主元素没有定位，弹层和页面的元素在同一个层叠上下文里比，
+// 会被页面的置顶元素盖住（比如虎扑的顶栏盖住通知），所以从一个很高的起点叠，之后打开的照样叠在前面的上面。
+// 不能把宿主元素做成层叠上下文：挂在 document.body 里的取色面板会被整个压在对话框下面
+export const ELEMENT_PLUS_CONFIG = { zIndex: 2_000_000_000 }
 
 let root: ShadowRoot | undefined
 const written = new Set<string>()
@@ -32,8 +37,17 @@ export function addPanelStyle(): HTMLStyleElement {
 }
 
 function createRoot(): ShadowRoot {
-  const host = document.createElement(UI_TAG)
+  const host = document.createElement('color-visited-ui')
   const shadowRoot = host.attachShadow({ mode: 'closed' })
+  // 键盘事件会冒泡出 shadow root，页面在 document 上看到的目标是宿主元素，分不出用户在输入框里打字，
+  // 会当成自己的快捷键（比如 Discourse 上按 c 是发新帖）。所以界面里的按键到这里就不再往上传。
+  // Tab 除外：它不是快捷键，而 Element Plus 的焦点陷阱要在 document 上看到它，才知道焦点是按键移走的，把移出对话框的焦点拉回来。
+  // 页面在捕获阶段照样收得到，录快捷键就是在 document 的捕获阶段录的；Element Plus 挂在 document 上的其他键盘监听收不到，比如按 Esc 关通知
+  for (const type of ['keydown', 'keypress', 'keyup']) {
+    shadowRoot.addEventListener(type, (event) => {
+      if ((event as KeyboardEvent).key !== 'Tab') event.stopPropagation()
+    })
+  }
   shadowRoot.append(createStyle(ownStyle))
   document.documentElement.append(host)
   return shadowRoot

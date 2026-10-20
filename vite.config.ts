@@ -37,10 +37,11 @@ function singleFile(): Plugin {
   }
 }
 
-// Tailwind 的边框、阴影、渐变这些工具类，靠 @property 注册的变量初始值，而 @property 在 shadow root 里不生效。
-// Tailwind 另写了一份初始值，却包在一个只针对旧版 Safari、Firefox 的 @supports 里，所以把这层 @supports 换成 @media all。
-// Tailwind 没有这个开关，只能替换文本；升级后找不到要换的文本就让构建失败，免得这些样式悄悄消失。
-// 开发时 CSS 没压缩、构建时压缩过，空白不一样
+// 让 Tailwind 的输出在 shadow root 里照常生效。Tailwind 没有这些开关，只能替换文本：
+// - 边框、阴影、渐变这些工具类，靠 @property 注册的变量初始值，而 @property 在 shadow root 里不生效。
+//   Tailwind 另写了一份初始值，却包在一个只针对旧版 Safari、Firefox 的 @supports 里，所以把这层 @supports 换成 @media all。
+//   升级后找不到要换的文本就让构建失败，免得这些样式悄悄消失。开发时 CSS 没压缩、构建时压缩过，空白不一样
+// - 间距、字号、圆角都用 rem，rem 按宿主页面 <html> 的字号算（掘金是 12px，界面跟着缩到 3/4），所以都按 16px 换成 px
 function tailwindInShadowRoot(): Plugin {
   return {
     name: 'color-visited:tailwind-in-shadow-root',
@@ -49,7 +50,7 @@ function tailwindInShadowRoot(): Plugin {
       handler(code) {
         const replaced = code.replace(/(@layer properties\s*\{\s*)@supports[^{]*\{/, '$1@media all{')
         if (replaced === code) this.error('Tailwind 输出的 @layer properties 里没有找到 @supports，见 vite.config.ts 的 tailwindInShadowRoot')
-        return replaced
+        return replaced.replace(/(\d*\.?\d+)rem\b/g, (_, value: string) => `${Number(value) * 16}px`)
       },
     },
   }
@@ -82,7 +83,7 @@ export default defineConfig({
       entry: 'src/main.ts',
       userscript: {
         name: 'color-visited 对已访问过的链接染色',
-        version: '2.23.5',
+        version: '2.23.6',
         description: '把访问过的链接染色成灰色',
         author: 'chesha1',
         license: 'GPL-3.0-only',

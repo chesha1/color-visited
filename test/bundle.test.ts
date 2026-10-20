@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url": "https://www.v2ex.com/"}
 // 构建出来的脚本：只有一个文件；加载页面时只执行内核，界面（Vue、Element Plus）到第一次通知、第一次打开设置时才执行；
-// 界面的样式都写在它的 closed shadow root 里，宿主页面上只多一段染色样式，设置对话框开着时再多一份给取色面板的样式。
+// 界面的样式都写在它的 closed shadow root 里、不用 rem，宿主页面上只多一段染色样式，设置对话框开着时再多一份给取色面板的样式；
+// 通知和对话框用同一份 Element Plus 配置。
 // 先构建，再在 jsdom 里执行产物（见 ./build），GM API 换成内存版。样式在页面上的效果、对话框的外观，要在浏览器里看
 import { beforeAll, expect, it, vi } from 'vitest'
+import { ELEMENT_PLUS_CONFIG } from '@/ui/root'
 import { buildScript, pageStyles, runScript, shadowRoots } from './build'
 import * as gm from './fakes/gm'
 import { addLink } from './runtime/dom'
@@ -62,6 +64,13 @@ it('第一次通知时才建界面：通知在 closed shadow root 里，样式�
   expect(pageStyles()).toHaveLength(1)
 })
 
+// 通知不在对话框的应用里，Element Plus 的配置要另外交给它。宿主元素没有定位，通知和页面的元素在同一个层叠上下文里比 z-index，
+// Element Plus 默认从 2000 起，会被页面的置顶元素盖住（比如虎扑的顶栏）
+it('没打开过设置时，通知也从配置的 z-index 起往上叠', () => {
+  const message = shadowRoots[0].querySelector<HTMLElement>('.el-message')
+  expect(Number(message?.style.zIndex)).toBeGreaterThanOrEqual(ELEMENT_PLUS_CONFIG.zIndex)
+})
+
 it('打开设置：对话框挂在同一个 shadow root 里，它的样式补写进去；取色面板要的样式另写进宿主页面', async () => {
   gm.menuCommands.get('设置')!()
   await vi.waitFor(() => expect(shadowRoots[0].querySelector('.el-dialog')).not.toBeNull())
@@ -73,4 +82,11 @@ it('打开设置：对话框挂在同一个 shadow root 里，它的样式补写
   // 原样写进去：取色面板挂在 document.body 里，变量要写在 :root 上
   expect(panelStyle.textContent).toContain(':root{--el-')
   expect(panelStyle.textContent).toContain('.el-color-picker')
+})
+
+// rem 按宿主页面 <html> 的字号算，shadow root 隔不开：页面的根字号是 12px 时（比如掘金），界面跟着缩到 3/4
+it('界面的样式里没有 rem：Tailwind 的 rem 按 16px 换成了 px', () => {
+  const css = cssIn(shadowRoots[0])
+  expect(css[0]).toContain('--spacing:4px')
+  expect(css.join('')).not.toMatch(/\drem\b/)
 })

@@ -1,8 +1,9 @@
 // 设置对话框：每次打开都新建一个 Vue 应用，关掉就卸载，下次打开时按存储里的当前设置重新开始。
 // 第一次打开设置时才执行这个模块（见 main.ts）
 import { createApp } from 'vue'
+import { provideGlobalConfig } from 'element-plus'
 import SettingsDialog from '@/ui/SettingsDialog.vue'
-import { addPanelStyle, createMountPoint } from '@/ui/root'
+import { addPanelStyle, createMountPoint, ELEMENT_PLUS_CONFIG } from '@/ui/root'
 
 let isOpen = false
 
@@ -22,5 +23,6 @@ export function openSettings(): void {
       isOpen = false
     },
   })
+  provideGlobalConfig(ELEMENT_PLUS_CONFIG, app)
   app.mount(container)
 }

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url": "https://www.v2ex.com/"}
-// 设置对话框：所有 tab 编辑同一份 draft，只有一个保存；只有关闭按钮会关，关掉就卸载。
+// 设置对话框：所有 tab 编辑同一份 draft，只有一个保存；只有关闭按钮会关，关掉就卸载；在里面打字不传给页面，弹层叠在页面上面。
 // 在 jsdom 里执行构建出来的脚本（见 ./build），像用户那样点对话框里的元素。文件里的测试按顺序接着前一个的状态跑。
-// 对话框和取色面板的外观、取色面板里的操作，要在浏览器里看
+// 对话框和取色面板的外观、取色面板里的操作、按 Tab 时焦点怎么走、弹层实际有没有被页面盖住，要在浏览器里看
 import { beforeAll, expect, it, vi } from 'vitest'
+import { ELEMENT_PLUS_CONFIG } from '@/ui/root'
 import { buildScript, pageStyles, runScript, shadowRoots } from './build'
 import * as gm from './fakes/gm'
 import { addLink, press } from './runtime/dom'
@@ -93,6 +94,10 @@ function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function zIndexOf(element: HTMLElement): number {
+  return Number(element.style.zIndex)
+}
+
 it('点菜单打开；已经开着时再点，什么都不做', async () => {
   await openSettings()
   gm.menuCommands.get('设置')!()
@@ -146,8 +151,46 @@ it('点背景、按 Esc 都不关', async () => {
   expect(get('.el-overlay').style.display).not.toBe('none')
 })
 
-// 先加一个还没访问过的链接：批量标记触发了，就会把它记下
-it('快捷键 tab：按下的键录成快捷键，Esc 也录得到；录的正好是现在的批量快捷键时，不触发批量标记', async () => {
+// 键盘事件会冒泡出 shadow root，页面在 document 上看到的目标是宿主元素，当作用户没在打字：
+// 比如 Discourse 的快捷键，在颜色框里输入 #ccc，按到 c 就是发新帖。字母键的快捷键常绑在 keypress 上。
+// Tab 不是快捷键，照样传过去：Element Plus 的焦点陷阱靠它把按 Shift+Tab 移出对话框的焦点拉回来
+it('在对话框的输入框里按键，页面挂在 document 上的 keydown、keypress、keyup 监听都收不到；Tab 除外', () => {
+  const types = ['keydown', 'keypress', 'keyup']
+  const received: string[] = []
+  const listener = (event: Event) => received.push(`${event.type} ${(event as KeyboardEvent).key}`)
+  for (const type of types) document.addEventListener(type, listener)
+  for (const type of types) input(COLOR).dispatchEvent(new KeyboardEvent(type, { bubbles: true, composed: true, code: 'KeyC', key: 'c' }))
+  for (const type of ['keydown', 'keyup']) input(COLOR).dispatchEvent(new KeyboardEvent(type, { bubbles: true, composed: true, code: 'Tab', key: 'Tab' }))
+  for (const type of types) document.removeEventListener(type, listener)
+  expect(received).toEqual(['keydown Tab', 'keyup Tab'])
+})
+
+// 宿主元素没有定位，界面的弹层和页面的元素在同一个层叠上下文里比 z-index，Element Plus 默认从 2000 起，会被页面的置顶元素盖住。
+// 页面上还没有链接，按批量快捷键只弹一条通知
+it('弹层都从配置的 z-index 起往上叠：遮罩不低于起点，之后打开的取色面板、弹的通知在遮罩上面', async () => {
+  const overlay = zIndexOf(get('.el-overlay'))
+  expect(overlay).toBeGreaterThanOrEqual(ELEMENT_PLUS_CONFIG.zIndex)
+
+  // 取色面板挂在 document.body 里
+  get('#pane-general .el-color-picker__trigger').click()
+  const panel = await vi.waitFor(() => {
+    const element = document.querySelector<HTMLElement>('.el-color-picker__panel')
+    expect(element?.style.display).toBe('')
+    return element!
+  })
+  expect(zIndexOf(panel)).toBeGreaterThan(overlay)
+
+  press(SHORTCUT)
+  const message = await vi.waitFor(() => get('.el-message'))
+  expect(zIndexOf(message)).toBeGreaterThan(overlay)
+
+  get('#pane-general .el-color-picker__trigger').click()
+  await vi.waitFor(() => expect(panel.style.display).toBe('none'))
+})
+
+// 先加一个还没访问过的链接：批量标记触发了，就会把它记下。
+// 焦点在对话框里时按键传不到 document 的冒泡阶段，录制挂在 document 的捕获阶段，照样录得到
+it('快捷键 tab：按下的键录成快捷键，焦点在对话框里、按 Esc 也录得到；录的正好是现在的批量快捷键时，不触发批量标记', async () => {
   const url = 'https://www.v2ex.com/t/1'
   addLink(url)
   await showTab('batch')
@@ -157,7 +200,7 @@ it('快捷键 tab：按下的键录成快捷键，Esc 也录得到；录的正�
   await wait(50)
   expect(saveButton().disabled).toBe(true)
 
-  press({ code: 'Escape', key: 'Escape' })
+  press({ code: 'Escape', key: 'Escape' }, input(SHORTCUT_INPUT))
   await vi.waitFor(() => expect(input(SHORTCUT_INPUT).value).toBe('Esc'))
   expect(saveButton().disabled).toBe(false)
 })
@@ -188,9 +231,10 @@ it('同步 tab：最后同步时间跟着存储刷新', async () => {
 
 it('关掉：卸载对话框，删掉挂载点；取色面板的样式从宿主页面上删掉，只剩染色样式；没保存的修改不存', async () => {
   expect(pageStyles()).toHaveLength(2)
+  const mountPoint = [...shadowRoots[0].children].find((child) => child.querySelector('.el-dialog'))
   get('.el-dialog__headerbtn').click()
   await vi.waitFor(() => expect(find('.el-dialog')).toBeNull())
-  expect(shadowRoots[0].querySelector('div')).toBeNull()
+  expect(mountPoint?.isConnected).toBe(false)
   expect(pageStyles().map((style) => style.id)).toEqual(['color-visited-style'])
   expect(storedSettings().batch).toEqual(SHORTCUT)
   expect(storedSettings().sync).toEqual(SETTINGS.sync)
