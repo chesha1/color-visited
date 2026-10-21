@@ -1,0 +1,15 @@
+{
+  // 仓库不用 Biome：没有它的配置，也不装它的可执行文件，开着的话插件每次启动都报找不到 Biome
+  "biome.enabled": false,
+
+  // 代码格式由 ESLint 管（@stylistic、eslint-plugin-vue 的规则），格式化也交给它。
+  // VS Code 自带的 TypeScript 格式化有些缩进和 @stylistic 不一样，保存时会改出 lint 错误
+  "eslint.format.enable": true,
+  "[javascript]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" },
+  "[typescript]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" },
+  "[vue]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" },
+  // 保存时按 ESLint 的规则修一遍，和 pnpm lint 一样
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  }
+}
