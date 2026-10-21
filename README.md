@@ -62,11 +62,11 @@ Therefore, this script adopts a **proactive recording + style injection** approa
 <details>
 <summary>📋 <strong>Core Workflow</strong></summary>
 
-1. **Page Detection** → Determine script activation through preset rules
-2. **Link Monitoring** → Event delegation listens for link clicks (left/middle/Ctrl+click)
-3. **State Recording** → Store URL and timestamp to GM local storage
-4. **Style Coloring** → Dynamic CSS injection + a `data-color-visited` attribute on visited links
-5. **Dynamic Updates** → MutationObserver monitors DOM changes to handle new links
+1. **Page Detection** → Decide whether to color the current page from the site table and the per-site switches in settings; check again whenever the URL changes (including SPA navigation)
+2. **Visit Recording** → Listen for link clicks on the document (left/middle/Ctrl+click) and write the normalized URL with a timestamp to GM storage, one value per record
+3. **Style Coloring** → Inject a coloring stylesheet and add a `data-color-visited` attribute to links that match the site's rules and have an unexpired record
+4. **Dynamic Updates** → A MutationObserver handles links that appear or change their href; clicks, batch marking, undo and sync only write to storage, and the marks on the page follow storage
+5. **Background Maintenance** → Expired records are cleaned up once a day and auto sync runs at most once every 10 minutes, counted across all tabs; a failed attempt still counts
 
 </details>
 
@@ -83,11 +83,12 @@ Therefore, this script adopts a **proactive recording + style injection** approa
 <details>
 <summary>🛠️ <strong>Core Technical Features</strong></summary>
 
-- **Shadow DOM Isolation** - Vue app completely independent, doesn't interfere with page styles
-- **Event Delegation** - Document-level listening, perfectly handles dynamic content
-- **URL Normalization** - Intelligently removes query parameters for better matching accuracy
-- **GM API Integration** - Reliable local persistent storage
-- **Cross-device Sync** - GitHub Gist cloud sync + automatic conflict resolution
+- **Storage as the Single Source of Truth** - Every write goes to storage only; link colors and settings follow storage changes
+- **Per-record Storage** - Each visit is stored as its own value, so tabs recording visits at the same time never overwrite each other; timestamps only move forward, so devices end up with the same data whatever order they sync in
+- **URL Normalization** - Rules keyed by each link's hostname strip parts that don't identify the post, such as query parameters and floor numbers, so one post is one record
+- **On-demand UI** - The settings dialog and notifications (Vue, Element Plus) only run the first time they're needed; a normal page load runs just the coloring part
+- **UI Kept Apart from the Page** - The UI lives in a closed Shadow DOM, so page styles can't reach it, and typing in the settings won't trigger the page's keyboard shortcuts
+- **Cross-device Sync** - Syncs through GitHub Gist, grouped by host, prefix-compressed and gzipped; requests go through `GM_xmlhttpRequest`, unaffected by the page's CSP; merging keeps the newer timestamp of each record
 
 </details>
 
@@ -105,7 +106,6 @@ Having issues or feature suggestions? Feel free to provide feedback through:
 
 ### 🚧 In Development
 - [ ] **Fine-grained Control** - Support excluding specific links within pages (e.g., Bilibili Watch Later)
-- [ ] **Performance Optimization** - Use trie structure to optimize storage
 - [ ] **Smarter Coloring Scope** - For example, on Pixiv, while coloring titles, also color the corresponding series name
 - [ ] **Custom Presets** - Add user-defined presets
 
