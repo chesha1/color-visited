@@ -10,6 +10,7 @@ import {
   onLinksChange,
   recordVisit,
   setLastSyncTime,
+  takeTurn,
   type VisitedLinks,
 } from '@/core/storage'
 import { removeBatchApi, resetGM, setValueFromOtherTab, store } from './fakes/gm'
@@ -108,19 +109,24 @@ describe('deleteExpiredLinks：过期清理', () => {
       userSettings: { general: { debug: false } },
       [A]: NOW - DAY,
       [B]: NOW - YEAR,
-      lastCleanupTime: NOW,
     })
   })
+})
 
-  it('所有标签页合起来一天最多清理一次', () => {
+describe('takeTurn：后台任务所有标签页合起来轮流做', () => {
+  it('从没做过：轮到，先记下现在的时间。各个任务分开记', () => {
+    expect(takeTurn('cleanup', DAY)).toBe(true)
+    expect(takeTurn('autoSync', DAY)).toBe(true)
+    expect(stored()).toEqual({ lastCleanupTime: NOW, lastAutoSyncTime: NOW })
+  })
+
+  it('距上次开始不到一个间隔：不轮到，其他标签页开始的也算', () => {
     setValueFromOtherTab('lastCleanupTime', NOW - DAY + 1) // 其他标签页不到一天前刚清理过
-    store.set(C, NOW - YEAR - 1)
-    deleteExpiredLinks(YEAR)
-    expect(store.has(C)).toBe(true)
+    expect(takeTurn('cleanup', DAY)).toBe(false)
 
     vi.setSystemTime(NOW + 1) // 距那次清理满一天了
-    deleteExpiredLinks(YEAR)
-    expect(store.has(C)).toBe(false)
+    expect(takeTurn('cleanup', DAY)).toBe(true)
+    expect(takeTurn('cleanup', DAY)).toBe(false) // 刚轮过
   })
 })
 
@@ -182,7 +188,6 @@ describe('onLinksChange：本标签页写入、删除访问记录之后，通知
 
   it('什么都没变时不通知', () => {
     store.set(A, NOW)
-    store.set('lastCleanupTime', NOW) // 今天已经清理过
     mergeLinks({ [A]: NOW, userSettings: NOW })
     deleteLinksIfUnchanged({ [A]: NOW - DAY, [B]: NOW })
     deleteExpiredLinks(YEAR)
@@ -211,7 +216,7 @@ describe('没有批量读写接口时（Tampermonkey 5.3、Violentmonkey 2.19.1 
     store.set(B, NOW - YEAR - 1)
     store.set(C, NOW)
     deleteExpiredLinks(YEAR)
-    expect(stored()).toEqual({ [C]: NOW, lastCleanupTime: NOW })
+    expect(stored()).toEqual({ [C]: NOW })
   })
 
   it('撤销批量标记', () => {

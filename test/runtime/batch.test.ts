@@ -37,7 +37,6 @@ beforeAll(() => {
   })
   store.set(VISITED, NOW - DAY)
   store.set(EXPIRED, NOW - YEAR - 1)
-  store.set('lastCleanupTime', NOW) // 今天已经清理过，过期的记录留在存储里
   start()
 })
 

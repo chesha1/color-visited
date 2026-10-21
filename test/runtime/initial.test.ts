@@ -27,7 +27,6 @@ beforeAll(() => {
   vi.useFakeTimers({ now: NOW, toFake: ['Date'] })
   for (const url of [VISITED, OTHER_PAGE, OTHER_SITE]) store.set(url, NOW - DAY)
   store.set(EXPIRED, NOW - YEAR - 1)
-  store.set('lastCleanupTime', NOW) // 今天已经清理过，启动时不再清理
   vi.spyOn(console, 'error')
   start()
 })

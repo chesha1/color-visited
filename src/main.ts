@@ -2,8 +2,10 @@
 import { GM_registerMenuCommand } from 'vite-plugin-monkey/dist/client'
 import { startPage } from '@/core/page'
 import { getSettings } from '@/core/settings'
-import { deleteExpiredLinks, migrateLegacyLinks } from '@/core/storage'
+import { deleteExpiredLinks, migrateLegacyLinks, takeTurn } from '@/core/storage'
 import { autoSync } from '@/core/sync'
+
+const DAY = 1000 * 60 * 60 * 24
 
 // 启动的各步互不依赖：一步出错只报告这一步，后面的照常执行
 function run(step: () => void): void {
@@ -25,7 +27,9 @@ function openSettings(): void {
 run(() => GM_registerMenuCommand('设置', openSettings))
 // 读访问记录之前，先把旧版本的整块记录迁移成逐条存储
 run(migrateLegacyLinks)
-// 所有标签页合起来一天最多清理一次。染色不依赖它：过期的记录读的时候就当作没有
-run(() => deleteExpiredLinks(getSettings().general.expirationTime))
+// 所有标签页合起来一天最多清理一次。染色不依赖它：过期的记录读的时候就当作没有，晚点删只是多占些存储
+run(() => {
+  if (takeTurn('cleanup', DAY)) deleteExpiredLinks(getSettings().general.expirationTime)
+})
 run(autoSync)
 run(startPage)

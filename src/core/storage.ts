@@ -18,7 +18,8 @@ import {
 
 const SETTINGS_KEY = 'userSettings'
 const LAST_SYNC_TIME_KEY = 'lastSyncTime'
-const LAST_CLEANUP_TIME_KEY = 'lastCleanupTime'
+// 后台任务上次开始的时间（ms），见 takeTurn
+const TURN_KEYS = { cleanup: 'lastCleanupTime', autoSync: 'lastAutoSyncTime' }
 // v2.21.0 及以前把全部记录存成这一个对象，启动时会迁移成逐条存储
 const LEGACY_LINKS_KEY = 'visitedLinks'
 
@@ -93,15 +94,9 @@ export function mergeLinks(links: VisitedLinks): number {
   return count
 }
 
-// 清理要把全部记录读一遍，十几万条时要几十毫秒；而过期的记录 isVisited 已经当作没有了，
-// 晚点删不影响染色，只是多占些存储，所以所有标签页合起来一天最多清理一次，上次清理的时间（ms）记在存储里
-const CLEANUP_INTERVAL = 1000 * 60 * 60 * 24
-
+// 过期清理。要把全部记录读一遍，十几万条时要几十毫秒，不能每加载一个页面就做一次，main.ts 只在轮到时调用
 export function deleteExpiredLinks(expirationTime: number): void {
   const now = Date.now()
-  if (now - GM_getValue(LAST_CLEANUP_TIME_KEY, 0) < CLEANUP_INTERVAL) return
-  GM_setValue(LAST_CLEANUP_TIME_KEY, now)
-
   const links = loadLinks()
   const expiredUrls = Object.keys(links).filter((url) => now - links[url] > expirationTime)
   if (expiredUrls.length > 0) deleteLinks(expiredUrls)
@@ -143,8 +138,9 @@ export function onRemoteSettingsWrite(listener: () => void): () => void {
   return () => GM_removeValueChangeListener(id)
 }
 
-// 上次同步成功的时间（ms），0 表示从未同步。它是同步写下的状态，不是用户设置：放在 userSettings 里的话，
-// 保存设置时会连同页面里那份旧值整块写回去。所以单独存一个键，只有同步会写它
+// 上次同步成功的时间（ms），0 表示从未同步，只给设置页显示"最后同步时间"；自动同步隔多久做一次不看它，见 takeTurn。
+// 它是同步写下的状态，不是用户设置：放在 userSettings 里的话，保存设置时会连同页面里那份旧值整块写回去。
+// 所以单独存一个键，只有同步会写它
 export function getLastSyncTime(): number {
   return GM_getValue(LAST_SYNC_TIME_KEY, 0)
 }
@@ -157,4 +153,15 @@ export function setLastSyncTime(time: number): void {
 export function onLastSyncTimeChange(listener: (time: number) => void): () => void {
   const id = GM_addValueChangeListener<number>(LAST_SYNC_TIME_KEY, (_key, _oldTime, time) => listener(time ?? 0))
   return () => GM_removeValueChangeListener(id)
+}
+
+// 后台任务轮流做：所有标签页合起来，距上次开始满 interval 才轮到。轮到了先记下现在的时间，再返回 true，
+// 所以按开始算、不按做成算：失败了也占这一次，否则一直失败时，每加载一个页面都要从头再来一遍。
+// 不加锁：几个标签页同时加载时可能还看不到彼此刚记下的时间，都轮到，清理、同步多做一遍也没关系
+export function takeTurn(task: keyof typeof TURN_KEYS, interval: number): boolean {
+  const key = TURN_KEYS[task]
+  const now = Date.now()
+  if (now - GM_getValue(key, 0) < interval) return false
+  GM_setValue(key, now)
+  return true
 }

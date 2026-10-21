@@ -3,14 +3,13 @@
 
 import { log } from '@/core/log'
 import { getSettings, type SyncSettings } from '@/core/settings'
-import { getLastSyncTime, loadLinks, mergeLinks, setLastSyncTime, type VisitedLinks } from '@/core/storage'
+import { loadLinks, mergeLinks, setLastSyncTime, takeTurn, type VisitedLinks } from '@/core/storage'
 import { decode, encode, type Decoded } from '@/core/sync/codec'
 import { readGist, readUser, writeGist, type Gist } from '@/core/sync/github'
 import { notify } from '@/ui/notify'
 
-// 加载页面时自动同步的最短间隔，距上次同步成功不到这么久就跳过，设置页的"立即同步"不受限制。
-// 每次同步都要下载、合并整份数据，有新记录时还要整份上传，不能每加载一个页面就来一次。
-// lastSyncTime 由所有标签页共用，所以这是整个浏览器合起来的频率
+// 加载页面时自动同步的最短间隔，整个浏览器合起来算，设置页的"立即同步"不受限制。
+// 每次同步都要下载、合并整份数据，有新记录时还要整份上传，不能每加载一个页面就来一次
 export const AUTO_SYNC_INTERVAL = 1000 * 60 * 10
 
 export interface ConnectionTestResult {
@@ -105,10 +104,10 @@ export async function runSync({ manual }: { manual: boolean }): Promise<void> {
   }
 }
 
-// 加载页面时，启用了同步就在后台同步一次。距上次同步成功不到 AUTO_SYNC_INTERVAL 就跳过；
-// 失败不会更新 lastSyncTime，下次加载页面会再试
+// 加载页面时，启用了同步、而且轮到了，就在后台同步一次。失败了也占这一次：令牌过期这类失败不会自己好，
+// 不能每加载一个页面就请求一次、弹一次错误。没启用时不占，开启之后下次加载页面就同步
 export function autoSync(): void {
-  if (getSettings().sync.enabled && Date.now() - getLastSyncTime() >= AUTO_SYNC_INTERVAL) runSync({ manual: false })
+  if (getSettings().sync.enabled && takeTurn('autoSync', AUTO_SYNC_INTERVAL)) runSync({ manual: false })
 }
 
 // 测试连接：依次检查令牌、Gist 的所有者和内容，只读不写。结果交给设置页显示，不抛错
