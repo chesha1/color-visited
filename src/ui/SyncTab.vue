@@ -1,8 +1,12 @@
 <template>
   <div class="space-y-6">
     <div class="border-b pb-4">
-      <h3 class="text-lg font-semibold text-gray-900 mb-2">数据同步设置</h3>
-      <p class="text-sm text-gray-600">通过 GitHub Gist 同步已访问链接数据，实现多设备同步</p>
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">
+        数据同步设置
+      </h3>
+      <p class="text-sm text-gray-600">
+        通过 GitHub Gist 同步已访问链接数据，实现多设备同步
+      </p>
     </div>
 
     <div class="space-y-4">
@@ -10,7 +14,9 @@
       <div class="flex items-center justify-between">
         <div>
           <label class="text-sm font-medium text-gray-900">启用数据同步</label>
-          <p class="text-sm text-gray-500">开启后加载页面时自动同步，{{ autoSyncMinutes }} 分钟内最多一次</p>
+          <p class="text-sm text-gray-500">
+            开启后加载页面时自动同步，{{ autoSyncMinutes }} 分钟内最多一次
+          </p>
         </div>
         <el-switch
           v-model="sync.enabled"
@@ -51,7 +57,10 @@
       </div>
 
       <!-- 帮助说明 -->
-      <el-card class="bg-blue-50" shadow="never">
+      <el-card
+        class="bg-blue-50"
+        shadow="never"
+      >
         <template #header>
           <span class="text-sm font-medium text-blue-800">设置步骤</span>
         </template>

@@ -1,11 +1,9 @@
 // 组合根：脚本在每个注入了的页面上从这里按顺序启动
 import { GM_registerMenuCommand } from 'vite-plugin-monkey/dist/client'
 import { startPage } from '@/core/page'
-import { getSettings } from '@/core/settings'
+import { DAY, getSettings } from '@/core/settings'
 import { deleteExpiredLinks, migrateLegacyLinks, takeTurn } from '@/core/storage'
 import { autoSync } from '@/core/sync'
-
-const DAY = 1000 * 60 * 60 * 24
 
 // 启动的各步互不依赖：一步出错只报告这一步，后面的照常执行
 function run(step: () => void): void {

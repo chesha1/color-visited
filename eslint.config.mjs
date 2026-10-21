@@ -1,34 +1,29 @@
-import globals from 'globals'
-import pluginJs from '@eslint/js'
+import js from '@eslint/js'
 import stylistic from '@stylistic/eslint-plugin'
-import typescriptEslint from '@typescript-eslint/eslint-plugin'
-import typescriptParser from '@typescript-eslint/parser'
+import { defineConfig } from 'eslint/config'
 import vue from 'eslint-plugin-vue'
-import vueParser from 'vue-eslint-parser'
+import tseslint from 'typescript-eslint'
 
-/** @type {import('eslint').Linter.Config[]} */
-export default [
+export default defineConfig(
   {
-    ignores: ['dist/', 'src/components.d.ts', 'src/vite-env.d.ts'],
+    ignores: ['dist/', 'src/components.d.ts'],
+  },
+  js.configs.recommended,
+  // 要在 Vue 的配置前面：它给所有文件设了 TS 的解析器，.vue 要换回 vue-eslint-parser
+  tseslint.configs.recommended,
+  vue.configs['flat/recommended-error'],
+  {
+    files: ['**/*.vue'],
+    languageOptions: {
+      parserOptions: { parser: tseslint.parser },
+    },
+    // .vue 里的 <script> 也是 TS：类型检查已经管了的规则（比如 no-undef），和 .ts 一样关掉
+    rules: tseslint.configs.eslintRecommended.rules,
   },
   {
-    files: ['src/**/*.js', 'src/**/*.ts', 'test/**/*.ts', '*.config.{ts,mjs}'],
-    languageOptions: {
-      globals: globals.browser,
-      parser: typescriptParser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-      },
-    },
-    plugins: {
-      '@typescript-eslint': typescriptEslint,
-    },
     rules: {
-      ...pluginJs.configs.recommended.rules,
-      'no-undef': 'off',
-      'no-useless-escape': 'off',
-      'no-unused-vars': 'off',
+      // 用 { code: _, ...rest } 去掉一个字段。TypeScript 的 noUnusedLocals 也不管这种
+      '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }],
     },
   },
   {
@@ -44,23 +39,7 @@ export default [
       }],
     },
   },
-  {
-    files: ['src/**/*.vue'],
-    languageOptions: {
-      globals: globals.browser,
-      parser: vueParser,
-      parserOptions: {
-        parser: typescriptParser,
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-      },
-    },
-    plugins: {
-      vue,
-      '@typescript-eslint': typescriptEslint,
-    },
-  },
-  // 不写 files：作用于上面两段选中的全部文件，.vue 只管 <script>
+  // .vue 只管 <script>，模板的格式由上面 Vue 的配置管
   stylistic.configs.customize({
     indent: 2,
     quotes: 'single',
@@ -70,4 +49,4 @@ export default [
     arrowParens: true,
     quoteProps: 'as-needed',
   }),
-]
+)

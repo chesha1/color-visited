@@ -8,9 +8,6 @@
 
     /* Bundler mode */
     "moduleResolution": "bundler",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
@@ -25,6 +22,5 @@
 
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "vitest.config.ts"],
-  "exclude": ["dist", "dist-ssr", "build"]
+  "include": ["vite.config.ts", "vitest.config.ts"]
 }

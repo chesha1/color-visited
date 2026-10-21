@@ -1,10 +1,17 @@
 <template>
   <div class="space-y-6">
     <div class="border-b pb-4">
-      <h3 class="text-lg font-semibold text-gray-900 mb-2">批量染色快捷键设置</h3>
-      <p class="text-sm text-gray-600">按下快捷键，对当前页面上所有符合规则的链接进行染色</p>
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">
+        批量染色快捷键设置
+      </h3>
+      <p class="text-sm text-gray-600">
+        按下快捷键，对当前页面上所有符合规则的链接进行染色
+      </p>
     </div>
-    <el-form label-width="120px" class="space-y-6">
+    <el-form
+      label-width="120px"
+      class="space-y-6"
+    >
       <el-form-item label="当前快捷键">
         <el-input
           :model-value="formatShortcut(shortcut)"

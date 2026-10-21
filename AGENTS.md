@@ -22,14 +22,13 @@
 
 ## 版本号
 
-- 发版或“把版本号加一”时，默认只修改 userscript 里的版本号，例如 `vite.config.ts` 中 `userscript.version`。
-- `package.json` 的 `version` 默认不需要修改，除非用户明确要求。
+- 版本号只写在 `vite.config.ts` 的 `userscript.version`，发版或“把版本号加一”时改它；`package.json` 不写 `version`（D8）。
 
 ## 发版
 
 - 发版由 CI 完成（[release.yml](.github/workflows/release.yml)）。构建产物 `dist/` 不入库，不用手动构建、提交。
 - push 到 `main` 后，CI 先跑 `pnpm test` 和不带 `--fix` 的 eslint，任何一步失败都不构建、不发布；都通过才构建脚本（`pnpm build` 先跑 vue-tsc，类型检查不过也不发布）。版本号还没发布过时，自动发一个 GitHub Release（tag 为 `v版本号`），Greasy Fork 收到 webhook 后跟着更新；版本号没变的提交只构建、不发布。
-- 产物文件名 `color-visited.user.js` 不能改，头部要保留 `@version`。
+- 产物文件名 `color-visited.user.js`（vite-plugin-monkey 按 `package.json` 的 `name` 取）不能改，头部要保留 `@version`。
 - tag 指向 CI 另加的、放着构建产物的提交：Greasy Fork 收到 release 事件后，是用 `git show <tag>:color-visited.user.js` 取脚本的。
 
 ## Git Commit Message
@@ -261,3 +260,4 @@ docs(readme): 更新同步存储说明
 - **靠构建配置缩小产物。** 压缩，Greasy Fork 不允许；删除死代码，默认已经开着；按需引入，已经生效（完整的 Element Plus 不压缩有 2.1 MB）。`externalGlobals` 从 CDN `@require` 的 Element Plus 只有完整版（压缩后 1.1 MB），更大，而且每次照样要解析。
 - **Vitest 的 browser mode（D11）。** 测试页面在 Vitest 自己的服务器上，`location` 改不了，`pushState` 也不能换域名，测不了 test/runtime/ 的场景；跑的是源码，验证不了产物的 CSS；不值得为它多两个 devDependency、每次发版都在 CI 里装一次 Chromium。
 - **测试只构建一次（Vitest 的 globalSetup）。** bundle.test.ts、dialog.test.ts 各构建一次，但两者并行，全套约 4 秒，省不出时间。
+- **版本号由 package.json 提供（D8）。** vite-plugin-monkey 默认读 `package.json` 的 `version`，但脚本头部的其他字段都写在 vite.config.ts 的 `userscript` 里，版本号跟它们放在一起，一处看全；项目不发布到 npm，用不到 `package.json` 的版本号。

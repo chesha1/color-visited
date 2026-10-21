@@ -162,7 +162,6 @@ describe('页面 → 激活哪个站点', () => {
     'https://www.pixiv.net/artworks/123456789',
     'https://cn.pornhub.com/view_video.php?viewkey=ph5f1234567890',
     'https://www.reddit.com/r/programming/comments/1abcdef/some_title/',
-    'https://seekingalpha.com/article/4712345-some-title',
     'https://chan.sankakucomplex.com/posts/AbCdEfGhIjK',
     'https://seekingalpha.com/article/4712345-some-title',
     'https://www.south-plus.net/read.php?tid-2412345.html',
@@ -180,7 +179,7 @@ describe('页面 → 激活哪个站点', () => {
 
 describe('注入范围', () => {
   // 管理器只在整页加载时检查注入范围。从外部链接打开 SPA 站点的帖子，再站内跳到列表页，
-  // 这时脚本要已经在页面上，靠运行时按 pages 激活（B20）
+  // 这时脚本要已经在页面上，靠运行时按 pages 激活
   it.each([
     'https://linux.do/t/topic/647305',
     'https://www.uscardforum.com/t/topic/123456',

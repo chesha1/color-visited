@@ -5,7 +5,7 @@
 
 ## 怎么用这份文档
 
-- 新会话可以直接说：「读 `docs/plans/refactor-plan-v6.md`，做 S16」。
+- 新会话可以直接说：「读 `docs/plans/refactor-plan-v6.md`，做 S18」。
 - 本文只写要做的事。架构、约束和已经定了的取舍都在 [AGENTS.md](../../AGENTS.md)，只在那里维护：v2 到 v5 每出一版计划都把它们整段重抄一遍，S17 搬进 AGENTS.md 之后不再抄。仓库约定（pnpm、测试、版本号、提交信息格式）也在那里。
 - 编号：
   - **S** = 实施步骤，**D** = 要你拍板的决策，**Q** = 先实测、再决定做不做的调查。编号只是名字，先后看「进度」。
@@ -22,14 +22,12 @@
 
 | 步骤 | 内容 | 状态 |
 |---|---|---|
-| S16 | lint 规则和配置清理（v5 的 S16，文档部分并进了 S17） | 未开始 |
 | S18 | 站点开关在默认值里列全 | 未开始 |
 | S19 | 访问记录变化的通知不带 URL 列表 | 未开始 |
 | S20 | 设置界面的模板整理 | 未开始 |
 | S15 | 放进隔离环境；在真实的管理器里把手动验证一次做完，连同 Q1 | 未开始 |
 
-- 为什么是这个顺序：S16 在 S20 之前，模板按新的 lint 规则写；S15 放最后，它的验证只能手动做，一次覆盖前面所有的改动。S18、S19 互不依赖。
-- D8 随时可定。
+- 为什么是这个顺序：S15 放最后，它的验证只能手动做，一次覆盖前面所有的改动。S18、S19 互不依赖。
 
 ## 结论
 
@@ -90,20 +88,6 @@
 
 ## 步骤
 
-### S16 · lint 规则和配置清理（v5 的 S16，文档部分并进了 S17；D8）
-
-- **ESLint**：TS 部分只开了 `@eslint/js` 的 recommended，还关掉了 `no-unused-vars`；Vue 那段只注册了插件，没有任何规则。
-  - 换成 typescript-eslint 的 recommended 和 eslint-plugin-vue 的 `flat/recommended`。2026-10-21 在 HEAD 上试开：72 条，70 条是模板的格式（PresetTab 占 32 条），`--fix` 都能改掉；剩下 2 条是测试里用 `{ code: _, ...rest }` 去掉字段，让 `no-unused-vars` 放过下划线开头的变量。.vue 里也关掉 `no-undef`（类型检查已经管了）。没有查出真正的问题。
-  - 依赖跟着精简：`@typescript-eslint/eslint-plugin`、`@typescript-eslint/parser` 换成一个 `typescript-eslint`；`vue-eslint-parser`（eslint-plugin-vue 的配置自带）、`globals`（关了 `no-undef` 就用不上）不再直接依赖。
-- **配置**：
-  - package.json：license 写的是 `ISC`，和脚本头部的 `GPL-3.0-only` 不一致，改成后者；去掉没有意义的 `main` 和空的 `keywords`、`author`，`description` 要么补上、要么去掉；版本号见 D8。`typecheck` 脚本里，`tsc -p tsconfig.app.json` 和 `vue-tsc --build` 做的是同一件事，只留后者。
-  - tsconfig：`useDefineForClassFields`、`jsx: preserve`、`exactOptionalPropertyTypes: false` 在本项目里不起作用；`noImplicitAny` 已经包含在 `strict` 里；include 里的 `*.tsx` 没有对应的文件，`src/components.d.ts` 已经被 `src/**/*.ts` 包含。
-  - src/vite-env.d.ts 只留 `/// <reference types="vite/client" />`（`?inline` 和 `import.meta.env` 要它）：`*.vue` 的模块声明是给普通 tsc 用的，vue-tsc 不需要；GM API 都从 `vite-plugin-monkey/dist/client` import，用不到 vite-plugin-monkey 的两个全局声明。v5 在仓库副本里试过，去掉之后 vue-tsc 照样通过。
-- **顺手**：
-  - 测试注释里引用的计划编号（sites.test.ts 的 B20、dialog.test.ts 的 B24）改成直接说明现在的行为：计划文档里早就没有这些编号了。
-  - `DAY` 在 main.ts、settings.ts、ui/draft.ts 各定义了一次，只留 settings.ts 的一份并导出。
-  - sites.test.ts「不激活」那组里，Seeking Alpha 的文章页写了两行。
-
 ### S18 · 站点开关在默认值里列全
 
 - 现状和思路：见「迭代留下的痕迹」第 1 条。
@@ -134,7 +118,7 @@
   - 各个 tab：去掉只复述标签的注释，说明"为什么"的留着。
   - 会改外观的，做之前先问：数据同步页"同步状态"里的"当前 Gist ID"和上面的输入框重复；"设置步骤"卡片和两个输入框下面的说明重复。
 - 验证：dialog.test.ts 照旧全过；构建出的脚本在 headless Chrome 里截四个 tab、展开一个站点、取色面板，和改之前逐像素比较。预设网站页改成由 tab 面板滚动，底部的留白跟着内容一起滚，这是唯一预期的差别。
-- 副本里试过（都按 S16 的规则格式化之后再比）：PresetTab 170 → 135 行，`pnpm test` 全过。
+- 副本里试过（都按现在的 lint 规则格式化之后再比）：PresetTab 170 → 135 行，`pnpm test` 全过。
 
 ### S15 · 放进隔离环境；在真实的管理器里把手动验证一次做完（v5 的 S15，连同 Q1）
 
@@ -146,12 +130,6 @@
   - 界面和宿主页面互不影响：linux.do 上在颜色框里输入 c 和 /，不出发帖框、不开搜索；点进对话框的输入框之后连按 Shift+Tab，焦点停在对话框的第一个元素上；掘金上的对话框和 v2ex 上的一样大；虎扑的页面在顶部时按批量快捷键，通知完整可见、"撤销"点得到；36氪上打开设置，右侧的悬浮按钮在遮罩下面；
   - 通知、同步。Firefox 的内容脚本环境里，要特别看同步的压缩、解压（`CompressionStream`、`Response`）是否正常。自动同步失败一次之后（比如填一个作废了的令牌），10 分钟内再加载页面，这个标签页、别的标签页都不再请求、不再弹"同步失败"，满 10 分钟再试一次：jsdom 里只有一份存储，测不到每个标签页各有一份缓存、靠扩展后台广播。
 - Q1 在同一次量：注入方式换成内容脚本之后，量到的才是以后真实的开销。
-
-## 待决策
-
-- [ ] **D8 · 版本号只留一个来源**（v2 留下的）
-  - 现状：userscript 的版本号写在 vite.config.ts 里，package.json 的 `version` 一直是 1.0.0，AGENTS.md 规定发版时只改前者。
-  - 建议：删掉 vite.config.ts 里的 `version`（vite-plugin-monkey 默认读 package.json 的），以后只改 package.json，同时改 AGENTS.md 的版本号规则。不改也没有实际问题。
 
 ## 调查
 

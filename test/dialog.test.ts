@@ -106,7 +106,7 @@ it('点菜单打开；已经开着时再点，什么都不做', async () => {
   expect(saveButton().disabled).toBe(true)
 })
 
-// B24：以前只保存当前 tab，切到另一个 tab 再点保存，前一个 tab 的修改悄悄丢掉
+// 保存交出的是整份 draft 和快照的差别，和当前停在哪个 tab 无关
 it('在两个 tab 里各改一项，点一次保存，两项都存下来', async () => {
   fill(COLOR, 'blue')
   await showTab('preset')

@@ -1,10 +1,17 @@
 <template>
   <div class="space-y-6">
     <div class="border-b pb-4">
-      <h3 class="text-lg font-semibold text-gray-900 mb-2">常规设置</h3>
-      <p class="text-sm text-gray-600">自定义链接颜色和行为设置</p>
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">
+        常规设置
+      </h3>
+      <p class="text-sm text-gray-600">
+        自定义链接颜色和行为设置
+      </p>
     </div>
-    <el-form label-width="120px" class="space-y-6">
+    <el-form
+      label-width="120px"
+      class="space-y-6"
+    >
       <el-form-item label="链接颜色">
         <div class="flex items-center gap-3">
           <el-color-picker
@@ -34,7 +41,9 @@
             />
             <span class="text-sm text-gray-600">天</span>
           </div>
-          <div class="text-xs text-gray-500">设置已访问链接的记录保留时间</div>
+          <div class="text-xs text-gray-500">
+            设置已访问链接的记录保留时间
+          </div>
         </div>
       </el-form-item>
 
@@ -45,7 +54,9 @@
             size="large"
             inline-prompt
           />
-          <div class="text-xs text-gray-500">开启后将在控制台显示详细调试信息</div>
+          <div class="text-xs text-gray-500">
+            开启后将在控制台显示详细调试信息
+          </div>
         </div>
       </el-form-item>
     </el-form>

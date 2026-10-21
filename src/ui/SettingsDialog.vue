@@ -19,24 +19,50 @@
         class="h-full"
         stretch
       >
-        <el-tab-pane label="常规设置" name="general" class="h-full">
+        <el-tab-pane
+          label="常规设置"
+          name="general"
+          class="h-full"
+        >
           <div class="p-6 h-full overflow-y-auto">
-            <GeneralTab v-model="draft.general" :saved-expiration-time="saved.general.expirationTime" />
+            <GeneralTab
+              v-model="draft.general"
+              :saved-expiration-time="saved.general.expirationTime"
+            />
           </div>
         </el-tab-pane>
-        <el-tab-pane label="预设网站" name="preset" class="h-full">
+        <el-tab-pane
+          label="预设网站"
+          name="preset"
+          class="h-full"
+        >
           <div class="p-6 h-full overflow-y-auto">
             <PresetTab v-model="draft.preset" />
           </div>
         </el-tab-pane>
-        <el-tab-pane label="批量染色快捷键" name="batch" class="h-full">
+        <el-tab-pane
+          label="批量染色快捷键"
+          name="batch"
+          class="h-full"
+        >
           <div class="p-6 h-full overflow-y-auto">
-            <ShortcutTab v-model="draft.batch" :recording="tab === 'batch'" :changed="!!changes.batch" />
+            <ShortcutTab
+              v-model="draft.batch"
+              :recording="tab === 'batch'"
+              :changed="!!changes.batch"
+            />
           </div>
         </el-tab-pane>
-        <el-tab-pane label="数据同步" name="sync" class="h-full">
+        <el-tab-pane
+          label="数据同步"
+          name="sync"
+          class="h-full"
+        >
           <div class="p-6 h-full overflow-y-auto">
-            <SyncTab v-model="draft.sync" :changed="!!changes.sync" />
+            <SyncTab
+              v-model="draft.sync"
+              :changed="!!changes.sync"
+            />
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -44,14 +70,18 @@
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <el-button @click="resetGroup(draft, tab)" size="large" plain>
+        <el-button
+          size="large"
+          plain
+          @click="resetGroup(draft, tab)"
+        >
           重置为默认
         </el-button>
         <el-button
           type="primary"
           size="large"
-          @click="save"
           :disabled="Object.keys(changes).length === 0"
+          @click="save"
         >
           保存设置
         </el-button>

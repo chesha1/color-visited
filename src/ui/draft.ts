@@ -1,9 +1,7 @@
 // 设置对话框的纯逻辑。对话框（SettingsDialog.vue 和各个 tab）只负责显示和绑定
 
-import { createDefaultSettings, type Settings } from '@/core/settings'
+import { createDefaultSettings, DAY, type Settings } from '@/core/settings'
 import { isSiteEnabled, SITES } from '@/shared/sites'
-
-const DAY = 1000 * 60 * 60 * 24
 
 // 对话框编辑的副本。preset 按站点表给每个站点补上是否启用，开关和"已启用 x/y"直接看它；
 // 不和 settings 共用对象，改副本不会改到打开时留下的快照
