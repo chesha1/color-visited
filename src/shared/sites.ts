@@ -116,9 +116,8 @@ export const SITES: Site[] = [
     id: 'ehentai',
     name: 'E-Hentai',
     pages: [
-      /^https:\/\/(e-|ex)hentai\.org\/?$/, // 首页
+      /^https:\/\/(e-|ex)hentai\.org\/([?#].*)?$/, // 首页和搜索结果，带什么参数都是画廊列表（翻页是 ?next=、?prev=，点过分类按钮再搜时 f_cats 排在 f_search 前面）
       /^https:\/\/(e-|ex)hentai\.org\/toplist\.php\?tl=\d+/, // 排行榜
-      /^https:\/\/(e-|ex)hentai\.org\/\?f_search=.*/, // 首页搜索页
       /^https:\/\/(e-|ex)hentai\.org\/popular/, // 热门页面
       /^https:\/\/(e-|ex)hentai\.org\/watched.*/, // 关注页面
       /^https:\/\/(e-|ex)hentai\.org\/tag\/.*/, // 标签页面
