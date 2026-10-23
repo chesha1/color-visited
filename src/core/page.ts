@@ -3,7 +3,7 @@
 import { activate } from '@/core/colorizer'
 import { log } from '@/core/log'
 import { getSettings, onSettingsChange } from '@/core/settings'
-import { findActiveSite } from '@/shared/sites'
+import { findSite } from '@/shared/sites'
 
 export function startPage(): void {
   let dispose: (() => void) | null = null
@@ -12,8 +12,8 @@ export function startPage(): void {
     dispose = null
     try {
       const settings = getSettings()
-      const site = findActiveSite(location.href, settings.preset)
-      if (site) dispose = activate(site, settings)
+      const site = findSite(location.href)
+      if (site && settings.preset[site.id]) dispose = activate(site, settings)
       else log.debug(`${location.href} 不属于任何启用了的站点，不染色`)
     } catch (error) {
       // 要接住：不能让 URL 检测和设置订阅跟着失效

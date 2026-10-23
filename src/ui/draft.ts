@@ -1,22 +1,10 @@
 // 设置对话框的纯逻辑。对话框（SettingsDialog.vue 和各个 tab）只负责显示和绑定
 
 import { createDefaultSettings, DAY, type Settings } from '@/core/settings'
-import { isSiteEnabled, SITES } from '@/shared/sites'
-
-// 对话框编辑的副本。preset 按站点表给每个站点补上是否启用，开关和"已启用 x/y"直接看它；
-// 不和 settings 共用对象，改副本不会改到打开时留下的快照
-export function toDraft(settings: Settings): Settings {
-  return {
-    general: { ...settings.general },
-    preset: Object.fromEntries(SITES.map(({ id }) => [id, isSiteEnabled(settings.preset, id)])),
-    batch: { ...settings.batch },
-    sync: { ...settings.sync },
-  }
-}
 
 // "重置为默认"只重置当前 tab 编辑的那个分组，保存之前都只改副本
 export function resetGroup<K extends keyof Settings>(draft: Settings, group: K): void {
-  draft[group] = toDraft(createDefaultSettings())[group]
+  draft[group] = createDefaultSettings()[group]
 }
 
 // 过期时间在输入框里按天显示。存储里可能有不是整天的值，显示成最接近的整数

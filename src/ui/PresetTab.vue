@@ -151,7 +151,7 @@ import { computed, ref } from 'vue'
 import { ArrowRight } from '@element-plus/icons-vue'
 import { SITES } from '@/shared/sites'
 
-// 站点 id → 是否启用，站点表里的每个站点都有值（见 toDraft）
+// 站点 id → 是否启用，站点表里的每个站点都有值（见 settings.ts 的 createDefaultSettings）
 const preset = defineModel<Record<string, boolean>>({ required: true })
 
 const enabledCount = computed(() => SITES.filter(({ id }) => preset.value[id]).length)

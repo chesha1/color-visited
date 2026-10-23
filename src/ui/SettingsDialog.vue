@@ -93,7 +93,7 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue'
 import { diffSettings, getSettings, saveSettings, type Settings } from '@/core/settings'
-import { resetGroup, toDraft } from '@/ui/draft'
+import { resetGroup } from '@/ui/draft'
 import GeneralTab from '@/ui/GeneralTab.vue'
 import PresetTab from '@/ui/PresetTab.vue'
 import ShortcutTab from '@/ui/ShortcutTab.vue'
@@ -102,9 +102,10 @@ import SyncTab from '@/ui/SyncTab.vue'
 const emit = defineEmits<{ closed: [] }>()
 
 // 快照是打开时（或上次保存后）存储里的设置，draft 是各个 tab 编辑的副本。
+// 两者各取一次 getSettings()，每次取到的都是新建的对象，改副本不会改到快照。
 // 有没有改动、保存什么，都只看两者的差别
 const saved = shallowRef(getSettings())
-const draft = ref(toDraft(saved.value))
+const draft = ref(getSettings())
 const changes = computed(() => diffSettings(saved.value, draft.value))
 
 const tab = ref<keyof Settings>('general')
@@ -114,6 +115,6 @@ const tab = ref<keyof Settings>('general')
 const save = () => {
   saveSettings(changes.value)
   saved.value = getSettings()
-  draft.value = toDraft(saved.value)
+  draft.value = getSettings()
 }
 </script>

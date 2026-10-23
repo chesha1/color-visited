@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { findActiveSite, normalizeUrl, SITES } from '@/shared/sites'
+import { normalizeUrl, SITES } from '@/shared/sites'
 
 // 站点匹配表，锁住的是站点表本身：哪些页面上激活哪个站点，激活后哪些链接要染色。
 // 期望值里的站点 id 也是 userSettings.preset 里的键，改名会重置用户的开关，所以这里写的都是原名。
-// 运行时的 findActiveSite 只取第一个命中的站点；这里查出全部，好检查有没有重叠
+// 运行时的 findSite 只取第一个命中的站点；这里查出全部，好检查有没有重叠
 
 // 规则命中这个页面的所有站点。一个页面只应该属于一个站点
 function sitesOfPage(url: string): string[] {
@@ -197,17 +197,6 @@ describe('注入范围', () => {
   ])('SPA 站点的非激活页也注入：%s', (url) => {
     expect(sitesOfPage(url)).toEqual([])
     expect(isInjected(url)).toBe(true)
-  })
-})
-
-describe('findActiveSite：设置里关掉的站点不激活', () => {
-  it.each([
-    [{}, 'v2ex'], // preset 里没有的站点算启用：新加的站点默认启用
-    [{ v2ex: true }, 'v2ex'],
-    [{ zhihu: false }, 'v2ex'],
-    [{ v2ex: false }, undefined],
-  ])('preset 为 %j 时，v2ex 首页 → %s', (preset, id) => {
-    expect(findActiveSite('https://www.v2ex.com/', preset)?.id).toBe(id)
   })
 })
 

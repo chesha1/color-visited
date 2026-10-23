@@ -72,7 +72,7 @@ docs(readme): 更新同步存储说明
 | 模块 | 职责 |
 |---|---|
 | `main.ts` | 组合根。按顺序：注册"设置"菜单 → 迁移旧数据 → 轮到了就清理过期记录（一天一次）→ 轮到了就自动同步（10 分钟一次）→ `startPage()`。每一步各自接住错误；菜单最先注册，后面哪一步出错，设置都还能打开 |
-| `shared/sites.ts` | 站点表、按链接的 hostname 查表的 `normalizeUrl`、`isSiteEnabled`、`findActiveSite`。Node 也会执行它（见「构建与发布」） |
+| `shared/sites.ts` | 站点表、按链接的 hostname 查表的 `normalizeUrl`、按页面的 URL 查站点的 `findSite`（不看站点开关，开没开由 page.ts 看设置）。Node 也会执行它（见「构建与发布」） |
 | `core/storage.ts` | 唯一调用 GM 存储 API 的模块，所有键名都定义在这里：访问记录的读写和 `onLinksChange`；设置的原始读写和其他标签页写入的订阅；`lastSyncTime` 的读写和订阅；后台任务轮流做的 `takeTurn`；旧数据迁移 |
 | `core/settings.ts` | 默认值、`parseSettings`、`getSettings` / `saveSettings` / `onSettingsChange`、`diffSettings` |
 | `core/page.ts` | 常驻的 URL 检测；URL 或设置一变，就释放上一次的激活、重新激活 |
@@ -86,7 +86,7 @@ docs(readme): 更新同步存储说明
 | `ui/message.ts` | 用 Element Plus 的 `ElMessage` 显示通知。通知不属于哪个 Vue 应用，`ELEMENT_PLUS_CONFIG` 经一个只带配置、不挂载的应用的 context 交给它 |
 | `ui/root.ts` | 第一次用到时才创建宿主元素和 closed shadow root，把样式写进去，拦下界面里键盘事件的冒泡（Tab 除外）；`createMountPoint()` 给对话框、通知各一个挂载点；`addPanelStyle()` 把取色面板要的样式写进 `<head>`；`ELEMENT_PLUS_CONFIG`：对话框、通知共用的 Element Plus 配置，现在只有 z-index 的起点 |
 | `ui/dialog.ts`、`ui/*.vue` | `openSettings()`：每次打开都新建一个 Vue 应用（带上 `ELEMENT_PLUS_CONFIG`），关掉就卸载。每个 tab 一个组件，用 `v-model` 编辑 draft 里自己的那个分组 |
-| `ui/draft.ts` | 对话框的纯逻辑：`toDraft`、"重置为默认"、过期时间按天编辑时的换算 |
+| `ui/draft.ts` | 对话框的纯逻辑："重置为默认"、过期时间按天编辑时的换算 |
 
 ### 依赖规则
 
@@ -101,7 +101,7 @@ docs(readme): 更新同步存储说明
 - **页面颜色只跟着存储走。** colorizer 只在两种时候改标记：扫描新出现的、或 href 变了的链接；收到本标签页访问记录的增删通知。点击、批量标记、撤销、同步合并都只写存储，不碰 DOM。扫描时一律按链接当前的 href 重新判断、不看原来有没有标记，结果没变时不写 DOM，原因见 colorizer.ts 的 `updateLinks`。
 - **激活一次，释放一次。** `activate` 里的监听器共用一个 AbortController；observer、订阅、样式、标记都在它返回的 dispose 里释放。
 - **后台任务轮流做。** 过期清理、自动同步都先过 `takeTurn`：每个任务一个时间戳，所有标签页共用，距上次开始不到间隔就跳过；轮到了先写下现在的时间，再开始做，失败也算一次。设置页的"立即同步"不经过它。
-- **对话框只有一份 draft、一个保存。** 打开时取 `getSettings()` 作快照，`toDraft` 出一份副本给各个 tab 编辑；有没有改动看 `diffSettings(快照, draft)` 是不是空的，保存就是把这份差别交给 `saveSettings`，之后快照、副本都换成存储里的最新值。只有关闭按钮会关，没保存的修改跟着丢掉。
+- **对话框只有一份 draft、一个保存。** 打开时取两次 `getSettings()`，一份作快照，一份作副本给各个 tab 编辑（每次取到的都是新建的对象）；有没有改动看 `diffSettings(快照, draft)` 是不是空的，保存就是把这份差别交给 `saveSettings`，之后快照、副本都重新从存储里取。只有关闭按钮会关，没保存的修改跟着丢掉。
 - **界面单文件、按需执行。** 没打开过设置、也没弹过通知的页面上，没有宿主元素，Vue 和 Element Plus 的代码不执行，宿主页面上只多一段染色样式；只有设置对话框开着时，`<head>` 里多一份给取色面板用的 Element Plus 样式（见「构建与发布」）。
 - **界面和宿主页面互不影响。** closed shadow root 隔开选择器和元素；`:host { all: initial }` 挡住继承的样式；界面里的 keydown、keypress、keyup 在 shadow root 上停止冒泡，页面和脚本自己挂在 document 冒泡阶段的监听都收不到，Tab 除外（见「运行平台」）；Tailwind 的 rem 在构建时换成 px；Element Plus 的弹层从一个很高的 z-index（20 亿）起往上叠。取色面板是例外，挂在 `document.body`。
 
@@ -134,7 +134,7 @@ docs(readme): 更新同步存储说明
   }
   ```
   - 读取时要容忍：字段缺失或类型不对（包括 `preset` 是 null）；v2.21.0 及以前残留的 `sync.lastSyncTime`；快捷键缺 `code`（当时存的是 `key`，已经接受让这些用户重录）；`expirationTime` 不到 1 天（含 null、0、负数），这时换成默认的一年，否则所有记录都会被当作过期，清理时全部删掉。
-  - `preset` 里没有的站点算启用（新站点默认启用）；已经删掉的站点留下的键不影响任何东西。
+  - `preset` 读取时按站点表列全：存储里是布尔值的照用，没有的站点算启用（新站点默认启用），已经删掉的站点的键不留。所以保存过一次之后，存储里列着站点表里的每个站点。
   - 保存时只写改过的字段，合并到存储里的当前值上；快捷键改了就整个替换（按字段合并的话，会拼出一个谁都没设过的组合）。这样对话框开着时其他标签页做的修改不会被冲掉。
 - **`lastSyncTime`**：上次同步成功的时间，只有同步会写它，只用来在设置页显示"最后同步时间"。
 - **`lastAutoSyncTime`**：上次自动同步开始的时间，开始之前写，成功、失败都算。加载页面时距它不到 10 分钟就不自动同步；所有标签页共用，所以是整个浏览器合起来 10 分钟最多一次。设置页的"立即同步"不看它，也不写它。

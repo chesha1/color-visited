@@ -445,12 +445,7 @@ export function normalizeUrl(link: { href: string, hostname: string }): string {
   return NORMALIZERS.get(link.hostname)?.(link.href) ?? link.href
 }
 
-// preset 里没有的站点算启用：新加的站点默认启用
-export function isSiteEnabled(preset: Record<string, boolean>, id: string): boolean {
-  return preset[id] !== false
-}
-
-// 页面属于哪个启用了的站点。一个页面最多属于一个站点（test/sites.test.ts 检查）
-export function findActiveSite(url: string, preset: Record<string, boolean>): Site | undefined {
-  return SITES.find((site) => isSiteEnabled(preset, site.id) && site.pages.some((page) => page.test(url)))
+// 页面属于哪个站点。一个页面最多属于一个站点（test/sites.test.ts 检查）
+export function findSite(url: string): Site | undefined {
+  return SITES.find((site) => site.pages.some((page) => page.test(url)))
 }

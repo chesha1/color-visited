@@ -4,6 +4,7 @@
 // 在 jsdom 里执行构建出来的脚本（见 ./build），像用户那样点对话框里的元素。文件里的测试按顺序接着前一个的状态跑。
 // 对话框和取色面板的外观、取色面板里的操作、按 Tab 时焦点怎么走、弹层实际有没有被页面盖住，要在浏览器里看
 import { beforeAll, expect, it, vi } from 'vitest'
+import { SITES } from '@/shared/sites'
 import { ELEMENT_PLUS_CONFIG } from '@/ui/root'
 import { buildScript, pageStyles, runScript, shadowRoots } from './build'
 import * as gm from './fakes/gm'
@@ -11,7 +12,9 @@ import { addLink, press } from './runtime/dom'
 import { DAY, YEAR } from './time'
 
 const SHORTCUT = { ctrlKey: true, shiftKey: true, altKey: false, metaKey: false, code: 'KeyV' }
+const ALL_ENABLED = Object.fromEntries(SITES.map(({ id }) => [id, true]))
 
+// preset 是空的：存储里没有的站点算启用。保存过一次之后，存储里列着站点表里的每个站点
 const SETTINGS = {
   general: { color: 'gray', expirationTime: YEAR, debug: false },
   preset: {},
@@ -115,7 +118,7 @@ it('在两个 tab 里各改一项，点一次保存，两项都存下来', async
   expect(storedSettings()).toEqual({
     ...SETTINGS,
     general: { ...SETTINGS.general, color: 'blue' },
-    preset: { '36kr': false },
+    preset: { ...ALL_ENABLED, '36kr': false },
   })
   await vi.waitFor(() => expect(saveButton().disabled).toBe(true))
 })
@@ -128,7 +131,7 @@ it('对话框开着时其他标签页改了别的字段：这边保存之后那�
   expect(storedSettings()).toEqual({
     ...SETTINGS,
     general: { ...SETTINGS.general, color: 'blue', expirationTime: 30 * DAY },
-    preset: { '36kr': true },
+    preset: ALL_ENABLED,
   })
   await showTab('general')
   expect(input(DAYS).value).toBe('30')

@@ -3,7 +3,7 @@
 
 import { DEFAULT_SHORTCUT, type Shortcut } from '@/core/shortcut'
 import { onRemoteSettingsWrite, readSettings, writeSettings } from '@/core/storage'
-import { isSiteEnabled } from '@/shared/sites'
+import { SITES } from '@/shared/sites'
 
 export interface GeneralSettings {
   color: string
@@ -20,7 +20,7 @@ export interface SyncSettings {
 
 export interface Settings {
   general: GeneralSettings
-  /** 站点 id → 是否启用。没有的站点算启用，见 isSiteEnabled */
+  /** 站点 id → 是否启用，站点表里的每个站点都有 */
   preset: Record<string, boolean>
   /** 批量标记的快捷键 */
   batch: Shortcut
@@ -30,7 +30,7 @@ export interface Settings {
 // 保存时交出的改动：只有改过的字段。快捷键是一个整体，改了就整个交出
 export interface SettingsPatch {
   general?: Partial<GeneralSettings>
-  preset?: Record<string, boolean>
+  preset?: Partial<Record<string, boolean>>
   batch?: Shortcut
   sync?: Partial<SyncSettings>
 }
@@ -44,7 +44,7 @@ export function createDefaultSettings(): Settings {
       expirationTime: 365 * DAY,
       debug: false,
     },
-    preset: {},
+    preset: Object.fromEntries(SITES.map(({ id }) => [id, true])), // 存储里没有的站点（比如新加的）默认启用
     batch: { ...DEFAULT_SHORTCUT },
     sync: { enabled: false, githubToken: '', gistId: '' },
   }
@@ -81,13 +81,9 @@ export function parseSettings(raw: unknown): Settings {
     general.expirationTime = defaults.general.expirationTime
   }
 
-  const preset = isRecord(stored.preset)
-    ? Object.fromEntries(Object.entries(stored.preset).filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean'))
-    : {}
-
   return {
     general,
-    preset,
+    preset: pick(defaults.preset, stored.preset),
     // 快捷键是一个整体：缺了哪个字段（比如以前存的是 key，没有 code），按字段补上默认值会拼出一个谁都没设过的组合
     batch: hasAllFields(defaults.batch, stored.batch) ? pick(defaults.batch, stored.batch) : defaults.batch,
     sync: pick(defaults.sync, stored.sync),
@@ -137,8 +133,7 @@ export function diffSettings(base: Settings, draft: Settings): SettingsPatch {
   const patch: SettingsPatch = {}
   const general = changedFields(base.general, draft.general)
   if (Object.keys(general).length > 0) patch.general = general
-  // 站点开关按是否启用比较：preset 里没有的站点算启用，改成 true 不算改动
-  const preset = Object.fromEntries(Object.entries(draft.preset).filter(([id, enabled]) => enabled !== isSiteEnabled(base.preset, id)))
+  const preset = changedFields(base.preset, draft.preset)
   if (Object.keys(preset).length > 0) patch.preset = preset
   if (Object.keys(changedFields(base.batch, draft.batch)).length > 0) patch.batch = { ...draft.batch }
   const sync = changedFields(base.sync, draft.sync)

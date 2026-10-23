@@ -8,17 +8,19 @@ import {
   saveSettings,
   type Settings,
 } from '@/core/settings'
+import { SITES } from '@/shared/sites'
 import { resetGM, setValueFromOtherTab, store } from './fakes/gm'
 import { DAY, YEAR } from './time'
 
 vi.mock('vite-plugin-monkey/dist/client', () => import('./fakes/gm'))
 
 const DEFAULTS = createDefaultSettings()
+const ALL_ENABLED = Object.fromEntries(SITES.map(({ id }) => [id, true]))
 
-// 存储里一份完整的设置，每个字段都和默认值不同
+// 存储里一份完整的设置，每个分组都和默认值不同
 const STORED: Settings = {
   general: { color: 'gray', expirationTime: 30 * DAY, debug: true },
-  preset: { v2ex: false, linuxdo: true },
+  preset: { ...ALL_ENABLED, v2ex: false },
   batch: { ctrlKey: false, shiftKey: false, altKey: true, metaKey: false, code: 'KeyB' },
   sync: { enabled: true, githubToken: 'token', gistId: 'gist' },
 }
@@ -37,13 +39,14 @@ describe('parseSettings：以默认值为底，只认默认值里有、类型也
     expect(parseSettings(STORED)).toEqual(STORED)
   })
 
-  it('preset 是 null：当作空的，所有站点都算启用', () => {
-    expect(parseSettings({ ...STORED, preset: null }).preset).toEqual({})
+  it('preset 是 null：当作空的，所有站点都启用', () => {
+    expect(parseSettings({ ...STORED, preset: null }).preset).toEqual(ALL_ENABLED)
   })
 
-  it('preset 里只留布尔值', () => {
-    expect(parseSettings({ ...STORED, preset: { v2ex: false, linuxdo: 'yes', zhihu: null, hupu: true } }).preset)
-      .toEqual({ v2ex: false, hupu: true })
+  // 新加的站点不在存储里
+  it('preset 按站点表列出每个站点：存储里是布尔值的照用，没有的、不是布尔值的算启用，站点表里没有的不留', () => {
+    expect(parseSettings({ ...STORED, preset: { v2ex: false, linuxdo: 'yes', zhihu: null, removed: false } }).preset)
+      .toEqual({ ...ALL_ENABLED, v2ex: false })
   })
 
   it('缺字段：缺的用默认值，其余的照旧', () => {
@@ -127,8 +130,8 @@ describe('saveSettings：只把改过的字段合并到存储里的当前值上'
   })
 
   it('站点开关：只改交出来的站点', () => {
-    saveSettings({ preset: { v2ex: true, zhihu: false } })
-    expect(getSettings().preset).toEqual({ v2ex: true, linuxdo: true, zhihu: false })
+    saveSettings({ preset: { zhihu: false } })
+    expect(getSettings().preset).toEqual({ ...ALL_ENABLED, v2ex: false, zhihu: false })
   })
 
   it('快捷键：整个替换', () => {
@@ -137,8 +140,13 @@ describe('saveSettings：只把改过的字段合并到存储里的当前值上'
     expect(getSettings().batch).toEqual(shortcut)
   })
 
-  it('存储里的旧值先规范化再合并：残留的字段去掉，不合法的过期时间换成一年', () => {
-    store.set('userSettings', { ...STORED, general: { ...STORED.general, expirationTime: 0 }, sync: { ...STORED.sync, lastSyncTime: 1 } })
+  it('存储里的旧值先规范化再合并：站点开关按站点表列全，残留的字段去掉，不合法的过期时间换成一年', () => {
+    store.set('userSettings', {
+      ...STORED,
+      general: { ...STORED.general, expirationTime: 0 },
+      preset: { v2ex: false, removed: false },
+      sync: { ...STORED.sync, lastSyncTime: 1 },
+    })
     saveSettings({ general: { debug: false } })
     expect(store.get('userSettings')).toEqual({ ...STORED, general: { ...STORED.general, expirationTime: YEAR, debug: false } })
   })
@@ -194,15 +202,6 @@ describe('diffSettings：只交出改过的字段，没改的部分不出现', (
       draft.preset.linuxdo = true
     })
     expect(diffSettings(STORED, draft)).toEqual({ preset: { v2ex: true } })
-  })
-
-  it('站点开关：preset 里没有的站点算启用，打开它不算改动，关掉才算', () => {
-    expect(diffSettings(STORED, draftOf((draft) => {
-      draft.preset.zhihu = true
-    }))).toEqual({})
-    expect(diffSettings(STORED, draftOf((draft) => {
-      draft.preset.zhihu = false
-    }))).toEqual({ preset: { zhihu: false } })
   })
 
   it('快捷键改了任何一处：整个交出', () => {

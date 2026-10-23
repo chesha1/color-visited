@@ -5,7 +5,7 @@
 
 ## 怎么用这份文档
 
-- 新会话可以直接说：「读 `docs/plans/refactor-plan-v6.md`，做 S18」。
+- 新会话可以直接说：「读 `docs/plans/refactor-plan-v6.md`，做 S19」。
 - 本文只写要做的事。架构、约束和已经定了的取舍都在 [AGENTS.md](../../AGENTS.md)，只在那里维护：v2 到 v5 每出一版计划都把它们整段重抄一遍，S17 搬进 AGENTS.md 之后不再抄。仓库约定（pnpm、测试、版本号、提交信息格式）也在那里。
 - 编号：
   - **S** = 实施步骤，**D** = 要你拍板的决策，**Q** = 先实测、再决定做不做的调查。编号只是名字，先后看「进度」。
@@ -22,19 +22,18 @@
 
 | 步骤 | 内容 | 状态 |
 |---|---|---|
-| S18 | 站点开关在默认值里列全 | 未开始 |
 | S19 | 访问记录变化的通知不带 URL 列表 | 未开始 |
 | S20 | 设置界面的模板整理 | 未开始 |
 | S15 | 放进隔离环境；在真实的管理器里把手动验证一次做完，连同 Q1 | 未开始 |
 
-- 为什么是这个顺序：S15 放最后，它的验证只能手动做，一次覆盖前面所有的改动。S18、S19 互不依赖。
+- 为什么是这个顺序：S15 放最后，它的验证只能手动做，一次覆盖前面所有的改动。
 
 ## 结论
 
 - **整体结构是对的，不需要推倒重来。** 从需求重新推了一遍，现在的每个机制都对应一条需求，去掉哪一个都会丢功能，或者把修过的 bug 引回来（见「每个机制为什么在」）。
   - 模块之间是一张有向无环图。唯一的环是 ui/message.ts 引用 ui/notify.ts 里的类型，运行时不存在；每次加载都执行的模块不碰界面，由 ESLint 守着。
   - 代码量（不算注释和空行）：运行时（main.ts 和 core/，不含同步）约 450 行，同步约 300 行，界面的 .ts 约 120 行、.vue 约 430 行；站点表约 420 行，基本是数据。
-- **反复修 bug 留下的痕迹有三处**，都在模块内部，不动结构（见「迭代留下的痕迹」）。三处在副本里一起试过：`pnpm test` 全过，src 少 65 行，测试少 54 行。
+- **反复修 bug 留下的痕迹有三处**，都在模块内部，不动结构。站点开关的缺省值已经在默认值里列全（S18），剩下两处见「迭代留下的痕迹」，各自在副本里试过。
 - **越积越多的是计划文档本身。**
   - 约束从 v2 起每版整段重抄一遍；「考虑过、不做的」一版比一版长。它们记的是现状和已经定了的事，不是要做的事。
   - 隔离环境（S15）只改两行配置，从 v2 的 A14 起每一版都有它，每次都被新插进来的步骤挤到后面，因为它的验证只能在真实的管理器里手动做。
@@ -73,37 +72,21 @@
 
 ### 迭代留下的痕迹
 
-1. **"没列出的站点算启用"要在三个地方各记一次**（S18）。
-   - `userSettings.preset` 里只有用户动过的站点，没有的算启用。于是用到它的地方都得记着这条：`findActiveSite` 经过 `isSiteEnabled`；对话框打开时，`toDraft` 按站点表把每个站点补上；`diffSettings` 比较站点开关时也要按 `isSiteEnabled` 比，否则补上的 `true` 会被当成改动。
-   - 这其实是缺省值，该在规范化时一次补齐：默认值里按站点表列出每个站点（都是 `true`），`parseSettings` 就能像别的分组一样用 `pick`（存储里是布尔值的照用，没有的取默认，站点表里没有的不留）。之后用到它的地方只看 `preset[id]`。
-2. **记录变化的通知带着 URL 列表，唯一的订阅者又拿它在整页里过滤**（S19）。
+1. **记录变化的通知带着 URL 列表，唯一的订阅者又拿它在整页里过滤**（S19）。
    - `onLinksChange` 把这次写入、删除的 URL 交给订阅者；唯一的订阅者 colorizer.ts 为了找到页面上对应的链接，要把整页的链接都归一化一遍，再查这个集合。
    - 既然整页都要过一遍，就不必带 URL：存储一变，按存储把整页的链接重新判断一遍，和激活时的第一次扫描是同一段代码。
-3. **设置界面的模板基本还是 2025 年 7 月的写法**（S20）。S10 换掉了数据流，模板没怎么动：
+2. **设置界面的模板基本还是 2025 年 7 月的写法**（S20）。S10 换掉了数据流，模板没怎么动：
    - PresetTab 展开后的两段规则只差标题和颜色（v5 也指出过）；还有只包一层的 div，和一个什么也拦不住的 `@click.stop`（开关和可点的标题区是兄弟元素，没有外层的点击处理）。
    - 滚动容器叠了好几层：最外层 400px 的容器里只有一个 `h-full` 的 el-tabs，内容永远超不出它，这一层的 `overflow-y-auto` 不起作用；预设网站页的根元素和外面的 tab 面板都设了 `h-full overflow-y-auto`，实际只有一层在滚。
    - 不少注释只复述下面的标签，比如 `<!-- 启用同步开关 -->`、`<!-- 右侧：独立的开关控制区 -->`。
 
-其余模块逐个看过，不动：main.ts、shortcut.ts、log.ts、core/sync/ 的三个文件，ui/ 的 root.ts、notify.ts、message.ts、dialog.ts，还有 vite.config.ts（page.ts 只在 S18 里改一行）。singleFile 仍然需要：vite-plugin-monkey 8.1.1 还是最新版，仍按入口 chunk 的 `dynamicImports` 决定改用 SystemJS。
+其余模块逐个看过，不动：main.ts、shortcut.ts、log.ts、core/sync/ 的三个文件，ui/ 的 root.ts、notify.ts、message.ts、dialog.ts，还有 vite.config.ts。singleFile 仍然需要：vite-plugin-monkey 8.1.1 还是最新版，仍按入口 chunk 的 `dynamicImports` 决定改用 SystemJS。
 
 ## 步骤
 
-### S18 · 站点开关在默认值里列全
-
-- 现状和思路：见「迭代留下的痕迹」第 1 条。
-- 做法：
-  - settings.ts：`createDefaultSettings` 的 `preset` 按站点表列出每个站点，都是 `true`；`parseSettings` 的 `preset` 用 `pick`；`diffSettings` 的站点开关直接用 `changedFields`；`SettingsPatch.preset` 改成 `Partial<Record<string, boolean>>`。
-  - shared/sites.ts：删掉 `isSiteEnabled`；`findActiveSite(url, preset)` 换成只查站点表的 `findSite(url)`，开没开由 page.ts 看 `settings.preset[site.id]`。站点表从此不知道用户设置。
-  - ui/draft.ts：删掉 `toDraft`。对话框的快照和副本各调一次 `getSettings()`，两次拿到的本来就是互不相干的两份；`resetGroup` 直接取 `createDefaultSettings()[group]`。
-- 存储上的变化：保存过一次设置之后，`userSettings.preset` 会列出站点表里的每个站点，已经删掉的站点的键随之去掉。c210e24 之前的版本存的就是这个样子（启动时把缺的站点补成 `true` 写回去），新旧版本互相读都没问题；以后新加的站点不在存储里，照旧默认启用。
-- 测试：
-  - settings.test.ts：preset 的几条改成按站点表列全（存储里没有的、不是布尔值的算启用，站点表里没有的不留）；删掉"没有的站点打开不算改动"那条，副本列全之后这种情况不存在了。
-  - draft.test.ts 删掉 `toDraft` 的几条；sites.test.ts 删掉 `findActiveSite` 那组，关掉的站点不激活由 test/runtime/disabled.test.ts 锁住；dialog.test.ts 里存下来的 preset 按列全的样子写。
-- 副本里试过：src 少 22 行，测试少 54 行，`pnpm test` 全过。
-
 ### S19 · 访问记录变化的通知不带 URL 列表
 
-- 现状和思路：见「迭代留下的痕迹」第 2 条。
+- 现状和思路：见「迭代留下的痕迹」第 1 条。
 - 做法：storage.ts 的 `onLinksChange` 改成 `(listener: () => void)`，`setLinks`、`deleteLinks` 不再把 URL 交出去；colorizer.ts 订阅时直接把 `document.querySelectorAll('a[href]')` 交给 `updateLinks`。其他标签页的写入照旧收不到（把其他标签页记下的访问实时染到当前页上是新功能，见 AGENTS.md 的「已经定了的取舍」）。
 - 开销：jsdom 里，500 个链接、存储里 10 万条记录的页面上点一次链接，中位数 11.78 → 11.83 ms。jsdom 本身慢，时间主要花在 `querySelectorAll` 和读 `href` 上，两版都要做。
 - 测试：storage.test.ts 里 `onLinksChange` 的两条只查通知了几次；test/runtime/ 的场景不用改。
@@ -111,7 +94,7 @@
 
 ### S20 · 设置界面的模板整理
 
-- 现状：见「迭代留下的痕迹」第 3 条。
+- 现状：见「迭代留下的痕迹」第 2 条。
 - 做法（外观不变）：
   - PresetTab：两段规则合成一段 `v-for`；去掉只包一层的 div 和 `@click.stop`；根元素不再自己滚动。
   - SettingsDialog：最外层容器的 `overflow-y-auto` 去掉；每个 tab 面板只留一层滚动。
