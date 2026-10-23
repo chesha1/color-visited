@@ -34,10 +34,10 @@ export function isLinkEntry(key: string, value: unknown): value is number {
   return isLinkKey(key) && Number.isFinite(value)
 }
 
-// 本标签页写入、删除了哪些访问记录。其他标签页的写入收不到：记录是逐键存储的，没法订阅全部的键
-const linkListeners = new Set<(urls: string[]) => void>()
+// 本标签页写入、删除了访问记录。其他标签页的写入收不到：记录是逐键存储的，没法订阅全部的键
+const linkListeners = new Set<() => void>()
 
-export function onLinksChange(listener: (urls: string[]) => void): () => void {
+export function onLinksChange(listener: () => void): () => void {
   linkListeners.add(listener)
   return () => {
     linkListeners.delete(listener)
@@ -48,14 +48,13 @@ export function onLinksChange(listener: (urls: string[]) => void): () => void {
 function setLinks(links: VisitedLinks): void {
   if (GM_setValues) GM_setValues(links)
   else for (const url in links) GM_setValue(url, links[url])
-  const urls = Object.keys(links)
-  for (const listener of linkListeners) listener(urls)
+  for (const listener of linkListeners) listener()
 }
 
 function deleteLinks(urls: string[]): void {
   if (GM_deleteValues) GM_deleteValues(urls)
   else for (const url of urls) GM_deleteValue(url)
-  for (const listener of linkListeners) listener(urls)
+  for (const listener of linkListeners) listener()
 }
 
 // 有没有还没过期的记录。过期的记录读的时候就当作没有，不等清理删掉：

@@ -25,7 +25,8 @@ export function activate(site: Site, settings: Settings): () => void {
 
   // 按链接现在的 href 重新判断，不看原来有没有标记：翻页、"换一批"、虚拟滚动这类列表会复用 <a>、只换 href，
   // 移出 DOM 之后再改的 href 只能在插回来时发现，克隆出来的链接也带着原来的标记。
-  // 结果和现在一样时 toggleAttribute 不写 DOM：每个新插入的链接都要判断一遍，而 setAttribute 即使值没变，页面上的 MutationObserver 也会收到一次变化
+  // 结果和现在一样时 toggleAttribute 不写 DOM：每个新插入的链接都要判断，访问记录每变一次整页都要重新判断，
+  // 而 setAttribute 即使值没变，页面上的 MutationObserver 也会收到一次变化
   const updateLinks = (links: Iterable<Element>, reason: string) => {
     let checked = 0
     let marked = 0
@@ -48,13 +49,9 @@ export function activate(site: Site, settings: Settings): () => void {
   const observer = new MutationObserver((mutations) => updateLinks(linksIn(mutations), '页面有变化'))
   observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] })
 
-  // 页面上同一个 URL 可能有好几个链接，都要跟着改
-  const unsubscribe = onLinksChange((urls) => {
-    const changed = new Set(urls)
-    const links = [...document.querySelectorAll('a[href]')]
-      .filter((link) => link instanceof HTMLAnchorElement && changed.has(normalizeUrl(link)))
-    updateLinks(links, `${urls.length} 条访问记录有变化`)
-  })
+  // 访问记录一变，就按存储把整页的链接重新判断一遍。只挑出变了的 URL 也省不了什么：
+  // 同一个 URL 在页面上可能有好几个写法不同的链接，要找出它们，照样得把每个链接都归一化一遍
+  const unsubscribe = onLinksChange(() => updateLinks(document.querySelectorAll('a[href]'), '访问记录有变化'))
 
   const onClick = (event: MouseEvent) => {
     // auxclick 对中键、右键都会触发。右键点一下（比如复制链接地址）不算点开

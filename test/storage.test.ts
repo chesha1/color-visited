@@ -158,7 +158,8 @@ describe('migrateLegacyLinks：v2.21.0 及以前把全部记录存在 visitedLin
   })
 })
 
-describe('onLinksChange：本标签页写入、删除访问记录之后，通知改了哪些 URL', () => {
+// 订阅者每收到一次通知就把整页的链接重新判断一遍，所以一次写入、删除不管改了几条，都只通知一次
+describe('onLinksChange：本标签页写入、删除访问记录之后通知', () => {
   const listener = vi.fn()
   let unsubscribe: () => void
 
@@ -171,19 +172,19 @@ describe('onLinksChange：本标签页写入、删除访问记录之后，通知
     unsubscribe()
   })
 
-  it('写入：只通知真的写进去了的', () => {
+  it('写入：合并、记下访问，各通知一次', () => {
     store.set(A, NOW)
-    mergeLinks({ [A]: NOW - DAY, [B]: NOW })
+    mergeLinks({ [A]: NOW - DAY, [B]: NOW, [C]: NOW - DAY })
     recordVisit(C)
-    expect(listener.mock.calls).toEqual([[[B]], [[C]]])
+    expect(listener).toHaveBeenCalledTimes(2)
   })
 
-  it('删除：撤销批量标记、过期清理', () => {
-    mergeLinks({ [A]: NOW, [B]: NOW - YEAR - 1 })
+  it('删除：撤销批量标记、过期清理，各通知一次', () => {
+    mergeLinks({ [A]: NOW, [B]: NOW, [C]: NOW - YEAR - 1 })
     listener.mockClear()
-    deleteLinksIfUnchanged({ [A]: NOW })
+    deleteLinksIfUnchanged({ [A]: NOW, [B]: NOW })
     deleteExpiredLinks(YEAR)
-    expect(listener.mock.calls).toEqual([[[A]], [[B]]])
+    expect(listener).toHaveBeenCalledTimes(2)
   })
 
   it('什么都没变时不通知', () => {
