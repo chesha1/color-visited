@@ -63,7 +63,7 @@ docs(readme): 更新同步存储说明
 
 改代码时不能破坏的东西。改了这里写到的架构或约束，在同一个提交里改这一节；只关于某一个函数的细节写在它的注释里，这里只指过去，不在两处各写一遍。
 
-文中的 S15、Q1 是[重构计划 v6](docs/plans/refactor-plan-v6.md) 里还没做的步骤和调查，做完之后改掉对应的地方；D7、D9 这类是计划文档里已经定了的决策的编号，提交信息里引用过。
+文中的 Q1 是[重构计划 v6](docs/plans/refactor-plan-v6.md) 里还没做的调查，做完之后改掉对应的地方；D7、D9 这类是计划文档里已经定了的决策的编号，提交信息里引用过。
 
 ### 模块
 
@@ -103,7 +103,7 @@ docs(readme): 更新同步存储说明
 - **后台任务轮流做。** 过期清理、自动同步都先过 `takeTurn`：每个任务一个时间戳，所有标签页共用，距上次开始不到间隔就跳过；轮到了先写下现在的时间，再开始做，失败也算一次。设置页的"立即同步"不经过它。
 - **对话框只有一份 draft、一个保存。** 打开时取两次 `getSettings()`，一份作快照，一份作副本给各个 tab 编辑（每次取到的都是新建的对象）；有没有改动看 `diffSettings(快照, draft)` 是不是空的，保存就是把这份差别交给 `saveSettings`，之后快照、副本都重新从存储里取。只有关闭按钮会关，没保存的修改跟着丢掉。
 - **界面单文件、按需执行。** 没打开过设置、也没弹过通知的页面上，没有宿主元素，Vue 和 Element Plus 的代码不执行，宿主页面上只多一段染色样式；只有设置对话框开着时，`<head>` 里多一份给取色面板用的 Element Plus 样式（见「构建与发布」）。
-- **界面和宿主页面互不影响。** closed shadow root 隔开选择器和元素；`:host { all: initial }` 挡住继承的样式；界面里的 keydown、keypress、keyup 在 shadow root 上停止冒泡，页面和脚本自己挂在 document 冒泡阶段的监听都收不到，Tab 除外（见「运行平台」）；Tailwind 的 rem 在构建时换成 px；Element Plus 的弹层从一个很高的 z-index（20 亿）起往上叠。取色面板是例外，挂在 `document.body`。
+- **界面和宿主页面互不影响。** 脚本在隔离环境里运行，页面改写不了它用到的内置对象，也看不到它的 JS 对象（见「运行平台」）；closed shadow root 隔开选择器和元素；`:host { all: initial }` 挡住继承的样式；界面里的 keydown、keypress、keyup 在 shadow root 上停止冒泡，页面和脚本自己挂在 document 冒泡阶段的监听都收不到，Tab 除外（见「运行平台」）；Tailwind 的 rem 在构建时换成 px；Element Plus 的弹层从一个很高的 z-index（20 亿）起往上叠。取色面板是例外，挂在 `document.body`。
 
 ### 写法
 
@@ -176,8 +176,10 @@ docs(readme): 更新同步存储说明
   - SPA 站点要写 `match` 覆盖整个 host：站内跳转不是整页加载，管理器不会补注入，否则从非激活页（比如从外部链接打开的帖子）站内跳到激活页，脚本一直不在。
   - 非 SPA 站点不写 `match`：每次注入，管理器都要把全部 GM 值交给页面（见「性能与数据规模」）。怎么判断是不是 SPA，见「新增站点怎么做」。
 - **SPA 跳转检测用 MutationObserver**，在非激活页上也一直运行，原因见 page.ts 的 `watchUrl`。
-- **注入环境。** Tampermonkey 不写 `@sandbox` 时默认是 `raw`，注入页面的 MAIN_WORLD；Violentmonkey 的 `@inject-into` 默认是 `auto`，也是先试页面环境（S15 之后两者都进隔离环境）。在页面环境里，脚本用到的全局对象和原型都和页面共享，`fetch` 和外链的资源都受页面 CSP 的限制。
-  - 所以网络请求一律走 `GM_xmlhttpRequest`（只有 core/sync/github.ts 发请求）：Hacker News 的 CSP 是 `default-src 'self'`，页面的 `fetch` 连不了 api.github.com，请求根本发不出去。测试里全局的 `fetch` 被换成直接失败，哪里用了它，同步的测试就会失败。
+- **注入环境。** 脚本头部写了 `@sandbox DOM`（Tampermonkey 认）和 `@inject-into content`（Violentmonkey 认），两个管理器都把脚本放进隔离环境：和页面共用 DOM，JS 对象各是各的。不写的话，两个管理器默认都先放进页面环境（TM 的 `raw`、VM 的 `auto`），脚本用到的全局对象和原型都和页面共享。
+  - 页面环境里，页面先换掉 `attachShadow` 就能拿到 closed shadow root，换掉输入框 `value` 的 setter 就能在打开设置时看到令牌；Vue 设的 `__VUE__` 也落在页面的 `window` 上。放进隔离环境之后这些都没有了，功能不变（2026-10-29，Chrome 146 headless，CDP 的 isolated world 里执行构建产物，和页面环境对照）。在输入框里打字、粘贴，页面在捕获阶段照样看得到，见「已经定了的取舍」。
+  - 开发模式（`pnpm dev`）不写这两行，代码在页面环境里跑：vite-plugin-monkey 的加载器往页面里插 `<script type="module">` 加载源码，GM API 挂在 `document` 的一个属性上交给它，而这种属性两个环境互相看不到。所以开发模式验证不了隔离环境里的行为。
+  - 网络请求一律走 `GM_xmlhttpRequest`（只有 core/sync/github.ts 发请求）：由管理器发出，不受页面 CSP 的限制。页面环境里的 `fetch` 受页面 CSP 的限制：Hacker News 的 CSP 是 `default-src 'self'`，连不了 api.github.com。测试里全局的 `fetch` 被换成直接失败，哪里用了它，同步的测试就会失败。
 - **界面的事件和层叠。** 键盘事件、input 事件都是 composed 的，会穿出 shadow root；页面在 document 上看到的目标是宿主元素（closed 时 `composedPath()` 也只给到宿主元素），分不出用户是不是在输入框里打字。页面在捕获阶段先于 shadow root 拿到事件。宿主元素没有定位，界面里的弹层和页面的元素在同一个层叠上下文里比 z-index。
   - Element Plus 的焦点陷阱拿 `document.activeElement` 找焦点，closed shadow root 里它只是宿主元素，所以对话框里按 Tab 不会循环。焦点移到对话框外的元素上时，它看 document 上最近一次是 keydown 还是 mousedown，是按键移走的才拉回来：按 Shift+Tab 移出第一个元素会被拉回来，按 Tab 从最后一个元素移到浏览器的地址栏就不管了。所以 Tab 不能在 shadow root 上拦下（2026-10-20，Chrome 146 headless，CDP 的真实按键：拦下 Tab 之后，点过对话框里的输入框再按 Shift+Tab，焦点跑到页面上）。
   - 不能把宿主元素做成层叠上下文（加定位和 z-index，或者用 popover 放进顶层）：取色面板挂在 body 里，会被整个压在对话框下面。

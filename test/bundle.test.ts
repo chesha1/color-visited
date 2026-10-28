@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url": "https://www.v2ex.com/"}
-// 构建出来的脚本：只有一个文件；加载页面时只执行内核，界面（Vue、Element Plus）到第一次通知、第一次打开设置时才执行；
+// 构建出来的脚本：只有一个文件，头部要求放进隔离环境；加载页面时只执行内核，界面（Vue、Element Plus）到第一次通知、第一次打开设置时才执行；
 // 界面的样式都写在它的 closed shadow root 里、不用 rem，宿主页面上只多一段染色样式，设置对话框开着时再多一份给取色面板的样式；
 // 通知和对话框用同一份 Element Plus 配置。
 // 先构建，再在 jsdom 里执行产物（见 ./build），GM API 换成内存版。样式在页面上的效果、对话框的外观，要在浏览器里看
@@ -33,6 +33,13 @@ beforeAll(async () => {
 it('只有一个文件：不 @require 别的脚本，不是 SystemJS 格式，样式不从 unpkg 加载，也不用 GM_addStyle 写进页面', () => {
   expect(script.slice(0, script.indexOf('==/UserScript=='))).not.toContain('@require')
   for (const text of ['System.register', 'unpkg.com', 'GM_addStyle']) expect(script).not.toContain(text)
+})
+
+// 两个管理器各认各的写法。开发模式的头部不写，见 vite.config.ts
+it('头部要求放进隔离环境：Tampermonkey 认 @sandbox DOM，Violentmonkey 认 @inject-into content', () => {
+  const header = script.slice(0, script.indexOf('==/UserScript=='))
+  expect(header).toMatch(/^\/\/ @sandbox\s+DOM$/m)
+  expect(header).toMatch(/^\/\/ @inject-into\s+content$/m)
 })
 
 it('加载页面时只执行内核：链接照常标记，菜单注册了；界面的代码没有执行，页面上没有宿主元素', () => {

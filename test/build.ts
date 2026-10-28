@@ -27,7 +27,7 @@ export async function buildScript(): Promise<string> {
 // 脚本建的 shadow root。closed 的从外面拿不到，所以执行产物之前换掉 attachShadow，记下它返回的
 export const shadowRoots: ShadowRoot[] = []
 
-// 和管理器把脚本注入页面一样：GM API 放在全局，间接调用 eval，在全局作用域里执行
+// GM API 放在全局，间接调用 eval，在全局作用域里执行。jsdom 只有一个 JS 环境，真实的管理器会把脚本放进隔离环境（见 AGENTS.md「运行平台」）
 export function runScript(script: string): void {
   const { attachShadow } = Element.prototype
   Element.prototype.attachShadow = function (init: ShadowRootInit) {

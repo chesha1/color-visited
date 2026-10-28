@@ -57,7 +57,7 @@ function tailwindInShadowRoot(): Plugin {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),
@@ -91,6 +91,10 @@ export default defineConfig({
         match,
         'run-at': 'document-idle',
         noframes: true,
+        // 只要 DOM、不要页面的 JS 对象，放进隔离环境（见 AGENTS.md「运行平台」）。@sandbox 给 Tampermonkey，@inject-into 给 Violentmonkey。
+        // 开发模式不写：vite-plugin-monkey 的加载器把 GM API 挂在 document 的一个属性上，交给它插进页面的源码，
+        // 加载器进了隔离环境，页面环境里就读不到这个属性
+        ...(command === 'build' && { sandbox: 'DOM', 'inject-into': 'content' }),
         homepage: 'https://github.com/chesha1/color-visited',
         supportURL: 'https://github.com/chesha1/color-visited/issues',
         // 同步的请求走 GM_xmlhttpRequest，见 src/core/sync/github.ts
@@ -107,4 +111,4 @@ export default defineConfig({
       },
     }),
   ],
-})
+}))
