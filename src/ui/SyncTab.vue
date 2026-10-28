@@ -10,7 +10,6 @@
     </div>
 
     <div class="space-y-4">
-      <!-- 启用同步开关 -->
       <div class="flex items-center justify-between">
         <div>
           <label class="text-sm font-medium text-gray-900">启用数据同步</label>
@@ -18,12 +17,9 @@
             开启后加载页面时自动同步，{{ autoSyncMinutes }} 分钟内最多一次
           </p>
         </div>
-        <el-switch
-          v-model="sync.enabled"
-        />
+        <el-switch v-model="sync.enabled" />
       </div>
 
-      <!-- GitHub 令牌输入 -->
       <div>
         <label class="block text-sm font-medium text-gray-900 mb-2">
           GitHub 个人访问令牌
@@ -36,11 +32,10 @@
           :disabled="!sync.enabled"
         />
         <p class="text-xs text-gray-500 mt-1">
-          需要创建具有 "gist" 权限的个人访问令牌
+          到 GitHub > Settings > Developer settings > Personal access tokens > Tokens (classic) 创建，权限选 "gist"
         </p>
       </div>
 
-      <!-- Gist ID 输入：失焦时把粘贴进来的 Gist 网址归一化成纯 ID -->
       <div>
         <label class="block text-sm font-medium text-gray-900 mb-2">
           Gist ID
@@ -52,43 +47,20 @@
           @blur="sync.gistId = normalizeGistId(sync.gistId)"
         />
         <p class="text-xs text-gray-500 mt-1">
-          新建一个 Gist，文件名和内容随意，首次同步时内容会被替换为同步数据
+          新建一个专用的 Gist，文件名和内容随意，首次同步时内容会被替换为同步数据
         </p>
       </div>
 
-      <!-- 帮助说明 -->
-      <el-card
-        class="bg-blue-50"
-        shadow="never"
-      >
-        <template #header>
-          <span class="text-sm font-medium text-blue-800">设置步骤</span>
-        </template>
-        <ol class="text-xs text-blue-700 space-y-1 list-decimal list-inside">
-          <li>到 GitHub > Settings > Developer settings > Personal access tokens > Tokens (classic) 创建令牌，权限选择 "gist"</li>
-          <li>新建一个专用的 Gist（文件名和内容随意，首次同步时会被替换为同步数据），复制网址中的 ID 部分，或直接粘贴整个网址</li>
-          <li>将令牌和 Gist ID 填入上方输入框</li>
-        </ol>
-      </el-card>
-
-      <!-- 同步状态显示 -->
       <el-card shadow="never">
         <template #header>
           <span class="text-sm font-medium text-gray-800">同步状态</span>
         </template>
-        <div class="text-sm space-y-2">
-          <div class="flex justify-between">
-            <span class="text-gray-600">当前 Gist ID:</span>
-            <span class="text-gray-900">{{ sync.gistId || '未设置' }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">最后同步时间:</span>
-            <span class="text-gray-900">{{ lastSyncTime ? new Date(lastSyncTime).toLocaleString() : '从未同步' }}</span>
-          </div>
+        <div class="text-sm flex justify-between">
+          <span class="text-gray-600">最后同步时间:</span>
+          <span class="text-gray-900">{{ lastSyncTime ? new Date(lastSyncTime).toLocaleString() : '从未同步' }}</span>
         </div>
       </el-card>
 
-      <!-- 测试连接、立即同步按钮 -->
       <div class="flex justify-center pt-2">
         <el-button
           type="primary"

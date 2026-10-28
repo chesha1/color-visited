@@ -11,62 +11,51 @@
     <template #header>
       <span class="text-lg font-semibold">设置</span>
     </template>
-    <div class="h-[400px] overflow-y-auto">
-      <!-- 每个 tab 编辑设置的一个分组，name 就是分组名 -->
-      <el-tabs
-        v-model="tab"
-        tab-position="left"
-        class="h-full"
-        stretch
+    <!-- 每个 tab 编辑设置的一个分组，name 就是分组名 -->
+    <el-tabs
+      v-model="tab"
+      tab-position="left"
+      class="h-[400px]"
+    >
+      <el-tab-pane
+        label="常规设置"
+        name="general"
+        class="h-full p-6 overflow-y-auto"
       >
-        <el-tab-pane
-          label="常规设置"
-          name="general"
-          class="h-full"
-        >
-          <div class="p-6 h-full overflow-y-auto">
-            <GeneralTab
-              v-model="draft.general"
-              :saved-expiration-time="saved.general.expirationTime"
-            />
-          </div>
-        </el-tab-pane>
-        <el-tab-pane
-          label="预设网站"
-          name="preset"
-          class="h-full"
-        >
-          <div class="p-6 h-full overflow-y-auto">
-            <PresetTab v-model="draft.preset" />
-          </div>
-        </el-tab-pane>
-        <el-tab-pane
-          label="批量染色快捷键"
-          name="batch"
-          class="h-full"
-        >
-          <div class="p-6 h-full overflow-y-auto">
-            <ShortcutTab
-              v-model="draft.batch"
-              :recording="tab === 'batch'"
-              :changed="!!changes.batch"
-            />
-          </div>
-        </el-tab-pane>
-        <el-tab-pane
-          label="数据同步"
-          name="sync"
-          class="h-full"
-        >
-          <div class="p-6 h-full overflow-y-auto">
-            <SyncTab
-              v-model="draft.sync"
-              :changed="!!changes.sync"
-            />
-          </div>
-        </el-tab-pane>
-      </el-tabs>
-    </div>
+        <GeneralTab
+          v-model="draft.general"
+          :saved-expiration-time="saved.general.expirationTime"
+        />
+      </el-tab-pane>
+      <el-tab-pane
+        label="预设网站"
+        name="preset"
+        class="h-full p-6 overflow-y-auto"
+      >
+        <PresetTab v-model="draft.preset" />
+      </el-tab-pane>
+      <el-tab-pane
+        label="批量染色快捷键"
+        name="batch"
+        class="h-full p-6 overflow-y-auto"
+      >
+        <ShortcutTab
+          v-model="draft.batch"
+          :recording="tab === 'batch'"
+          :changed="!!changes.batch"
+        />
+      </el-tab-pane>
+      <el-tab-pane
+        label="数据同步"
+        name="sync"
+        class="h-full p-6 overflow-y-auto"
+      >
+        <SyncTab
+          v-model="draft.sync"
+          :changed="!!changes.sync"
+        />
+      </el-tab-pane>
+    </el-tabs>
 
     <template #footer>
       <div class="flex justify-end gap-3">
