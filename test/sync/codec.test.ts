@@ -29,6 +29,7 @@ describe('往返：编码再解码，每个键都和原来一字不差', () => {
     ['带端口', 'https://example.com:8443/a'],
     ['域名有大写字母', 'https://Example.com/a'],
     ['带用户名', 'https://user@example.com/a'],
+    ['host 是 __proto__', 'https://__proto__/x'],
     ['有中文', 'https://example.com/中文?q=测试'],
     ['mailto:', 'mailto:hn@ycombinator.com'],
     ['javascript:', 'javascript:void(0)'],

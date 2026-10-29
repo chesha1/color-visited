@@ -103,32 +103,23 @@ function splitUrl(url: string): [key: string, text: string] {
   return [RAW_GROUP, url]
 }
 
-// 按第一项排序：分组按分组键，组内按文本
-function byFirst([a]: [string, unknown], [b]: [string, unknown]): number {
-  return a < b ? -1 : a > b ? 1 : 0
-}
-
-// v3 的 payload：{ 分组键: [[和上一条相同的前缀长度, 剩下的文本, 时间戳], …] }。组内按文本排好序，相邻两条的前缀多半相同
+// v3 的 payload：{ 分组键: [[和上一条相同的前缀长度, 剩下的文本, 时间戳], …] }。
+// 整条 URL 排一次序，组内的文本也就排好了序（同一组的 URL 都是同一个 origin 接上文本，@raw 组的文本就是 URL 本身），相邻两条的前缀多半相同。
+// 分组键是 host，可能是 __proto__：先放在 Map 里，最后用 Object.fromEntries 建成自有属性
 function group(links: VisitedLinks): Record<string, [number, string, number][]> {
-  const groups = new Map<string, [text: string, time: number][]>()
-  for (const [url, time] of Object.entries(links)) {
+  const groups = new Map<string, [number, string, number][]>()
+  const previous = new Map<string, string>()
+  for (const url of Object.keys(links).sort()) {
     const [key, text] = splitUrl(url)
-    const entries = groups.get(key)
-    if (entries) entries.push([text, time])
-    else groups.set(key, [[text, time]])
+    const last = previous.get(key) ?? ''
+    let prefix = 0
+    while (prefix < text.length && text[prefix] === last[prefix]) prefix++
+    previous.set(key, text)
+    const records = groups.get(key) ?? []
+    records.push([prefix, text.slice(prefix), links[url]])
+    groups.set(key, records)
   }
-
-  const payload: Record<string, [number, string, number][]> = {}
-  for (const [key, entries] of [...groups].sort(byFirst)) {
-    let previous = ''
-    payload[key] = entries.sort(byFirst).map(([text, time]) => {
-      let prefix = 0
-      while (prefix < text.length && text[prefix] === previous[prefix]) prefix++
-      previous = text
-      return [prefix, text.slice(prefix), time]
-    })
-  }
-  return payload
+  return Object.fromEntries(groups)
 }
 
 // 把 v3 的 payload 还原成平铺的「URL → 时间戳」，时间戳和别的格式一样留到 pickLinks 过滤

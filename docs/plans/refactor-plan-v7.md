@@ -6,7 +6,7 @@
 
 ## 怎么用这份文档
 
-- 新会话可以直接说：「读 `docs/plans/refactor-plan-v7.md`，做 S22」。
+- 新会话可以直接说：「读 `docs/plans/refactor-plan-v7.md`，做 S23」。
 - 架构、约束和已经定了的取舍都在 [AGENTS.md](../../AGENTS.md)，只在那里维护；仓库约定（pnpm、测试、版本号、提交信息格式）也在那里。
 - 编号接着 v6 往下排，删掉的编号不复用：**S** = 实施步骤，**D** = 要你拍板的决策。
 - 每完成一步：
@@ -19,48 +19,18 @@
 
 | 步骤 | 内容 | 状态 |
 |---|---|---|
-| S22 | 编码改成整条 URL 排一次序，修复 host 是 `__proto__` 的记录传不上去 | 未开始 |
 | S23 | 构建配置去掉和 bundle 测试重复的 SystemJS 检查 | 未开始 |
 | S24 | 注释精简：删掉复述代码的、和 AGENTS.md 重复的、过时的 | 未开始 |
 
-- 三步互不依赖，每步一个提交，顺序随意。都不碰样式和界面外观，不需要在浏览器里验证。
+- 两步互不依赖，每步一个提交，顺序随意。都不碰样式和界面外观，不需要在浏览器里验证。
 
 ## 结论
 
 - 回看了 src/ 的全部代码和 vite.config.ts。细节写法整体已经比较干净，防御大多放在数据进来的地方。
-- 要改的：5 处多余的防御和两处零碎（S21，已完成，判断标准写进了 AGENTS.md「写法」），1 处可以更直接的编码写法（顺带修掉一个违反「逐字往返」的边界 bug），1 处和测试重复的构建检查；注释再精简一轮。
-- 动手前已在当前代码上核对过：现在 558 个测试全过；S22 的新写法在本地 v3 样本（12.9 万条）上和现在的写法逐组比较过，每组的记录逐条相同，只有 `__proto__` 那组现在的写法会丢。
+- 要改的：5 处多余的防御和两处零碎（S21，已完成，判断标准写进了 AGENTS.md「写法」），1 处可以更直接的编码写法（S22，已完成，顺带修掉一个违反「逐字往返」的边界 bug），1 处和测试重复的构建检查；注释再精简一轮。
+- 动手前已在当前代码上核对过：558 个测试全过。
 
 ## 步骤
-
-### S22 · 编码改成整条 URL 排一次序，修复 host 是 `__proto__` 的记录传不上去
-
-- 现状：core/sync/codec.ts 的 `group` 先按分组键把 `[文本, 时间]` 收进 Map，再把分组按键排序、组内按文本排序（比较函数 `byFirst` 用了两次），最后用 `payload[key] = …` 写进普通对象。
-- 问题：分组键是 host。`https://__proto__/x` 是合法 URL，在 Hacker News 上点到就会记下（那里的规则是任意外链）。`payload['__proto__'] = …` 调用的是原型的 setter，这一组不会写进 JSON：这条记录永远传不上去，之后每次同步都判为和云端不一致、整份上传，违反同步不变量 10。
-- 做法：整条 URL 排一次序，一遍循环里分组、做前缀差分，删掉 `byFirst`；分组先放在 Map 里，最后用 `Object.fromEntries` 建成自有属性。同一组的 URL 都以同一个「origin + /」开头，组内的文本也就排好了序；@raw 组的文本就是 URL 本身。
-  ```ts
-  // v3 的 payload：{ 分组键: [[和上一条相同的前缀长度, 剩下的文本, 时间戳], …] }。
-  // 整条 URL 排一次序：同一组的 URL 都以同一个「origin + /」开头，组内的文本也就排好了序，相邻两条的前缀多半相同。
-  // 分组键是 host，可能是 __proto__：先放在 Map 里，最后用 Object.fromEntries 建成自有属性
-  function group(links: VisitedLinks): Record<string, [number, string, number][]> {
-    const groups = new Map<string, [number, string, number][]>()
-    const previous = new Map<string, string>()
-    for (const url of Object.keys(links).sort()) {
-      const [key, text] = splitUrl(url)
-      const last = previous.get(key) ?? ''
-      let prefix = 0
-      while (prefix < text.length && text[prefix] === last[prefix]) prefix++
-      previous.set(key, text)
-      const records = groups.get(key) ?? []
-      records.push([prefix, text.slice(prefix), links[url]])
-      groups.set(key, records)
-    }
-    return Object.fromEntries(groups)
-  }
-  ```
-- 输出：每组的记录和现在逐条相同（已在本地 v3 样本上比较过，见「结论」），只有分组之间的先后变了。v3 从引入起就是遍历对象来读的，不看分组的顺序。
-- 测试：test/sync/codec.test.ts 的往返表加一行「host 是 __proto__」（`https://__proto__/x`），先在改之前跑一次，确认失败；改完全过。本地有 v2、v3 样本，往返在真实数据上跑。
-- 提交：`fix(sync): 编码改成整条 URL 排一次序，修复 host 是 __proto__ 的记录一直传不上去`。
 
 ### S23 · 构建配置去掉和 bundle 测试重复的 SystemJS 检查
 
@@ -78,7 +48,7 @@
   - 和 AGENTS.md 重复的删掉。在这个位置动手前非知道不可的约束留一句，写上"见 AGENTS.md「…」"。
   - 过时的改成现在的样子：以前怎么写、修过什么，属于提交信息。
   - 解释"为什么"的不动：原因、实测数字、浏览器和管理器的怪癖，这是大多数。站点表里每条规则后面的说明、颜色预设的色名也不动。
-- 清单（S22 重写的 `group` 和 `byFirst`，注释跟着 S22 走）：
+- 清单：
   - 文件头：
     - 删掉：main.ts、core/page.ts、core/colorizer.ts、ui/dialog.ts、ui/draft.ts、ui/notify.ts、ui/message.ts。它们说的是模块做什么，AGENTS.md 的模块表和「关键机制」里都有。
     - 只留一句：
