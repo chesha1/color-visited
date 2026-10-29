@@ -6,7 +6,7 @@
 
 ## 怎么用这份文档
 
-- 新会话可以直接说：「读 `docs/plans/refactor-plan-v7.md`，做 S23」。
+- 新会话可以直接说：「读 `docs/plans/refactor-plan-v7.md`，做 S24」。
 - 架构、约束和已经定了的取舍都在 [AGENTS.md](../../AGENTS.md)，只在那里维护；仓库约定（pnpm、测试、版本号、提交信息格式）也在那里。
 - 编号接着 v6 往下排，删掉的编号不复用：**S** = 实施步骤，**D** = 要你拍板的决策。
 - 每完成一步：
@@ -19,27 +19,17 @@
 
 | 步骤 | 内容 | 状态 |
 |---|---|---|
-| S23 | 构建配置去掉和 bundle 测试重复的 SystemJS 检查 | 未开始 |
 | S24 | 注释精简：删掉复述代码的、和 AGENTS.md 重复的、过时的 | 未开始 |
 
-- 两步互不依赖，每步一个提交，顺序随意。都不碰样式和界面外观，不需要在浏览器里验证。
+- 不碰样式和界面外观，不需要在浏览器里验证。
 
 ## 结论
 
 - 回看了 src/ 的全部代码和 vite.config.ts。细节写法整体已经比较干净，防御大多放在数据进来的地方。
-- 要改的：5 处多余的防御和两处零碎（S21，已完成，判断标准写进了 AGENTS.md「写法」），1 处可以更直接的编码写法（S22，已完成，顺带修掉一个违反「逐字往返」的边界 bug），1 处和测试重复的构建检查；注释再精简一轮。
+- 要改的：5 处多余的防御和两处零碎（S21，已完成，判断标准写进了 AGENTS.md「写法」），1 处可以更直接的编码写法（S22，已完成，顺带修掉一个违反「逐字往返」的边界 bug），1 处和测试重复的构建检查（S23，已完成）；注释再精简一轮。
 - 动手前已在当前代码上核对过：558 个测试全过。
 
 ## 步骤
-
-### S23 · 构建配置去掉和 bundle 测试重复的 SystemJS 检查
-
-- 现状：vite.config.ts 的 `singleFile` 在 `generateBundle` 里清空 `dynamicImports`，这是真正起作用的部分；另外还在 `writeBundle` 里查产物有没有 `System.register`，有就让构建失败。
-- 做法：删掉 `writeBundle` 和它的注释；`singleFile` 上面的注释补半句：退回 SystemJS 时，test/bundle.test.ts 的第一条会失败。
-- 为什么：bundle.test.ts 第一条查的就是同一件事（头部没有 `@require`、产物里没有 `System.register`）；CI 先跑 `pnpm test` 再构建，退回 SystemJS 的版本发不出去。
-- 不动 `tailwindInShadowRoot` 里找不到 `@supports` 就报错的那句：它查的是替换有没有发生，测试只查结果，Tailwind 换一种包法时测试可能照样通过。
-- 验证：在临时副本里去掉 `generateBundle` 那段，确认 bundle.test.ts 失败；再在仓库里跑三项检查。
-- 提交：`chore: 构建配置去掉和 bundle 测试重复的 SystemJS 检查`。
 
 ### S24 · 注释精简：删掉复述代码的、和 AGENTS.md 重复的、过时的
 

@@ -14,7 +14,8 @@ const match = SITES.flatMap((site) => site.match ?? [])
 // 产物是一个 IIFE，界面的代码也在里面，到第一次用到时才执行：codeSplitting 为 false 时，
 // Rolldown 把被动态 import 的模块包进用到时才执行的初始化函数，不拆块。
 // 但 Rolldown 1.2 这时仍在入口的 chunk.dynamicImports 里列出入口自己，vite-plugin-monkey 看到它就改用 SystemJS 打包
-// （头部多出 3 个 @require）。所以先清空它；Rolldown 不再这样列的话，删掉 generateBundle 这一段
+// （头部多出 3 个 @require）。所以先清空它；Rolldown 不再这样列的话，删掉这个插件。
+// 退回 SystemJS 时，test/bundle.test.ts 执行产物就会报 System is not defined
 function singleFile(): Plugin {
   return {
     name: 'color-visited:single-file',
@@ -26,13 +27,6 @@ function singleFile(): Plugin {
           if (chunk.type === 'chunk') chunk.dynamicImports = []
         }
       },
-    },
-    // 以后升级 Rolldown 或 vite-plugin-monkey 时，退回了 SystemJS 就让构建失败，不悄悄发布
-    writeBundle(_, bundle) {
-      for (const output of Object.values(bundle)) {
-        const code = output.type === 'chunk' ? output.code : String(output.source)
-        if (code.includes('System.register')) this.error(`${output.fileName} 打包成了 SystemJS 格式，见 vite.config.ts 的 singleFile`)
-      }
     },
   }
 }
