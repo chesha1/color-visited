@@ -117,7 +117,7 @@ export function migrateLegacyLinks(): void {
 
   const mergedCount = mergeLinks(legacyLinks)
   GM_deleteValue(LEGACY_LINKS_KEY)
-  console.log(`已把 ${mergedCount} 条访问记录迁移为逐条存储`)
+  console.log(`[color-visited] 已把 ${mergedCount} 条访问记录迁移为逐条存储`)
 }
 
 // 设置只管原始的读写，读出来的值由 settings.ts 规范化

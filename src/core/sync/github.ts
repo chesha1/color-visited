@@ -65,10 +65,7 @@ export async function readUser(token: string): Promise<{ login: string, scopes?:
 export async function readGist(token: string, gistId: string): Promise<Gist> {
   const response = await request('获取 Gist 失败', token, 'GET', `${API}/gists/${gistId}`)
   const gist = JSON.parse(response.responseText) as GistResponse
-  const first = Object.entries(gist.files)[0]
-  if (!first) throw new Error('获取 Gist 失败: Gist 里没有文件')
-
-  const [fileName, file] = first
+  const [fileName, file] = Object.entries(gist.files)[0]
   const content = file.truncated
     ? (await request('获取 Gist 原始内容失败', token, 'GET', file.raw_url)).responseText
     : file.content

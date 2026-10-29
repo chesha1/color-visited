@@ -10,15 +10,10 @@ export function startPage(): void {
   const refresh = () => {
     dispose?.()
     dispose = null
-    try {
-      const settings = getSettings()
-      const site = findSite(location.href)
-      if (site && settings.preset[site.id]) dispose = activate(site, settings)
-      else log.debug(`${location.href} 不属于任何启用了的站点，不染色`)
-    } catch (error) {
-      // 要接住：不能让 URL 检测和设置订阅跟着失效
-      console.error('[color-visited] 激活页面失败', error)
-    }
+    const settings = getSettings()
+    const site = findSite(location.href)
+    if (site && settings.preset[site.id]) dispose = activate(site, settings)
+    else log.debug(`${location.href} 不属于任何启用了的站点，不染色`)
   }
   // URL 检测比激活先建，同一批 DOM 变化先交给它：URL 变了的话，旧的激活还没处理这批变化就释放掉了
   watchUrl(refresh)

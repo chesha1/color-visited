@@ -56,7 +56,7 @@ function createRoot(): ShadowRoot {
 // 构建时 Element Plus 的组件样式收在这个数组里，开发时 Vite 把它们插进 <head>
 function collectedCss(): string[] {
   if (import.meta.env.DEV) {
-    return [...document.querySelectorAll('style[data-vite-dev-id]')].map((style) => style.textContent ?? '')
+    return [...document.querySelectorAll('style[data-vite-dev-id]')].map((style) => style.textContent)
   }
   return (globalThis as unknown as Record<symbol, string[] | undefined>)[Symbol.for('color-visited/css')] ?? []
 }

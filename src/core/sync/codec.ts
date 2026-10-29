@@ -33,7 +33,6 @@ export async function encode(links: VisitedLinks): Promise<string> {
 // 认得出来的格式读坏了就抛错：不能当作空，否则调用方紧接着会用本地数据覆盖云端。
 // 认不出来的内容不是同步数据（新建 Gist 时内容可以随便填），返回 notSyncData
 export async function decode(text: string): Promise<Decoded> {
-  if (text.trim() === '') return notSyncData('内容为空')
   let data: unknown
   try {
     data = JSON.parse(text)

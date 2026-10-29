@@ -135,16 +135,11 @@ function batchMark(isTarget: (url: string) => boolean, expirationTime: number): 
     if (!(link instanceof HTMLAnchorElement)) continue
     const url = normalizeUrl(link)
     // 还没过期的记录不改时间戳：链接只是显示在页面上，不算访问
-    if (!Object.hasOwn(newLinks, url) && isTarget(url) && !isVisited(url, expirationTime)) newLinks[url] = now
+    if (isTarget(url) && !isVisited(url, expirationTime)) newLinks[url] = now
   }
-
-  const count = Object.keys(newLinks).length
-  if (count === 0) {
-    notify('没有找到新的符合规则的链接可添加', 'info')
-    return
-  }
-  mergeLinks(newLinks)
-  notify(`已批量添加 ${count} 个链接到已访问记录`, 'success', { text: '撤销', onClick: () => undoBatchMark(newLinks) })
+  const count = mergeLinks(newLinks)
+  if (count === 0) notify('没有找到新的符合规则的链接可添加', 'info')
+  else notify(`已批量添加 ${count} 个链接到已访问记录`, 'success', { text: '撤销', onClick: () => undoBatchMark(newLinks) })
 }
 
 // 撤销一次批量标记：删掉这次新增、之后没再点开过的记录（点开过的，时间戳已经刷新成点击的时间）

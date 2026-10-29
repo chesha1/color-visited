@@ -10,7 +10,7 @@ export interface Shortcut {
 }
 
 // Chromium 有 userAgentData，其他浏览器看 userAgent
-export const isMac = (() => {
+const isMac = (() => {
   const { userAgentData, userAgent } = navigator as Navigator & { userAgentData?: { platform: string } }
   return userAgentData ? userAgentData.platform === 'macOS' : /Mac|iPod|iPhone|iPad/.test(userAgent)
 })()
@@ -47,14 +47,14 @@ const KEY_SYMBOLS: Record<string, string> = {
 }
 
 // 修饰键按各个系统自己的叫法；键位名去掉 Key、Digit 前缀即可显示（KeyV → V），少数键换成符号
-export function formatShortcut(shortcut: Shortcut, mac = isMac): string {
+export function formatShortcut(shortcut: Shortcut): string {
   const parts: string[] = []
-  if (shortcut.metaKey) parts.push(mac ? '⌘ Command' : 'Win')
-  if (shortcut.ctrlKey) parts.push(mac ? '⌃ Control' : 'Ctrl')
-  if (shortcut.altKey) parts.push(mac ? '⌥ Option' : 'Alt')
-  if (shortcut.shiftKey) parts.push(mac ? '⇧ Shift' : 'Shift')
-  if (shortcut.code) parts.push(KEY_SYMBOLS[shortcut.code] || shortcut.code.replace(/^(Key|Digit)/, ''))
-  return parts.length > 0 ? parts.join(' + ') : '未设置'
+  if (shortcut.metaKey) parts.push(isMac ? '⌘ Command' : 'Win')
+  if (shortcut.ctrlKey) parts.push(isMac ? '⌃ Control' : 'Ctrl')
+  if (shortcut.altKey) parts.push(isMac ? '⌥ Option' : 'Alt')
+  if (shortcut.shiftKey) parts.push(isMac ? '⇧ Shift' : 'Shift')
+  parts.push(KEY_SYMBOLS[shortcut.code] || shortcut.code.replace(/^(Key|Digit)/, ''))
+  return parts.join(' + ')
 }
 
 // 用户正在输入时不响应快捷键，否则会抢掉输入框里的同名操作（比如默认的 Ctrl+Shift+V 是浏览器的“粘贴为纯文本”）
