@@ -1,5 +1,3 @@
-// 设置对话框的纯逻辑。对话框（SettingsDialog.vue 和各个 tab）只负责显示和绑定
-
 import { createDefaultSettings, DAY, type Settings } from '@/core/settings'
 
 // "重置为默认"只重置当前 tab 编辑的那个分组，保存之前都只改副本

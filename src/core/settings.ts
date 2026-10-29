@@ -1,5 +1,4 @@
-// 用户设置：存在存储的一个值里，字段名都已经持久化了，不能改。
-// 只有一条更新路径：本标签页 saveSettings、其他标签页写入，都经 onSettingsChange 通知；读取一律直接查存储，不缓存
+// 字段名都已经持久化了，不能改，见 AGENTS.md「用户数据」
 
 import { DEFAULT_SHORTCUT, type Shortcut } from '@/core/shortcut'
 import { onRemoteSettingsWrite, readSettings, writeSettings } from '@/core/storage'
@@ -108,7 +107,7 @@ export function saveSettings(patch: SettingsPatch): void {
   for (const listener of listeners) listener()
 }
 
-// 本标签页保存之后、其他标签页写入之后，各回调一次，新的设置用 getSettings 读。返回取消订阅的函数
+// 本标签页保存之后、其他标签页写入之后，各回调一次，新的设置用 getSettings 读
 export function onSettingsChange(listener: () => void): () => void {
   listeners.add(listener)
   const unsubscribeRemote = onRemoteSettingsWrite(listener)
@@ -118,7 +117,6 @@ export function onSettingsChange(listener: () => void): () => void {
   }
 }
 
-// draft 里和 base 不一样的字段
 function changedFields<T extends object>(base: T, draft: T): Partial<T> {
   const changes: Partial<T> = {}
   for (const key in draft) {
@@ -127,8 +125,6 @@ function changedFields<T extends object>(base: T, draft: T): Partial<T> {
   return changes
 }
 
-// 对话框保存时交出的改动：表单是打开对话框时的副本，没改过的字段在对话框开着时可能已经被其他标签页改掉了，
-// 拿副本里的旧值写回去会把那边的修改冲掉。没改的部分不出现在结果里
 export function diffSettings(base: Settings, draft: Settings): SettingsPatch {
   const patch: SettingsPatch = {}
   const general = changedFields(base.general, draft.general)

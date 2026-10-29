@@ -90,16 +90,12 @@ import SyncTab from '@/ui/SyncTab.vue'
 
 const emit = defineEmits<{ closed: [] }>()
 
-// 快照是打开时（或上次保存后）存储里的设置，draft 是各个 tab 编辑的副本。
-// 两者各取一次 getSettings()，每次取到的都是新建的对象，改副本不会改到快照。
-// 有没有改动、保存什么，都只看两者的差别
 const saved = shallowRef(getSettings())
 const draft = ref(getSettings())
 const changes = computed(() => diffSettings(saved.value, draft.value))
 
 const tab = ref<keyof Settings>('general')
 
-// 所有 tab 的改动一起保存。只交出改过的字段，对话框开着时其他标签页改的别的字段不会被冲掉。
 // 保存后对话框不关，显示存储里的最新值
 const save = () => {
   saveSettings(changes.value)

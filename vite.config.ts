@@ -77,7 +77,7 @@ export default defineConfig(({ command }) => ({
       entry: 'src/main.ts',
       userscript: {
         name: 'color-visited 对已访问过的链接染色',
-        version: '2.23.9',
+        version: '2.23.10',
         description: '把访问过的链接染色成灰色',
         author: 'chesha1',
         license: 'GPL-3.0-only',

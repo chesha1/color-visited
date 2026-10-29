@@ -1,6 +1,3 @@
-// 一次激活：按（站点，设置）给页面上的链接加标记、注入染色样式，记下点击和批量标记。返回的 dispose 把这次加上的全部去掉。
-// 标记只跟着存储走：点击、批量标记、撤销、同步合并都只写存储，标记由 onLinksChange 跟着改
-
 import { log } from '@/core/log'
 import { createDefaultSettings, type Settings } from '@/core/settings'
 import { isTyping, matchesShortcut } from '@/core/shortcut'
@@ -142,7 +139,6 @@ function batchMark(isTarget: (url: string) => boolean, expirationTime: number): 
   else notify(`已批量添加 ${count} 个链接到已访问记录`, 'success', { text: '撤销', onClick: () => undoBatchMark(newLinks) })
 }
 
-// 撤销一次批量标记：删掉这次新增、之后没再点开过的记录（点开过的，时间戳已经刷新成点击的时间）
 function undoBatchMark(newLinks: VisitedLinks): void {
   const deletedCount = deleteLinksIfUnchanged(newLinks).length
   const keptCount = Object.keys(newLinks).length - deletedCount

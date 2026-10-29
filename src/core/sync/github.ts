@@ -1,5 +1,3 @@
-// 唯一发网络请求的地方。请求都交给管理器的 GM_xmlhttpRequest 去发：页面的 fetch 受页面 CSP 的限制，
-// 有的网站（比如 Hacker News）上连不了 api.github.com；页面改写一下 fetch，也就拿到了令牌。
 // 请求的域名都要写进 vite.config.ts 的 connect
 
 import { GM_xmlhttpRequest, type GmResponseEvent } from 'vite-plugin-monkey/dist/client'
@@ -23,7 +21,6 @@ interface GistResponse {
 
 const API = 'https://api.github.com'
 
-// 常见错误状态码的原因
 const STATUS_HINTS: Partial<Record<number, string>> = {
   401: '令牌无效或已过期',
   403: '令牌权限不足，或触发了 GitHub API 限流',

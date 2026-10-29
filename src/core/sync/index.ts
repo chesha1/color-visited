@@ -1,5 +1,4 @@
-// 同步的流程：读出云端的记录合并进本地，合并后和云端不一致再整份上传。
-// 格式在 codec.ts，请求在 github.ts；日志只在这一层打
+// 日志只在这一层打，codec.ts、github.ts 里不打
 
 import { log } from '@/core/log'
 import { getSettings, type SyncSettings } from '@/core/settings'

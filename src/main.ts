@@ -1,4 +1,3 @@
-// 组合根：脚本在每个注入了的页面上从这里按顺序启动
 import { GM_registerMenuCommand } from 'vite-plugin-monkey/dist/client'
 import { startPage } from '@/core/page'
 import { DAY, getSettings } from '@/core/settings'

@@ -123,7 +123,6 @@ const setAll = (enabled: boolean) => {
   for (const { id } of SITES) preset.value[id] = enabled
 }
 
-// 展开了详情的站点
 const expanded = ref(new Set<string>())
 
 const toggleExpanded = (id: string) => {
@@ -131,7 +130,6 @@ const toggleExpanded = (id: string) => {
   else expanded.value.add(id)
 }
 
-// 展开后列出站点的两组规则：在哪些页面上生效、染哪些链接
 const sections = [
   { field: 'pages', title: '在下面这些页面中生效', dot: 'bg-green-500', badge: 'bg-green-100 text-green-800' },
   { field: 'links', title: '对下面这些链接染色', dot: 'bg-purple-500', badge: 'bg-purple-100 text-purple-800' },

@@ -1,5 +1,4 @@
-// 站点表：脚本在哪些页面上运行、染哪些链接，以及链接的归一化。新增站点只改这个文件。
-// vite.config.ts 在 Node 里 import 它来生成脚本头部，所以顶层不能引用浏览器全局对象，也不 import 别的 src 模块
+// vite.config.ts 在 Node 里 import 它，顶层不能引用浏览器全局对象，也不 import 别的 src 模块
 
 export interface Site {
   /** userSettings.preset 里的键，一改用户的开关就被重置，所以不能改 */
@@ -10,11 +9,7 @@ export interface Site {
   pages: RegExp[]
   /** 染哪些链接，对归一化之后的 URL 判断 */
   links: RegExp[]
-  /**
-   * 注入范围（@match）：管理器把脚本加载进哪些页面。写了就只按它生成 @match；不写就按 pages 生成 @include，和激活范围一样。
-   * 管理器只在整页加载时检查注入范围。SPA 站点的站内跳转不是整页加载，从没注入的页面跳到激活页，脚本也不会补上来，
-   * 所以 SPA 站点要覆盖整个 host。别的站点不写：每次注入，管理器都要把全部 GM 值交给页面
-   */
+  /** 注入范围（@match）：管理器把脚本加载进哪些页面。只有 SPA 站点写，见 AGENTS.md「注入范围和激活范围」 */
   match?: string[]
 }
 

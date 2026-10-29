@@ -1,5 +1,3 @@
-// 启动时就在的一层壳，core 只通过这里用到界面。通知用 Element Plus 显示（message.ts），到第一次通知时才执行它
-
 export type NotifyType = 'success' | 'warning' | 'info' | 'error'
 
 // 通知文字后面的操作按钮，比如批量标记后的"撤销"

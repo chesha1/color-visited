@@ -1,5 +1,3 @@
-// 当前页面按哪个站点的规则染色。URL 或设置一变，就把上一次的激活整个释放，再按当前的 URL 和设置重新激活
-
 import { activate } from '@/core/colorizer'
 import { log } from '@/core/log'
 import { getSettings, onSettingsChange } from '@/core/settings'

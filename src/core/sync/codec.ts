@@ -1,5 +1,4 @@
-// 云端（Gist 文件）的同步格式，都是纯函数：不知道网络，也不知道文件有没有被截断。
-// 写一律写 v3；读还要认 v2 和旧的明文，其他设备上可能还跑着旧版本的脚本
+// 都是纯函数：不知道网络，也不知道文件有没有被截断
 
 import { isLinkEntry, type VisitedLinks } from '@/core/storage'
 

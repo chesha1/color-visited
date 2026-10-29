@@ -1,9 +1,4 @@
-// 唯一调用 GM 存储 API 的模块，所有键名都定义在这里。
-// 每条访问记录单独存成一个 GM 值：键是归一化后的 URL，值是最近一次访问的时间戳，过期从这个时间算起。
-// 所有写入都经过 mergeLinks，只会把时间戳改大，所以各台设备不管按什么顺序同步，最后都是同一个值。
-// 记录之间互不相关，扩展后台按键应用各个标签页的写入，所以一次写入只改动自己那几条，
-// 多个标签页同时记录访问也不会互相覆盖。读取一律直接查存储，页面里不再保留一份会过时的副本。
-// 记录的键是绝对 URL，一定带协议头的冒号；下面这些不是访问记录的键，都不能含冒号
+// 含冒号的键都当作访问记录，其他键都不能含冒号，见 AGENTS.md「用户数据」
 
 import {
   GM_addValueChangeListener,
@@ -70,7 +65,6 @@ export function recordVisit(url: string): void {
   mergeLinks({ [url]: Date.now() })
 }
 
-// 读出全部记录，供同步和过期清理使用
 export function loadLinks(): VisitedLinks {
   const links: VisitedLinks = {}
   for (const key of GM_listValues()) {
@@ -137,9 +131,7 @@ export function onRemoteSettingsWrite(listener: () => void): () => void {
   return () => GM_removeValueChangeListener(id)
 }
 
-// 上次同步成功的时间（ms），0 表示从未同步，只给设置页显示"最后同步时间"；自动同步隔多久做一次不看它，见 takeTurn。
-// 它是同步写下的状态，不是用户设置：放在 userSettings 里的话，保存设置时会连同页面里那份旧值整块写回去。
-// 所以单独存一个键，只有同步会写它
+// 0 表示从未同步。不是用户设置，只有同步会写它，见 AGENTS.md「用户数据」
 export function getLastSyncTime(): number {
   return GM_getValue(LAST_SYNC_TIME_KEY, 0)
 }
@@ -148,7 +140,7 @@ export function setLastSyncTime(time: number): void {
   GM_setValue(LAST_SYNC_TIME_KEY, time)
 }
 
-// 本标签页或其他标签页同步完成后，用新的时间回调；返回取消监听的函数
+// 本标签页或其他标签页同步完成后，用新的时间回调
 export function onLastSyncTimeChange(listener: (time: number) => void): () => void {
   const id = GM_addValueChangeListener<number>(LAST_SYNC_TIME_KEY, (_key, _oldTime, time) => listener(time ?? 0))
   return () => GM_removeValueChangeListener(id)

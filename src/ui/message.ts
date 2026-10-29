@@ -1,4 +1,3 @@
-// 用 Element Plus 的 ElMessage 显示通知，挂在界面的 shadow root 里。第一次通知时才执行这个模块（见 notify.ts）
 import { createApp, h } from 'vue'
 import { ElButton, ElMessage, provideGlobalConfig } from 'element-plus'
 // 这两个组件是在代码里调用的，自动引入组件样式的 resolver 看不到，要自己引入
