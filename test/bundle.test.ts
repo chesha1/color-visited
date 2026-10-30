@@ -8,6 +8,7 @@ import { beforeAll, expect, it, vi } from 'vitest'
 import { ELEMENT_PLUS_CONFIG } from '@/ui/root'
 import { buildScript, pageStyles, runScript, shadowRoots } from './build'
 import * as gm from './fakes/gm'
+import { fakeGitHub, FILE, GIST_ID, TOKEN } from './fakes/github'
 import { addLink } from './runtime/dom'
 import { DAY } from './time'
 
@@ -96,4 +97,39 @@ it('界面的样式里没有 rem：Tailwind 的 rem 按 16px 换成了 px', () =
   const css = cssIn(shadowRoots[0])
   expect(css[0]).toContain('--spacing:4px')
   expect(css.join('')).not.toMatch(/\drem\b/)
+})
+
+it('批量通知关闭后同步；点击撤销先删记录，不把它上传', async () => {
+  const root = shadowRoots[0]
+  for (const close of root.querySelectorAll<HTMLElement>('.el-message__closeBtn')) close.click()
+  await vi.waitFor(() => expect(root.querySelector('.el-message')).toBeNull())
+
+  const github = fakeGitHub()
+  github.files[FILE] = JSON.stringify(Object.fromEntries([...gm.store].filter(([key]) => key.includes(':'))))
+  const settings = gm.store.get('userSettings') as object
+  gm.setValueFromOtherTab('userSettings', { ...settings, sync: { enabled: true, githubToken: TOKEN, gistId: GIST_ID } })
+  const batch = async (url: string) => {
+    addLink(url)
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...SHORTCUT }))
+    return vi.waitFor(() => {
+      const button = root.querySelector<HTMLButtonElement>('.el-message .el-button')
+      expect(button).not.toBeNull()
+      return button!
+    })
+  }
+
+  const button = await batch('https://www.v2ex.com/t/3')
+  expect(github.requests).toEqual([])
+  button.closest('.el-message')!.querySelector<HTMLElement>('.el-message__closeBtn')!.click()
+  await vi.waitFor(() => expect(gm.store.has('lastSyncTime')).toBe(true))
+  expect(github.requests).toEqual(['GET gist', 'PATCH gist'])
+  await vi.waitFor(() => expect(root.querySelector('.el-message .el-button')).toBeNull())
+
+  gm.store.delete('lastSyncTime')
+  const undoneUrl = 'https://www.v2ex.com/t/4'
+  const undo = await batch(undoneUrl)
+  undo.click()
+  expect(gm.store.has(undoneUrl)).toBe(false)
+  await vi.waitFor(() => expect(gm.store.has('lastSyncTime')).toBe(true))
+  expect(github.requests).toEqual(['GET gist', 'PATCH gist', 'GET gist'])
 })

@@ -4,6 +4,7 @@ export type NotifyType = 'success' | 'warning' | 'info' | 'error'
 export interface NotifyAction {
   text: string
   onClick: () => void
+  onClose?: () => void
 }
 
 // 模块只初始化一次，之后每次 import() 拿到的都是同一个。加载或显示出错只报告，不影响染色

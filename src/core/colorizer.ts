@@ -1,5 +1,5 @@
 import { log } from '@/core/log'
-import { createDefaultSettings, type Settings } from '@/core/settings'
+import { createDefaultSettings, getSettings, type Settings } from '@/core/settings'
 import { isTyping, matchesShortcut } from '@/core/shortcut'
 import {
   deleteLinksIfUnchanged,
@@ -10,6 +10,7 @@ import {
   recordVisit,
   type VisitedLinks,
 } from '@/core/storage'
+import { runSync } from '@/core/sync'
 import { normalizeUrl, type Site } from '@/shared/sites'
 import { notify } from '@/ui/notify'
 
@@ -136,7 +137,13 @@ function batchMark(isTarget: (url: string) => boolean, expirationTime: number): 
   }
   const count = mergeLinks(newLinks)
   if (count === 0) notify('没有找到新的符合规则的链接可添加', 'info')
-  else notify(`已批量添加 ${count} 个链接到已访问记录`, 'success', { text: '撤销', onClick: () => undoBatchMark(newLinks) })
+  else notify(`已批量添加 ${count} 个链接到已访问记录`, 'success', {
+    text: '撤销',
+    onClick: () => undoBatchMark(newLinks),
+    onClose: () => {
+      if (getSettings().sync.enabled) runSync({ manual: false })
+    },
+  })
 }
 
 function undoBatchMark(newLinks: VisitedLinks): void {

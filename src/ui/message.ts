@@ -26,8 +26,8 @@ export function showMessage(message: string, type: NotifyType, action?: NotifyAc
             type: type === 'error' ? 'danger' : type,
             // 只响应第一次点击：通知淡出的过程中按钮还点得到
             onClickOnce: () => {
-              notification.close()
               action.onClick()
+              notification.close()
             },
           }, () => action.text),
         ])
@@ -36,6 +36,7 @@ export function showMessage(message: string, type: NotifyType, action?: NotifyAc
     duration: action ? 5000 : 2000,
     showClose: true,
     grouping: true,
+    onClose: action?.onClose,
     offset: 20,
     appendTo: container,
   }, configApp._context)
