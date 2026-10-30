@@ -1,47 +1,38 @@
 <template>
-  <div class="space-y-6">
-    <div class="border-b pb-4">
-      <h3 class="text-lg font-semibold text-gray-900 mb-2">
-        批量染色快捷键设置
-      </h3>
-      <p class="text-sm text-gray-600">
-        按下快捷键，对当前页面上所有符合规则的链接进行染色
-      </p>
+  <div class="space-y-3">
+    <div class="rounded-lg border border-(--el-border-color-lighter) divide-y divide-(--el-border-color-lighter)">
+      <SettingRow title="批量染色">
+        <template #description>
+          把当前页面上符合规则的链接都记为已访问，误按可以撤销
+        </template>
+        <div class="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:thin]">
+          <template
+            v-for="(key, index) in formatShortcut(shortcut)"
+            :key="index"
+          >
+            <span
+              v-if="index"
+              class="shrink-0 text-(--el-text-color-secondary)"
+            >+</span>
+            <kbd class="shrink-0 rounded border border-b-2 border-(--el-border-color) bg-(--el-fill-color-light) px-2 py-1 font-mono text-xs text-(--el-text-color-primary)">{{ key }}</kbd>
+          </template>
+        </div>
+      </SettingRow>
     </div>
-    <el-form
-      label-width="120px"
-      class="space-y-6"
-    >
-      <el-form-item label="当前快捷键">
-        <el-input
-          :model-value="formatShortcut(shortcut)"
-          readonly
-          size="large"
-          class="font-mono"
-        />
-      </el-form-item>
-
-      <el-form-item>
-        <el-alert
-          :title="changed ? '已记录新快捷键，点击保存应用设置' : '请按下您想要使用的快捷键组合...'"
-          :type="changed ? 'success' : 'info'"
-          show-icon
-          :closable="false"
-        />
-      </el-form-item>
-    </el-form>
+    <p class="text-xs text-(--el-text-color-secondary)">
+      直接按下新的组合键即可替换
+    </p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { watchEffect } from 'vue'
 import { formatShortcut, isRecordable, toShortcut, type Shortcut } from '@/core/shortcut'
+import SettingRow from '@/ui/SettingRow.vue'
 
 const props = defineProps<{
   /** 这个 tab 正显示着，按下的键都录成快捷键 */
   recording: boolean
-  /** 快捷键改了，还没保存 */
-  changed: boolean
 }>()
 
 const shortcut = defineModel<Shortcut>({ required: true })

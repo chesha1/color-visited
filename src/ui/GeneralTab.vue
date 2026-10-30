@@ -1,65 +1,52 @@
 <template>
-  <div class="space-y-6">
-    <div class="border-b pb-4">
-      <h3 class="text-lg font-semibold text-gray-900 mb-2">
-        常规设置
-      </h3>
-      <p class="text-sm text-gray-600">
-        自定义链接颜色和行为设置
-      </p>
-    </div>
-    <el-form
-      label-width="120px"
-      class="space-y-6"
-    >
-      <el-form-item label="链接颜色">
-        <div class="flex items-center gap-3">
-          <el-color-picker
-            v-model="general.color"
-            show-alpha
-            :predefine="colorPresets"
-            size="large"
-          />
-          <el-input
-            v-model="general.color"
-            class="flex-1"
-            placeholder="请输入颜色值"
-            clearable
-          />
-        </div>
-      </el-form-item>
+  <div class="divide-y divide-(--el-border-color-lighter) rounded-lg border border-(--el-border-color-lighter)">
+    <SettingRow title="链接颜色">
+      <template #description>
+        已访问的链接显示成这个颜色
+      </template>
+      <div class="flex items-center gap-3">
+        <el-color-picker
+          v-model="general.color"
+          show-alpha
+          :predefine="colorPresets"
+          aria-label="选择链接颜色"
+          class="shrink-0"
+        />
+        <el-input
+          v-model="general.color"
+          class="w-[180px] min-w-0"
+          placeholder="请输入颜色值"
+          aria-label="链接颜色"
+          clearable
+        />
+      </div>
+    </SettingRow>
 
-      <el-form-item label="过期时间">
-        <div class="space-y-2">
-          <div class="flex items-center gap-2">
-            <el-input-number
-              v-model="expirationDays"
-              :max="3650"
-              controls-position="right"
-              size="large"
-              class="w-32"
-            />
-            <span class="text-sm text-gray-600">天</span>
-          </div>
-          <div class="text-xs text-gray-500">
-            设置已访问链接的记录保留时间
-          </div>
-        </div>
-      </el-form-item>
+    <SettingRow title="过期时间">
+      <template #description>
+        从最近一次访问算起，过期后链接恢复原样
+      </template>
+      <div class="flex items-center gap-2">
+        <el-input-number
+          v-model="expirationDays"
+          :max="3650"
+          controls-position="right"
+          aria-label="过期时间（天）"
+          class="w-32"
+        />
+        <span class="text-sm text-(--el-text-color-regular)">天</span>
+      </div>
+    </SettingRow>
 
-      <el-form-item label="调试模式">
-        <div class="space-y-2">
-          <el-switch
-            v-model="general.debug"
-            size="large"
-            inline-prompt
-          />
-          <div class="text-xs text-gray-500">
-            开启后将在控制台显示详细调试信息
-          </div>
-        </div>
-      </el-form-item>
-    </el-form>
+    <SettingRow title="调试模式">
+      <template #description>
+        在控制台输出调试日志
+      </template>
+      <el-switch
+        v-model="general.debug"
+        aria-label="调试模式"
+      />
+    </SettingRow>
   </div>
 </template>
 
@@ -67,6 +54,7 @@
 import { computed } from 'vue'
 import type { GeneralSettings } from '@/core/settings'
 import { fromDays, toDays } from '@/ui/draft'
+import SettingRow from '@/ui/SettingRow.vue'
 
 const props = defineProps<{
   /** 保存着的过期时间（ms），输入框里的天数不合法时回到它 */

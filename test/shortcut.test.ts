@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isRecordable, matchesShortcut, toShortcut, type Shortcut } from '@/core/shortcut'
+import { formatShortcut, isRecordable, matchesShortcut, toShortcut, type Shortcut } from '@/core/shortcut'
 
 // 按下的键。key 不参与匹配，写上是为了说明这时候 key 是什么
 function press(fields: Partial<KeyboardEvent>): KeyboardEvent {
@@ -9,6 +9,18 @@ function press(fields: Partial<KeyboardEvent>): KeyboardEvent {
 function shortcut(fields: Partial<Shortcut>): Shortcut {
   return { ctrlKey: false, shiftKey: false, altKey: false, metaKey: false, code: '', ...fields }
 }
+
+describe('formatShortcut：每个键单独显示，修饰键在前，物理键位转成键名或符号', () => {
+  it.each([
+    [shortcut({ ctrlKey: true, shiftKey: true, code: 'KeyV' }), ['Ctrl', 'Shift', 'V']],
+    [shortcut({ ctrlKey: true, shiftKey: true, altKey: true, metaKey: true, code: 'Digit1' }), ['Win', 'Ctrl', 'Alt', 'Shift', '1']],
+    [shortcut({ code: 'ArrowUp' }), ['↑']],
+    [shortcut({ code: 'Escape' }), ['Esc']],
+    [shortcut({ code: 'F2' }), ['F2']],
+  ])('%j', (value, keys) => {
+    expect(formatShortcut(value)).toEqual(keys)
+  })
+})
 
 describe('matchesShortcut：修饰键和物理键位（code）都一样才算按下了快捷键', () => {
   const ctrlShiftV = shortcut({ ctrlKey: true, shiftKey: true, code: 'KeyV' })

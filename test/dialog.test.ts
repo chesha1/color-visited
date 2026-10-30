@@ -25,7 +25,6 @@ const SETTINGS = {
 // 对话框里的输入框。tab 的 name 是设置的分组名：general、preset、batch、sync，对应的面板是 #pane-分组名
 const COLOR = '#pane-general input[placeholder="请输入颜色值"]'
 const DAYS = '#pane-general .el-input-number input'
-const SHORTCUT_INPUT = '#pane-batch input'
 const GIST = '#pane-sync input[placeholder^="请输入 Gist ID"]'
 
 beforeAll(async () => {
@@ -56,6 +55,10 @@ async function showTab(name: string): Promise<void> {
 
 function input(selector: string): HTMLInputElement {
   return get(selector) as HTMLInputElement
+}
+
+function shortcutKeys(): string[] {
+  return [...shadowRoots[0].querySelectorAll('#pane-batch kbd')].map((key) => key.textContent!.trim())
 }
 
 // 在输入框里填入一个值，和用户输入一样触发 input 事件
@@ -212,8 +215,11 @@ it('快捷键 tab：按下的键录成快捷键，焦点在对话框里、按 Es
   await wait(50)
   expect(saveButton().disabled).toBe(true)
 
-  press({ code: 'Escape', key: 'Escape' }, input(SHORTCUT_INPUT))
-  await vi.waitFor(() => expect(input(SHORTCUT_INPUT).value).toBe('Esc'))
+  const reset = button('恢复本页默认值')
+  reset.focus()
+  expect(shadowRoots[0].activeElement).toBe(reset)
+  press({ code: 'Escape', key: 'Escape' }, reset)
+  await vi.waitFor(() => expect(shortcutKeys()).toEqual(['Esc']))
   expect(saveButton().disabled).toBe(false)
 })
 
@@ -221,7 +227,7 @@ it('切到别的 tab 就不再录', async () => {
   await showTab('general')
   press({ code: 'KeyQ', key: 'q' })
   await wait(50)
-  expect(input(SHORTCUT_INPUT).value).toBe('Esc')
+  expect(shortcutKeys()).toEqual(['Esc'])
 })
 
 it('同步 tab：Gist 网址失焦后变成纯 ID；同步设置有没保存的修改时不能立即同步', async () => {
@@ -235,7 +241,7 @@ it('同步 tab：Gist 网址失焦后变成纯 ID；同步设置有没保存的�
   expect(button('测试连接').disabled).toBe(true) // 还没填令牌
 })
 
-it('同步 tab：最后同步时间跟着存储刷新', async () => {
+it('同步 tab：上次同步时间跟着存储刷新', async () => {
   expect(get('#pane-sync').textContent).toContain('从未同步')
   gm.setValueFromOtherTab('lastSyncTime', Date.now())
   await vi.waitFor(() => expect(get('#pane-sync').textContent).not.toContain('从未同步'))
@@ -255,7 +261,7 @@ it('关掉：卸载对话框，删掉挂载点；取色面板的样式从宿主�
 it('再打开：按存储里的当前设置重新开始，回到第一个 tab', async () => {
   await openSettings()
   expect(get('#tab-general').classList).toContain('is-active')
-  expect(input(SHORTCUT_INPUT).value).toBe('Ctrl + Shift + V')
+  expect(shortcutKeys()).toEqual(['Ctrl', 'Shift', 'V'])
   expect(input(COLOR).value).toBe('blue')
   expect(input(DAYS).value).toBe('30')
   expect(saveButton().disabled).toBe(true)

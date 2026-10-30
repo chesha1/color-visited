@@ -85,7 +85,7 @@ docs(readme): 更新同步存储说明
 | `ui/notify.ts` | 启动时就在的一层壳：`notify()` 被调用时才 `import()` message.ts |
 | `ui/message.ts` | 用 Element Plus 的 `ElMessage` 显示通知。通知不属于哪个 Vue 应用，`ELEMENT_PLUS_CONFIG` 经一个只带配置、不挂载的应用的 context 交给它 |
 | `ui/root.ts` | 第一次用到时才创建宿主元素和 closed shadow root，把样式写进去，拦下界面里键盘事件的冒泡（Tab 除外）；`createMountPoint()` 给对话框、通知各一个挂载点；`addPanelStyle()` 把取色面板要的样式写进 `<head>`；`ELEMENT_PLUS_CONFIG`：对话框、通知共用的 Element Plus 配置，包含 z-index 的起点和中文 locale |
-| `ui/dialog.ts`、`ui/*.vue` | `openSettings()`：每次打开都新建一个 Vue 应用（带上 `ELEMENT_PLUS_CONFIG`），关掉就卸载。每个 tab 一个组件，用 `v-model` 编辑 draft 里自己的那个分组 |
+| `ui/dialog.ts`、`ui/*.vue` | `openSettings()`：每次打开都新建一个 Vue 应用（带上 `ELEMENT_PLUS_CONFIG`），关掉就卸载。每个 tab 一个组件，用 `v-model` 编辑 draft 里自己的那个分组；`SettingRow.vue` 是各页共用的设置行 |
 | `ui/draft.ts` | 对话框的纯逻辑："恢复本页默认值"、过期时间按天编辑时的换算 |
 
 ### 依赖规则
@@ -138,7 +138,7 @@ docs(readme): 更新同步存储说明
   - 读取时要容忍：字段缺失或类型不对（包括 `preset` 是 null）；v2.21.0 及以前残留的 `sync.lastSyncTime`；快捷键缺 `code`（当时存的是 `key`，已经接受让这些用户重录）；`expirationTime` 不到 1 天（含 null、0、负数），这时换成默认的一年，否则所有记录都会被当作过期，清理时全部删掉。
   - `preset` 读取时按站点表列全：存储里是布尔值的照用，没有的站点算启用（新站点默认启用），已经删掉的站点的键不留。所以保存过一次之后，存储里列着站点表里的每个站点。
   - 保存时只写改过的字段，合并到存储里的当前值上；快捷键改了就整个替换（按字段合并的话，会拼出一个谁都没设过的组合）。这样对话框开着时其他标签页做的修改不会被冲掉。
-- **`lastSyncTime`**：上次同步成功的时间，只有同步会写它，只用来在设置页显示"最后同步时间"。
+- **`lastSyncTime`**：上次同步成功的时间，只有同步会写它，只用来在设置页显示"上次同步"。
 - **`lastAutoSyncTime`**：上次自动同步开始的时间，开始之前写，成功、失败都算。加载页面时距它不到 10 分钟就不自动同步；所有标签页共用，所以是整个浏览器合起来 10 分钟最多一次。设置页的"立即同步"不看它，也不写它。
 - **云端（Gist）的格式**：其他设备上可能还跑着旧版本的脚本。
   - 读：v3 和 v2 压缩包（压缩算法只有 gzip），以及旧的明文格式（键是网址、值是数字的对象，或者带 `visitedLinks` 字段的对象）。
@@ -167,7 +167,7 @@ docs(readme): 更新同步存储说明
 - **已经定了的界面技术**：布局和装饰用 Tailwind（D7）；设置界面和通知用 Element Plus（D9），按需执行；取色器用 `el-color-picker`（D10），它的面板只能挂在 `document.body`。
   - 原因：Element Plus 的 click-outside 在 document 上监听 mousedown、mouseup，按 `event.target` 判断是不是点到了外面；shadow root 里的点击传到 document 时，`target` 已经换成了宿主元素。面板放进 shadow root 之后（open、closed 都一样），在面板里点一个预设色块，值变了，面板随即被当成点到外面而关掉，选的颜色也被重置（2026-10-16，Chrome 155，CDP 的真实鼠标事件）。
   - 代价：对话框开着时，宿主页面的 `<head>` 里要有一份 Element Plus 的样式，宿主网站自己也用 Element Plus 时两边会互相干扰。
-- **界面的样式**（ui/root.ts）：shadow root 里先写 ui/style.css（Tailwind 和自己的样式），收集到的 Element Plus 样式把 `:root` 换成 `:host`、整段包进 `@layer components{…}`，接在后面。vite.config.ts 改写 Tailwind 的输出：`@layer properties` 里那层 `@supports` 换成 `@media all`（`@property` 在 shadow root 里不生效）；rem 按 16px 换成 px（rem 跟着宿主页面的根字号走）。
+- **界面的样式**（ui/root.ts）：Tailwind v4 的 `border`、`divide` 不写颜色时是 currentColor，要写颜色。shadow root 里先写 ui/style.css（Tailwind 和自己的样式），收集到的 Element Plus 样式把 `:root` 换成 `:host`、整段包进 `@layer components{…}`，接在后面。vite.config.ts 改写 Tailwind 的输出：`@layer properties` 里那层 `@supports` 换成 `@media all`（`@property` 在 shadow root 里不生效）；rem 按 16px 换成 px（rem 跟着宿主页面的根字号走）。
   - 不要另外声明层的顺序：比如先写一句 `@layer theme, base, element-plus, components, utilities;`，没列进去的 properties 层就排到了最后，放开的初始值会盖掉工具类设置的 `--tw-shadow`、`--tw-gradient-*`，阴影和渐变照样不显示。
   - 改动这几处，边框、阴影、渐变和写在 Element Plus 组件上的工具类会悄悄失效。test/bundle.test.ts 只查得到写进去的文本，效果要在浏览器里看。
 - **GM 权限声明。** vite-plugin-monkey 会根据代码里 import 的 `GM_*` 自动生成 `@grant`。`GM_xmlhttpRequest` 要访问的域名，需要加进 `connect`。

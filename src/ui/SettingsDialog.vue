@@ -74,7 +74,6 @@
         <ShortcutTab
           v-model="draft.batch"
           :recording="tab === 'batch'"
-          :changed="!!changes.batch"
         />
       </el-tab-pane>
       <el-tab-pane
