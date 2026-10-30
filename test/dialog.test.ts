@@ -70,8 +70,8 @@ function fill(selector: string, value: string): void {
 
 // 预设网站 tab 里某个站点的开关
 function siteSwitch(name: string): HTMLElement {
-  const card = [...shadowRoots[0].querySelectorAll('#pane-preset h4')].find((title) => title.textContent === name)
-  const element = card?.closest('.rounded-xl')?.querySelector<HTMLElement>('.el-switch')
+  const row = [...shadowRoots[0].querySelectorAll('#pane-preset li')].find((row) => row.querySelector('button')?.textContent?.trim() === name)
+  const element = row?.querySelector<HTMLElement>('.el-switch')
   if (!element) throw new Error(`预设网站里没有 ${name}`)
   return element
 }
