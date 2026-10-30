@@ -84,9 +84,9 @@ docs(readme): 更新同步存储说明
 | `core/sync/index.ts` | `syncWithCloud`、`testConnection`、带通知的 `runSync`、`autoSync` |
 | `ui/notify.ts` | 启动时就在的一层壳：`notify()` 被调用时才 `import()` message.ts |
 | `ui/message.ts` | 用 Element Plus 的 `ElMessage` 显示通知。通知不属于哪个 Vue 应用，`ELEMENT_PLUS_CONFIG` 经一个只带配置、不挂载的应用的 context 交给它 |
-| `ui/root.ts` | 第一次用到时才创建宿主元素和 closed shadow root，把样式写进去，拦下界面里键盘事件的冒泡（Tab 除外）；`createMountPoint()` 给对话框、通知各一个挂载点；`addPanelStyle()` 把取色面板要的样式写进 `<head>`；`ELEMENT_PLUS_CONFIG`：对话框、通知共用的 Element Plus 配置，现在只有 z-index 的起点 |
+| `ui/root.ts` | 第一次用到时才创建宿主元素和 closed shadow root，把样式写进去，拦下界面里键盘事件的冒泡（Tab 除外）；`createMountPoint()` 给对话框、通知各一个挂载点；`addPanelStyle()` 把取色面板要的样式写进 `<head>`；`ELEMENT_PLUS_CONFIG`：对话框、通知共用的 Element Plus 配置，包含 z-index 的起点和中文 locale |
 | `ui/dialog.ts`、`ui/*.vue` | `openSettings()`：每次打开都新建一个 Vue 应用（带上 `ELEMENT_PLUS_CONFIG`），关掉就卸载。每个 tab 一个组件，用 `v-model` 编辑 draft 里自己的那个分组 |
-| `ui/draft.ts` | 对话框的纯逻辑："重置为默认"、过期时间按天编辑时的换算 |
+| `ui/draft.ts` | 对话框的纯逻辑："恢复本页默认值"、过期时间按天编辑时的换算 |
 
 ### 依赖规则
 
@@ -218,6 +218,7 @@ docs(readme): 更新同步存储说明
 
 ### 界面
 
+- **设置对话框的 tab 放回左侧（D15）。** 现在只有 4 个 tab，标签短，放顶部能给内容留更多宽度，直接用 Element Plus 默认样式。改成好看的左侧栏要覆盖五六条样式；以后分类超过五六个、顶部放不下时再考虑。
 - **换掉 Element Plus（D9）。**
   - 为了让它在 closed shadow root 里正常工作，写了四十行左右的适配（不算注释）：收集组件样式、`:root` 换成 `:host`、包进 layer；取色面板的样式写进 `<head>`；通知借一个不挂载的应用拿配置；z-index 起点；Tab 键放行。
   - 换成自己写，要做对话框、tab、开关、数字输入框、带透明度滑块的取色器和通知，代码只会更多，外观也会变。换别的组件库也不会更轻：同一组组件、同样不压缩、不含 Vue 时，Element Plus 约 600 KB 加约 100 KB 样式，Naive UI 约 820 KB（样式在 JS 里），无样式的 Reka UI 约 310 KB、样式还要全部自己写。
@@ -237,7 +238,7 @@ docs(readme): 更新同步存储说明
 
 - **设置即时生效，去掉"保存"。**
   - 能省掉快照、draft、`diffSettings` 和 `SettingsPatch`。
-  - 但把过期时间改小是破坏性的（清理会删掉超出的记录，下次上传时云端也跟着少）。即时生效时，每个输入框都要分清"正在输入"和"输入完了"（el-input-number 每按一个键就更新一次 model，从 365 退格到空，中间会经过 3 天，v2.21.1 修过这一类），"重置为默认"也要另做确认。显式保存把这些都收在一个按钮上。
+  - 但把过期时间改小是破坏性的（清理会删掉超出的记录，下次上传时云端也跟着少）。即时生效时，每个输入框都要分清"正在输入"和"输入完了"（el-input-number 每按一个键就更新一次 model，从 365 退格到空，中间会经过 3 天，v2.21.1 修过这一类），"恢复本页默认值"也要另做确认。显式保存把这些都收在一个按钮上。
 - **给访问记录的键加前缀，或者分片存储。** 加前缀要迁移好几万条记录，换来的只是去掉"其他键不能含冒号"这一条约定。分片是为了让管理器每次注入少交一些 GM 值（键从几万个降到几十个），代价是要迁移，还会把多个标签页并发写同一个键的问题带回来。实际用下来加载不慢，这笔注入开销也就不量了（原来的 Q1，2026-10-29 取消）。
 - **把设置拆成多个 GM 键。** 能彻底消除整块写回带来的竞争，但要迁移；只写改过的字段之后，剩下的竞争窗口只有两个标签页几乎同时保存这一种。
 - **用 schema 库解析设置。** `pick`、`hasAllFields` 加起来十几行，换成库只是换个写法，多一个依赖。

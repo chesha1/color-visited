@@ -1,6 +1,6 @@
 import { createDefaultSettings, DAY, type Settings } from '@/core/settings'
 
-// "重置为默认"只重置当前 tab 编辑的那个分组，保存之前都只改副本
+// "恢复本页默认值"只重置当前 tab 编辑的那个分组，保存之前都只改副本
 export function resetGroup<K extends keyof Settings>(draft: Settings, group: K): void {
   draft[group] = createDefaultSettings()[group]
 }

@@ -114,6 +114,12 @@ it('在两个 tab 里各改一项，点一次保存，两项都存下来', async
   fill(COLOR, 'blue')
   await showTab('preset')
   siteSwitch('36氪').click()
+  await vi.waitFor(() => {
+    for (const group of ['general', 'preset']) expect(find(`#tab-${group} [aria-label="有未保存的修改"]`)).not.toBeNull()
+    for (const group of ['batch', 'sync']) expect(find(`#tab-${group} [aria-label="有未保存的修改"]`)).toBeNull()
+    expect(get('.el-dialog__footer [role="status"]').textContent).toBe('有未保存的修改')
+    expect(saveButton().disabled).toBe(false)
+  })
   await save()
   expect(storedSettings()).toEqual({
     ...SETTINGS,
@@ -121,6 +127,8 @@ it('在两个 tab 里各改一项，点一次保存，两项都存下来', async
     preset: { ...ALL_ENABLED, '36kr': false },
   })
   await vi.waitFor(() => expect(saveButton().disabled).toBe(true))
+  expect(find('[aria-label="有未保存的修改"]')).toBeNull()
+  expect(find('.el-dialog__footer [role="status"]')).toBeNull()
 })
 
 it('对话框开着时其他标签页改了别的字段：这边保存之后那个字段保留，对话框显示存储里的最新值', async () => {
@@ -182,6 +190,7 @@ it('弹层都从配置的 z-index 起往上叠：遮罩不低于起点，之后�
     return element!
   })
   expect(zIndexOf(panel)).toBeGreaterThan(overlay)
+  expect([...panel.querySelectorAll('.el-button')].map((button) => button.textContent?.trim())).toEqual(['清空', '确定'])
 
   press(SHORTCUT)
   const message = await vi.waitFor(() => get('.el-message'))

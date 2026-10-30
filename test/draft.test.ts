@@ -15,7 +15,7 @@ const SETTINGS: Settings = {
   sync: { enabled: true, githubToken: 'token', gistId: 'gist' },
 }
 
-describe('resetGroup："重置为默认"只重置一个分组', () => {
+describe('resetGroup："恢复本页默认值"只重置一个分组', () => {
   it.each(['general', 'preset', 'batch', 'sync'] as const)('%s：换成默认值，其他分组不动', (group) => {
     const draft = structuredClone(SETTINGS)
     const others = Object.entries(SETTINGS).filter(([key]) => key !== group)

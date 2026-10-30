@@ -1,10 +1,11 @@
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import ownStyle from '@/ui/style.css?inline'
 
 // 对话框、通知共用的 Element Plus 配置（见 dialog.ts、message.ts）。
 // 弹层（对话框的遮罩、取色面板、通知）默认从 z-index 2000 起往上叠。宿主元素没有定位，弹层和页面的元素在同一个层叠上下文里比，
 // 会被页面的置顶元素盖住（比如虎扑的顶栏盖住通知），所以从一个很高的起点叠，之后打开的照样叠在前面的上面。
 // 不能把宿主元素做成层叠上下文：挂在 document.body 里的取色面板会被整个压在对话框下面
-export const ELEMENT_PLUS_CONFIG = { zIndex: 2_000_000_000 }
+export const ELEMENT_PLUS_CONFIG = { zIndex: 2_000_000_000, locale: zhCn }
 
 let root: ShadowRoot | undefined
 const written = new Set<string>()
